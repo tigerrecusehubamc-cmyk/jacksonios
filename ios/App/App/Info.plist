@@ -45,5 +45,26 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Jackson uses Face ID to securely verify your identity and protect your account.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Jackson needs camera access to let you take profile photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Jackson needs photo library access to let you choose a profile photo.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Jackson needs your location to provide location-based rewards and features.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Jackson reads your step count to calculate activity-based rewards.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>jacksonrewards</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>com.jackson.rewards.app</string>
+		</dict>
+	</array>
 </dict>
 </plist>
