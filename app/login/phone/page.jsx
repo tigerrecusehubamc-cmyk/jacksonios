@@ -2,16 +2,19 @@
 import React, { useState } from "react";
 
 export default function PhoneLoginPage() {
-  const [phoneNumber, setPhoneNumber] = useState("9876579976");
-  const [countryCode, setCountryCode] = useState("+33");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  // const [countryCode, setCountryCode] = useState("+33");
 
   const handleProceed = () => {
-    // Handle form submission logic here
-    console.log("Proceeding with phone number:", countryCode + phoneNumber);
+    // OTP functionality commented out
+    // console.log("Proceeding with phone number:", countryCode + phoneNumber);
+    console.log("Phone number entered:", phoneNumber);
   };
 
   const handlePhoneChange = (e) => {
-    setPhoneNumber(e.target.value);
+    // Allow only digits
+    const digits = e.target.value.replace(/\D/g, "");
+    setPhoneNumber(digits);
   };
 
   return (
@@ -27,13 +30,13 @@ export default function PhoneLoginPage() {
         alt="Coins decoration"
         src="https://c.animaapp.com/TCUof8k2/img/coins-1@2x.png"
       />
-      
+
       <img
         className="absolute w-[120px] h-[100px] top-[80px] right-[20px] object-cover"
         alt="Treasure chest decoration"
         src="https://c.animaapp.com/TCUof8k2/img/2211-w030-n003-510b-p1-510--converted--02-2@2x.png"
       />
-      
+
       <img
         className="absolute w-[50px] h-[40px] top-[200px] right-[40px]"
         alt="Gem decoration"
@@ -55,39 +58,34 @@ export default function PhoneLoginPage() {
         {/* Form */}
         <div className="w-full max-w-[340px] space-y-6">
           <div>
-            <label 
-              htmlFor="phone-input" 
+            <label
+              htmlFor="phone-input"
               className="block text-neutral-400 text-sm mb-3 [font-family:'Poppins',Helvetica]"
             >
               Mobile Number
             </label>
-            
+
             <div className="relative">
               <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="mr-3">
-                  <path 
-                    d="M3.5 2C2.67 2 2 2.67 2 3.5V14.5C2 15.33 2.67 16 3.5 16H14.5C15.33 16 16 15.33 16 14.5V3.5C16 2.67 15.33 2 14.5 2H3.5Z" 
-                    stroke="#d3d3d3" 
-                    strokeWidth="1.5" 
+                  <path
+                    d="M3.5 2C2.67 2 2 2.67 2 3.5V14.5C2 15.33 2.67 16 3.5 16H14.5C15.33 16 16 15.33 16 14.5V3.5C16 2.67 15.33 2 14.5 2H3.5Z"
+                    stroke="#d3d3d3"
+                    strokeWidth="1.5"
                     fill="none"
                   />
                 </svg>
               </div>
-              
+
               <input
                 id="phone-input"
                 type="tel"
-                value={`${countryCode} | ${phoneNumber}`}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  const parts = value.split(' | ');
-                  if (parts.length === 2) {
-                    setCountryCode(parts[0]);
-                    setPhoneNumber(parts[1]);
-                  }
-                }}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={phoneNumber}
+                onChange={handlePhoneChange}
                 className="w-full h-14 pl-16 pr-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-neutral-400 text-base [font-family:'Poppins',Helvetica] focus:outline-none focus:border-white/40 focus:bg-white/15 transition-all duration-200"
-                placeholder="+33 | 9876579976"
+                placeholder="Enter phone number"
               />
             </div>
           </div>

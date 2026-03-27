@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import useOnboardingStore from '@/stores/useOnboardingStore';
 import { sendOtp, verifyOtp, checkMobileAvailability } from '@/lib/api';
 import Script from 'next/script';
-import { sendFirebaseOtp, verifyFirebaseOtp } from "@/lib/firebaseOtp";
+// import { sendFirebaseOtp, verifyFirebaseOtp } from "@/lib/firebaseOtp"; // OTP commented out
 
 const validateName = (name, fieldName = 'Name') => {
   const trimmedName = name.trim();
@@ -515,9 +515,9 @@ const SignUp = () => {
 
     // Step 2: Send OTP only if number is available
     try {
-      await sendFirebaseOtp(fullNumber);
-      setIsOtpSent(true);
-      setCountdown(180);
+      // await sendFirebaseOtp(fullNumber); // OTP commented out
+      // setIsOtpSent(true);
+      // setCountdown(180);
     } catch (err) {
       setError({ mobile: err.message || "Failed to send OTP. Please try again." });
     } finally {
@@ -527,7 +527,7 @@ const SignUp = () => {
   const handleResendOtp = async () => {
     if (countdown > 0) return;
     try {
-      await sendFirebaseOtp(`${countryCode}${formData.mobile}`);
+      // await sendFirebaseOtp(`${countryCode}${formData.mobile}`); // OTP commented out
       setCountdown(180);
       setFormData(prev => ({ ...prev, otp: new Array(6).fill("") }));
     } catch (err) {
@@ -537,9 +537,9 @@ const SignUp = () => {
   const handleVerifyOtp = async () => {
     const otpCode = formData.otp.join("");
     try {
-      const idToken = await verifyFirebaseOtp(otpCode);
-      setFirebaseIdToken(idToken);
-      setIsMobileVerified(true);
+      // const idToken = await verifyFirebaseOtp(otpCode); // OTP commented out
+      // setFirebaseIdToken(idToken);
+      // setIsMobileVerified(true);
     } catch (err) {
       setError({ otp: "Invalid code" });
     }
