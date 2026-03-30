@@ -55,6 +55,8 @@
 	<string>Jackson needs your location to provide location-based rewards and features.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Jackson reads your step count to calculate activity-based rewards.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Jackson may write activity data to help track your rewards progress.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

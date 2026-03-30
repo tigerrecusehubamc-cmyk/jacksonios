@@ -81,6 +81,24 @@ const config: CapacitorConfig = {
       }
     },
   },
+  ios: {
+    packageClassList: [
+      "CapacitorPlayIntegrityPlugin",
+      "StripePlugin",
+      "AppPlugin",
+      "CAPBrowserPlugin",
+      "CAPCameraPlugin",
+      "DevicePlugin",
+      "FilesystemPlugin",
+      "GeolocationPlugin",
+      "PreferencesPlugin",
+      "SplashScreenPlugin",
+      "StatusBarPlugin",
+      "NavigationBarPlugin",
+      "NativeBiometric",
+      "HealthKitBridge"
+    ]
+  },
 };
 
 export default config;

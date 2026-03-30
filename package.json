@@ -12,7 +12,6 @@
   "dependencies": {
     "@capacitor-community/play-integrity": "^7.1.0",
     "@capacitor-community/stripe": "^7.2.1",
-    "@capacitor-firebase/authentication": "^7.5.0",
     "@capacitor/app": "^7.0.2",
     "@capacitor/browser": "^7.0.2",
     "@capacitor/camera": "^7.0.2",
