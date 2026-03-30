@@ -22,7 +22,7 @@ const WatchAdCard = ({
     const [cooldownHours, setCooldownHours] = useState(4);
 
     // API Configuration
-    const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://rewardsapi.hireagent.co";
+    const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://rewardsuatapi.hireagent.co";
 
     // AppLovin MAX integration
     const {

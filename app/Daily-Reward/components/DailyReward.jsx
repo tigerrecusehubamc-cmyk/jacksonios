@@ -51,7 +51,7 @@ const DailyReward = () => {
         try {
             // API call to recover missed day
             const token = localStorage.getItem("authToken");
-            const response = await fetch("https://rewardsapi.hireagent.co/api/daily-rewards/recover", {
+            const response = await fetch("https://rewardsuatapi.hireagent.co/api/daily-rewards/recover", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

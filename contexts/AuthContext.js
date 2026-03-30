@@ -862,7 +862,8 @@ export function AuthProvider({ children }) {
         dispatch(fetchUserProfile({ token, force: true, background: true }));
         dispatch(fetchVipStatus(token));
         // Also refresh wallet/balance/XP when app comes to foreground — background only, and only if stale
-        const _walletState = require("@/lib/redux/store").store.getState().walletTransactions;
+        const _walletState =
+          require("@/lib/redux/store").store.getState().walletTransactions;
         const _walletTs = _walletState.walletScreenCacheTimestamp;
         const WALLET_FOCUS_STALE_MS = 60 * 1000; // 1 minute
         if (!_walletTs || Date.now() - _walletTs > WALLET_FOCUS_STALE_MS) {
@@ -2419,7 +2420,7 @@ export function AuthProvider({ children }) {
         // 1. Fetch profile + location status in PARALLEL (saves ~200-400ms vs sequential)
         const [profileAction, locationResult] = await Promise.allSettled([
           dispatch(fetchUserProfile(socialToken)),
-          fetch("https://rewardsapi.hireagent.co/api/location/status", {
+          fetch("https://rewardsuatapi.hireagent.co/api/location/status", {
             method: "GET",
             headers: {
               Authorization: `Bearer ${socialToken}`,

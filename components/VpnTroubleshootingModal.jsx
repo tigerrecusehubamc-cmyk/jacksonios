@@ -122,12 +122,12 @@ const VpnTroubleshootingModal = ({ isVisible, onClose }) => {
                         <div className="bg-red-900/30 rounded-lg p-4">
                             <h3 className="text-red-400 font-semibold mb-2">🌐 API Status</h3>
                             <div className="text-sm text-gray-300">
-                                <p>Base URL: https://rewardsapi.hireagent.co</p>
+                                <p>Base URL: https://rewardsuatapi.hireagent.co</p>
                                 <p>Besitos API: https://api.besitoscorp.com/</p>
                                 <button
                                     onClick={async () => {
                                         try {
-                                            const response = await fetch('https://rewardsapi.hireagent.co/api/health', {
+                                            const response = await fetch('https://rewardsuatapi.hireagent.co/api/health', {
                                                 method: 'GET',
                                                 timeout: 10000
                                             });

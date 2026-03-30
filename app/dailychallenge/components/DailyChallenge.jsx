@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getDailyChallengeCalendar } from "@/lib/api";
 import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -14,6 +15,7 @@ import { ChallengeGroupSection } from "./ChallengeGroupSection";
 import { ChallengeModal } from "./ChallengeModal";
 
 export const DailyChallenge = () => {
+    const router = useRouter();
     // Redux state and dispatch
     const dispatch = useDispatch();
     const { token } = useAuth() || {};
@@ -453,7 +455,7 @@ export const DailyChallenge = () => {
 
             <header className="flex flex-col w-full max-w-[375px] items-start gap-2 px-5 py-3 mt-[36px]">
                 <nav className="items-center gap-4 self-stretch w-full rounded-[32px] flex relative flex-[0_0_auto]">
-                    <button aria-label="Go back">
+                    <button aria-label="Go back" onClick={() => router.back()}>
                         <img
                             className="relative w-6 h-6"
                             alt="Arrow back ios new"

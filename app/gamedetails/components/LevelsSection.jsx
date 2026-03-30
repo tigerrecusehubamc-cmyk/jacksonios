@@ -524,7 +524,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
         setClaiming(true);
         try {
             // Call backend API to claim rewards
-            const response = await fetch('https://rewardsapi.hireagent.co/api/claim-rewards', {
+            const response = await fetch('https://rewardsuatapi.hireagent.co/api/claim-rewards', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

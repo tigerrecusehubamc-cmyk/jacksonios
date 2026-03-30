@@ -44,7 +44,7 @@ export const EditProfile = () => {
 
         // Ensure the avatar URL has proper protocol
         if (!avatarUrl.startsWith('http')) {
-          avatarUrl = `https://rewardsapi.hireagent.co${avatarUrl}`;
+          avatarUrl = `https://rewardsuatapi.hireagent.co${avatarUrl}`;
         }
 
         setAvatarPreview(avatarUrl);
