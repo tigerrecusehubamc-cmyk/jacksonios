@@ -27,6 +27,11 @@ public class HealthKitBridge: CAPPlugin {
     }
 
     /// Request HealthKit authorization from user
+    /// IMPORTANT: Apple does NOT tell apps if user granted/denied READ permissions
+    /// For READ permissions, we can only detect:
+    /// - if user needs to see the dialog (.shouldRequest)
+    /// - if user already decided (.unnecessary)
+    /// - if user previously denied (.shouldRequestAfterDeclinedRequest)
     @objc func requestAuthorization(_ call: CAPPluginCall) {
         guard let readTypes = call.getArray("read", String.self) else {
             call.reject("Invalid read types parameter")
@@ -41,17 +46,113 @@ public class HealthKitBridge: CAPPlugin {
             }
         }
 
-        healthStore.requestAuthorization(toShare: nil, read: readSet) { success, error in
+        // First, check if we need to show the permission dialog
+        healthStore.getRequestStatusForAuthorization(toShare: nil, read: readSet) { status, error in
             DispatchQueue.main.async {
                 if let error = error {
                     call.reject(error.localizedDescription)
-                } else {
+                    return
+                }
+
+                switch status {
+                case .shouldRequest:
+                    // User hasn't decided yet - show permission dialog
+                    self.healthStore.requestAuthorization(toShare: nil, read: readSet) { success, authError in
+                        DispatchQueue.main.async {
+                            if let authError = authError {
+                                call.reject(authError.localizedDescription)
+                            } else {
+                                // Apple doesn't tell us if user actually granted READ permission
+                                // success=true means dialog was shown, NOT that permission was granted
+                                // We return "dialogShown" and let the frontend test by querying data
+                                call.resolve([
+                                    "granted": true,  // Dialog was successfully shown
+                                    "status": "dialogShown",
+                                    "requiresSettingsRedirect": false,
+                                    "note": "Permission dialog was shown. Test access by querying steps."
+                                ])
+                            }
+                        }
+                    }
+
+                case .unnecessary:
+                    // User already made a decision in the past
+                    // We cannot know if they granted or denied READ permission
                     call.resolve([
-                        "granted": success
+                        "granted": true,  // Can't determine, assume positive
+                        "status": "previouslyRequested",
+                        "requiresSettingsRedirect": false,
+                        "note": "User previously decided. Test access by querying steps."
+                    ])
+
+                case .shouldRequestAfterDeclinedRequest:
+                    // User previously denied - they need to go to Settings
+                    call.resolve([
+                        "granted": false,
+                        "status": "denied",
+                        "requiresSettingsRedirect": true,
+                        "message": "Please enable HealthKit access in Settings → Privacy & Security → Health → [App] → Enable Steps"
+                    ])
+
+                @unknown default:
+                    call.reject("Unknown authorization status")
+                }
+            }
+        }
+    }
+
+    /// Test if we actually have read access to step data
+    /// This is the TRUE test - query steps and see if we get data
+    @objc func testReadAccess(_ call: CAPPluginCall) {
+        guard let startDateString = call.getString("startDate"),
+              let endDateString = call.getString("endDate"),
+              let startDate = ISO8601DateFormatter().date(from: startDateString),
+              var endDate = ISO8601DateFormatter().date(from: endDateString),
+              let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
+            call.reject("Invalid parameters")
+            return
+        }
+
+        endDate = Calendar.current.date(byAdding: .second, value: 1, to: endDate) ?? endDate
+
+        let predicate = HKQuery.predicateForSamples(
+            withStart: startDate,
+            end: endDate,
+            options: .strictStartDate
+        )
+
+        let query = HKStatisticsQuery(
+            quantityType: stepType,
+            quantitySamplePredicate: predicate,
+            options: .cumulativeSum
+        ) { _, result, error in
+            DispatchQueue.main.async {
+                if let error = error as? HKError {
+                    // Check error type
+                    switch error.code {
+                    case .errorAuthorizationDenied:
+                        call.resolve([
+                            "hasAccess": false,
+                            "steps": 0,
+                            "reason": "authorizationDenied"
+                        ])
+                    default:
+                        call.reject(error.localizedDescription)
+                    }
+                } else {
+                    let steps = Int(result?.sumQuantity()?.doubleValue(for: HKUnit.count()) ?? 0)
+                    // If steps > 0, we have access
+                    // If steps == 0, either no steps OR no permission (Apple doesn't tell us which)
+                    call.resolve([
+                        "hasAccess": steps > 0,
+                        "steps": steps,
+                        "reason": steps > 0 ? "hasData" : "noDataOrNoPermission"
                     ])
                 }
             }
         }
+
+        self.healthStore.execute(query)
     }
 
     /// Query step count for a date range

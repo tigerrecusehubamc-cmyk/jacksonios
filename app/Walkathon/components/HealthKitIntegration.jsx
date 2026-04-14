@@ -493,13 +493,9 @@ export const HealthKitIntegration = ({
                     message: available ? "HealthKit is available on this device" : "HealthKit is NOT available on this device"
                 });
 
-                // If HealthKit is not available, show appropriate error
                 if (!available) {
                     const errorMsg = "HealthKit is not available on this device. Please ensure your device supports HealthKit.";
-                    logHealthKit("❌ HealthKit Not Available", {
-                        available,
-                        message: errorMsg
-                    });
+                    logHealthKit("❌ HealthKit Not Available", { available, message: errorMsg });
                     setError(errorMsg);
                     onError?.(errorMsg);
                     return false;
@@ -507,17 +503,13 @@ export const HealthKitIntegration = ({
             } catch (err) {
                 logHealthKit("⚠️ Could Not Check HealthKit Availability", {
                     error: err.message,
-                    stack: err.stack,
-                    note: "Will continue - will fail gracefully if not available"
+                    note: "Will continue anyway"
                 });
             }
 
-            // Request authorization
+            // Request authorization - this shows the dialog
             logHealthKit("📝 Requesting HealthKit Authorization", {
-                permissions: {
-                    read: ['steps'],
-                    write: []
-                },
+                permissions: { read: ['steps'], write: [] },
                 timestamp: new Date().toISOString()
             });
 
@@ -526,42 +518,76 @@ export const HealthKitIntegration = ({
                 write: []
             });
 
-            logHealthKit("📥 Authorization Response Received", {
-                authResult,
-                granted: authResult?.granted,
-                status: authResult?.status,
-                permissions: authResult?.permissions
-            });
+            logHealthKit("📥 Authorization Response Received", { authResult });
 
-            const granted = authResult?.granted ?? false;
-            setIsAuthorized(granted);
-
-            if (!granted) {
-                logHealthKit("❌ Authorization Denied", {
+            // IMPORTANT: Apple doesn't tell us if user actually granted READ permission
+            // We must test by querying data!
+            if (authResult?.status === "denied" && authResult?.requiresSettingsRedirect) {
+                const errorMsg = "HealthKit access was denied. Please enable in Settings → Privacy & Security → Health.";
+                logHealthKit("❌ Authorization Denied - Settings Required", {
                     authResult,
-                    reason: authResult?.reason || "User denied or not available",
-                    message: "HealthKit authorization denied. Please enable in Settings → Privacy → Health.",
                     instructions: [
                         "Open iPhone Settings",
                         "Go to Privacy & Security",
                         "Tap Health",
-                        "Find WeWard app",
+                        "Find app name",
                         "Enable 'Read' permission for Steps"
                     ]
                 });
-                throw new Error("HealthKit authorization denied. Please enable in Settings → Privacy → Health.");
+                setError(errorMsg);
+                onError?.(errorMsg);
+                setIsAuthorized(false);
+                return false;
             }
 
-            logHealthKit("✅ Authorization Granted Successfully", {
-                granted,
-                authResult,
-                timestamp: new Date().toISOString(),
-                nextStep: "Can now query steps from HealthKit"
+            // For other cases, we need to TEST if we actually have access
+            // Use testReadAccess to verify permission by querying actual data
+            logHealthKit("🧪 Testing Read Access", { timestamp: new Date().toISOString() });
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const testResult = await callNativeMethod('testReadAccess', {
+                startDate: today.toISOString(),
+                endDate: tomorrow.toISOString()
             });
+
+            logHealthKit("📊 Read Access Test Result", { testResult });
+
+            if (testResult?.hasAccess === false && testResult?.reason === "authorizationDenied") {
+                // We definitively know permission was denied
+                const errorMsg = "HealthKit permission denied. Please enable in Settings → Privacy & Security → Health.";
+                logHealthKit("❌ Read Access Denied", { testResult });
+                setError(errorMsg);
+                onError?.(errorMsg);
+                setIsAuthorized(false);
+                return false;
+            }
+
+            if (testResult?.hasAccess === true) {
+                // We got data - permission is granted!
+                logHealthKit("✅ Authorization Confirmed - Has Access", {
+                    steps: testResult?.steps,
+                    message: "User has granted HealthKit read permission"
+                });
+                setIsAuthorized(true);
+                return true;
+            }
+
+            // If steps == 0, could be no steps OR no permission
+            // In this case, we assume authorization was granted but user has no steps today
+            logHealthKit("⚠️ No Steps Today - Assuming Authorized", {
+                steps: testResult?.steps,
+                reason: "User likely granted permission but has 0 steps today"
+            });
+            setIsAuthorized(true);
             return true;
+
         } catch (err) {
             console.error("HealthKit authorization error:", err);
-            const errorMsg = err.message || "Failed to authorize HealthKit access. Ensure native bridge is set up.";
+            const errorMsg = err.message || "Failed to authorize HealthKit access.";
             setError(errorMsg);
             onError?.(errorMsg);
             return false;
@@ -909,11 +935,9 @@ export const HealthKitIntegration = ({
                             </div>
                             <div className="flex-1">
                                 <p className="text-red-400 text-sm font-medium">{error}</p>
-                                {error.includes("HealthKit") && (
-                                    <p className="text-gray-500 text-xs mt-2">
-                                        Enable "Movement and Fitness" in Settings → Privacy & Security → Health
-                                    </p>
-                                )}
+                                <p className="text-gray-500 text-xs mt-2">
+                                    To enable: Settings → Privacy & Security → Health → [App Name] → Enable "Steps"
+                                </p>
                             </div>
                         </div>
                     </motion.div>

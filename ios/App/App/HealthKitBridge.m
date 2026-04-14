@@ -17,6 +17,7 @@ CAP_PLUGIN(HealthKitBridge, "HealthKit",
     CAP_PLUGIN_METHOD(isAvailable, CAPPluginReturnPromise);
     CAP_PLUGIN_METHOD(requestAuthorization, CAPPluginReturnPromise);
     CAP_PLUGIN_METHOD(querySteps, CAPPluginReturnPromise);
+    CAP_PLUGIN_METHOD(testReadAccess, CAPPluginReturnPromise);
 )
 
 
