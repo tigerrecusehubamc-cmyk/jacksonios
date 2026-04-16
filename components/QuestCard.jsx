@@ -205,7 +205,7 @@ export const QuestCard = ({ game }) => {
                     <img
                         className="w-6 h-6"
                         alt="Information circle"
-                        src="https://c.animaapp.com/FYtIEbRF/img/informationcircle.svg"
+                        src="/assets/animaapp/FYtIEbRF/img/informationcircle.svg"
                         loading="eager"
                         decoding="async"
                         width={24}
@@ -242,7 +242,7 @@ export const QuestCard = ({ game }) => {
 
                 <div className="absolute top-5 left-5 right-5 flex items-center gap-3">
                     {/* Avatar */}
-                    <div className="relative w-[74px] h-[74px] shrink-0 bg-[url(https://c.animaapp.com/FYtIEbRF/img/oval.svg)] bg-[100%_100%]">
+                    <div className="relative w-[74px] h-[74px] shrink-0 bg-[url(/assets/animaapp/FYtIEbRF/img/oval.svg)] bg-[100%_100%]">
                         <img
                             className="absolute top-1 left-1 w-[66px] h-[66px] object-cover rounded-full"
                             alt="Game Image"
@@ -292,7 +292,7 @@ export const QuestCard = ({ game }) => {
                                     {game?.goals?.[0]?.reward?.xp || game?.xp || 20}
                                 </span>
                                 <img
-                                    src="https://c.animaapp.com/mHRmJGe1/img/pic.svg"
+                                    src="/assets/animaapp/mHRmJGe1/img/pic.svg"
                                     alt="XP"
                                     className="w-4 h-4 object-contain"
                                     loading="eager"
@@ -318,7 +318,7 @@ export const QuestCard = ({ game }) => {
                     <img
                         className={`relative w-5 h-5 transition-all duration-300 ${isExpanded ? "rotate-90" : ""} `}
                         alt="Arrow"
-                        src="https://c.animaapp.com/iuW6cMRd/img/arrow.svg"
+                        src="/assets/animaapp/iuW6cMRd/img/arrow.svg"
                         loading="eager"
                         decoding="async"
                         width={20}
@@ -355,7 +355,7 @@ export const QuestCard = ({ game }) => {
                                                 <img
                                                     className="absolute top-0.5 left-1 w-[35px] h-[35px] aspect-[1] object-cover"
                                                     alt="Lock"
-                                                    src="https://c.animaapp.com/FYtIEbRF/img/image-3943@2x.png"
+                                                    src="/assets/animaapp/FYtIEbRF/img/image-3943-2x.png"
                                                     loading="eager"
                                                     decoding="async"
                                                     width={35}

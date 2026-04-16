@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchSurveys } from "@/lib/redux/slice/surveysSlice";
+import { onSurveyComplete } from "@/lib/adjustService";
+import { incrementAndGet } from "@/lib/adjustCounters";
 
 const SurveysSection = () => {
     const { token } = useAuth();
@@ -26,12 +28,7 @@ const SurveysSection = () => {
         if (!token) return;
 
         const hasFreshCache = surveys?.length && cacheTimestamp && (Date.now() - cacheTimestamp < CACHE_STALE_MS);
-        console.log("[DEBUG-SURVEYS] mount effect fired | status:", status, "| hasFreshCache:", hasFreshCache, "| cacheTimestamp:", cacheTimestamp);
-        if (hasFreshCache || status === "loading" || status === "failed") {
-            console.log("[DEBUG-SURVEYS] skipping dispatch — reason:", hasFreshCache ? "fresh cache" : status);
-            return;
-        }
-        console.log("[DEBUG-SURVEYS] dispatching fetchSurveys");
+        if (hasFreshCache || status === "loading" || status === "failed") return;
         dispatch(fetchSurveys({ token }));
     }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -44,15 +41,25 @@ const SurveysSection = () => {
             const ts = state.surveys.cacheTimestamp;
             const existing = state.surveys.surveys;
             const isStale = !ts || Date.now() - ts > FOCUS_REFRESH_STALE_MS;
-            console.log("[DEBUG-SURVEYS] focus/visibility fired | isStale:", isStale, "| ts:", ts, "| at:", new Date().toISOString());
             if (!isStale) return;
-            console.log("[DEBUG-SURVEYS] focus: dispatching fetchSurveys (background)");
             dispatch(fetchSurveys({ token, force: true, background: true }));
         };
 
-        const handleFocus = () => handleRefreshIfStale();
+        // Check if user is returning from a survey — fire completion event once per survey opened
+        const checkSurveyReturn = () => {
+            try {
+                const surveyId = localStorage.getItem("adjust_survey_opened");
+                if (surveyId) {
+                    localStorage.removeItem("adjust_survey_opened");
+                    // counter seeded from server at login — survives reinstalls
+                    onSurveyComplete(incrementAndGet("survey"), surveyId);
+                }
+            } catch { }
+        };
+
+        const handleFocus = () => { checkSurveyReturn(); handleRefreshIfStale(); };
         const handleVisibility = () => {
-            if (!document.hidden) handleRefreshIfStale();
+            if (!document.hidden) { checkSurveyReturn(); handleRefreshIfStale(); }
         };
 
         window.addEventListener("focus", handleFocus);
@@ -76,7 +83,10 @@ const SurveysSection = () => {
     const handleSurveyClick = (survey) => {
         // Directly redirect to clickUrl from survey response
         if (survey.clickUrl) {
-            // Open in new tab/window
+            // Flag that a survey was opened — completion event fires when user returns
+            try {
+                localStorage.setItem("adjust_survey_opened", survey.id || survey.surveyId || "1");
+            } catch { }
             window.open(survey.clickUrl, '_blank', 'noopener,noreferrer');
         }
     };

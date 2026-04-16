@@ -62,9 +62,8 @@ const GameItemCard = ({
                             src={game.image}
                             width={55}
                             height={55}
-                            loading="eager"
+                            loading="lazy"
                             decoding="async"
-                            priority
                         />
                     </div>
                 ) : (

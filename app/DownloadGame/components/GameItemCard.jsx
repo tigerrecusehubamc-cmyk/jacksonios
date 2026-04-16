@@ -1,4 +1,5 @@
-import React from 'react'
+import React from 'react';
+import { getTotalPromisedPoints } from "@/lib/gameDataNormalizer";
 
 const GameItemCard = ({
     game,
@@ -126,7 +127,6 @@ const GameItemCard = ({
     const displayCoins = Number.isFinite(coinsNum) ? (coinsNum === Math.round(coinsNum) ? String(Math.round(coinsNum)) : (Math.round(coinsNum * 100) / 100).toString()) : "0";
     let displayXP = "0";
     try {
-        const { getTotalPromisedPoints } = require('@/lib/gameDataNormalizer');
         const { totalXP } = getTotalPromisedPoints(game);
         displayXP = Number.isFinite(totalXP) ? String(Math.round(totalXP)) : "0";
     } catch (_) {
@@ -138,12 +138,12 @@ const GameItemCard = ({
     const stats = [
         {
             value: formatNumber(displayCoins),
-            icon: "https://c.animaapp.com/3btkjiTJ/img/image-3937@2x.png",
+            icon: "/assets/animaapp/3btkjiTJ/img/image-3937-2x.png",
             iconAlt: "Coin",
         },
         {
             value: formatNumber(displayXP),
-            icon: "https://c.animaapp.com/3btkjiTJ/img/pic.svg",
+            icon: "/assets/animaapp/3btkjiTJ/img/pic.svg",
             iconAlt: "XP",
         },
     ];
@@ -161,14 +161,14 @@ const GameItemCard = ({
                     <img
                         className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                         alt={`${cleanGameName} game icon`}
-                        src={game.image || game.overlayImage || "https://c.animaapp.com/DfFsihWg/img/image-3930@2x.png"}
+                        src={game.image || game.overlayImage || "/assets/animaapp/DfFsihWg/img/image-3930-2x.png"}
                         loading="eager"
                         decoding="async"
                         width="55"
                         height="55"
                         onError={(e) => {
-                            if (e.target.src !== "https://c.animaapp.com/DfFsihWg/img/image-3930@2x.png") {
-                                e.target.src = "https://c.animaapp.com/DfFsihWg/img/image-3930@2x.png";
+                            if (e.target.src !== "/assets/animaapp/DfFsihWg/img/image-3930-2x.png") {
+                                e.target.src = "/assets/animaapp/DfFsihWg/img/image-3930-2x.png";
                             }
                         }}
                         onClick={(e) => {
@@ -252,7 +252,7 @@ const GameItemCard = ({
                     <img
                         className="w-[14px] h-[14px] sm:w-[15px] sm:h-[15px] flex-shrink-0"
                         alt=""
-                        src="https://c.animaapp.com/3btkjiTJ/img/download.svg"
+                        src="/assets/animaapp/3btkjiTJ/img/download.svg"
                         aria-hidden="true"
                         loading="eager"
                         decoding="async"

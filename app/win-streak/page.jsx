@@ -2,13 +2,17 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
+import { onStreakMilestone } from "@/lib/adjustService";
+import { Capacitor } from "@capacitor/core";
 import { fetchStreakStatus } from "@/lib/redux/slice/streakSlice";
-import { getStreakHistory, getStreakLeaderboard } from "@/lib/api";
+// import { getStreakHistory, getStreakLeaderboard } from "@/lib/api"; // commented — /api/streak/status now provides all data
 import { TitleSection } from "./components/TitleSection";
 import { ProgressSection } from "./components/ProgressSection";
 import { RewardModal } from "./components/RewardModal";
 import { InfoModal } from "./components/InfoModal";
 import { HomeIndicator } from "@/components/HomeIndicator";
+import { useAppLovinAds } from "@/hooks/useAppLovinAds";
+import MockAdOverlay from "@/app/games/components/MockAdOverlay";
 
 /**
  * 30-Day Win Streak Page
@@ -25,28 +29,43 @@ export default function WinStreakPage() {
     const router = useRouter();
     const dispatch = useDispatch();
 
-    // Get data from Redux store
+    // Get data from Redux store — all from /api/streak/status
     const {
         currentStreak,
         completedDays,
         streakHistory,
+        streakTree,
+        rewards,
+        progress,
+        nextMilestone,
+        daysRemaining,
         status,
         error: streakError,
-        lastFetched
     } = useSelector((state) => state.streak);
 
-    // Local state for additional data and modals
-    const [leaderboard, setLeaderboard] = useState([]);
+    // Local state for modals only
     const [showRewardModal, setShowRewardModal] = useState(false);
     const [showInfoModal, setShowInfoModal] = useState(false);
     const [rewardData, setRewardData] = useState(null);
-    const [milestones, setMilestones] = useState([]); // Store milestone rewards from API
+    // const [leaderboard, setLeaderboard] = useState([]); // commented — not used
+    // const [milestones, setMilestones] = useState([]); // commented — using streakTree from /api/streak/status
 
     // Ref for scrollable container
     const scrollContainerRef = useRef(null);
+    const retryCountRef = useRef(0); // max 3 silent retries on failure
+    const firedStreakMilestonesRef = useRef(new Set()); // prevent re-firing on re-fetch
 
-    // Check if data is fresh (less than 5 minutes old)
-    const isDataFresh = lastFetched && (Date.now() - lastFetched) < 5 * 60 * 1000;
+    // Ads — same pattern as ChallengeModal
+    const isWeb = !Capacitor.isNativePlatform();
+    const [showMockAd, setShowMockAd] = useState(false);
+    const watchAdShownRef = useRef(false); // prevent showing ad more than once per page visit
+
+    const {
+        isShowingAd,
+        showAd,
+        loadAd,
+        clearError: clearAdError,
+    } = useAppLovinAds();
 
     // Preload critical images for faster display
     useEffect(() => {
@@ -55,13 +74,13 @@ export default function WinStreakPage() {
             "/treasure.png",
             "/dollor.png",
             "/xp.svg",
-            "https://c.animaapp.com/1RFP1hGC/img/image-4016@2x.png",
-            "https://c.animaapp.com/1RFP1hGC/img/image-3996@2x.png",
-            "https://c.animaapp.com/1RFP1hGC/img/close.svg",
-            "https://c.animaapp.com/1RFP1hGC/img/vector-349.svg",
-            "https://c.animaapp.com/1RFP1hGC/img/vector-350.svg",
-            "https://c.animaapp.com/1RFP1hGC/img/vector-351.svg",
-            "https://c.animaapp.com/1RFP1hGC/img/vector-352.svg"
+            "/assets/animaapp/1RFP1hGC/img/image-4016-2x.png",
+            "/assets/animaapp/1RFP1hGC/img/image-3996-2x.png",
+            "/assets/animaapp/1RFP1hGC/img/close.svg",
+            "/assets/animaapp/1RFP1hGC/img/vector-349.svg",
+            "/assets/animaapp/1RFP1hGC/img/vector-350.svg",
+            "/assets/animaapp/1RFP1hGC/img/vector-351.svg",
+            "/assets/animaapp/1RFP1hGC/img/vector-352.svg"
         ];
 
         criticalImages.forEach((src) => {
@@ -91,19 +110,28 @@ export default function WinStreakPage() {
         };
     }, []);
 
-    // Load streak data only if not already loaded or data is stale
+    // Fetch fresh data once every time the page is visited — show cached data immediately while loading
+    // On failure: silently retry once after 3 seconds without showing error screen
     useEffect(() => {
-        if (status === 'idle' || (!isDataFresh && status !== 'loading')) {
-            dispatch(fetchStreakStatus());
-        }
-    }, [dispatch, status, isDataFresh]);
+        dispatch(fetchStreakStatus());
+    }, []);
 
-    // Load additional data (history and leaderboard) only if needed
     useEffect(() => {
-        if (status === 'succeeded' && currentStreak !== undefined) {
-            loadAdditionalData();
-        }
-    }, [status, currentStreak]);
+        if (status !== 'failed') return;
+        if (retryCountRef.current >= 3) return; // stop after 3 retries
+        retryCountRef.current += 1;
+        const retryTimer = setTimeout(() => {
+            dispatch(fetchStreakStatus());
+        }, 3000);
+        return () => clearTimeout(retryTimer);
+    }, [status]);
+
+    // commented — history/leaderboard no longer needed, /api/streak/status provides all data
+    // useEffect(() => {
+    //     if (status === 'succeeded' && currentStreak !== undefined) {
+    //         loadAdditionalData();
+    //     }
+    // }, [status, currentStreak]);
 
     // Scroll to bottom when page loads/navigates
     useEffect(() => {
@@ -134,142 +162,98 @@ export default function WinStreakPage() {
         }
     }, [status]);
 
-    // Load additional data (history and leaderboard)
-    const loadAdditionalData = async () => {
-        try {
-            const token = localStorage.getItem('authToken');
-            if (!token) return;
-
-            const [historyResponse, leaderboardResponse] = await Promise.all([
-                getStreakHistory(1, 30, token),
-                getStreakLeaderboard(10, token)
-            ]);
-
-            if (leaderboardResponse && leaderboardResponse.data) {
-                setLeaderboard(leaderboardResponse.data.leaderboard || []);
-            }
-
-            // Store milestone rewards from API response
-            if (historyResponse && historyResponse.success && historyResponse.data && historyResponse.data.milestones) {
-                const apiMilestones = historyResponse.data.milestones || [];
-                setMilestones(apiMilestones);
-            }
-
-            // Scroll to bottom after additional data is loaded
-            setTimeout(() => {
-                if (scrollContainerRef.current) {
-                    // Scroll to absolute bottom - use maximum scrollable position
-                    const scrollHeight = scrollContainerRef.current.scrollHeight;
-                    // Scroll to the absolute maximum position
-                    scrollContainerRef.current.scrollTo({
-                        top: scrollHeight, // Scroll to absolute bottom
-                        behavior: 'smooth'
-                    });
-                }
-            }, 600); // Increased timeout to ensure all content is fully rendered
-        } catch (error) {
-            // Failed to load additional data - silently handle
-        }
-    };
-
-    // Helper function to get reward from milestones API data
-    const getRewardFromMilestones = (day) => {
-        const milestone = milestones.find(m => m.day === day);
-        if (!milestone || !milestone.rewards) {
-            return null;
-        }
-
-        const coins = milestone.rewards.find(r => r.type === 'coins')?.value || 0;
-        const xp = milestone.rewards.find(r => r.type === 'xp')?.value || 0;
-
-        return { coins, xp };
-    };
-
-    // Check for milestone rewards based on current streak
+    // Sync AppLovin showing state → mock overlay on web (same pattern as ChallengeModal)
     useEffect(() => {
-        if (currentStreak > 0) {
-            const milestoneDays = [7, 14, 21, 30];
-            const reachedMilestone = milestoneDays.find(m => m === currentStreak);
-
-            if (reachedMilestone) {
-                // Get reward from API milestones data, fallback to defaults if not available
-                const reward = getRewardFromMilestones(reachedMilestone) || {
-                    coins: reachedMilestone === 7 ? 50 : reachedMilestone === 14 ? 100 : reachedMilestone === 21 ? 150 : 250,
-                    xp: reachedMilestone === 7 ? 25 : reachedMilestone === 14 ? 50 : reachedMilestone === 21 ? 75 : 125
-                };
-
-                if (reward) {
-                    setRewardData({
-                        milestone: reachedMilestone,
-                        coins: reward.coins,
-                        xp: reward.xp,
-                        badge: `Day ${reachedMilestone} Champion!`
-                    });
-                    setShowRewardModal(true);
-                }
-            }
+        if (isWeb && isShowingAd) {
+            setShowMockAd(true);
+        } else if (isWeb && !isShowingAd && showMockAd) {
+            setShowMockAd(false);
         }
-    }, [currentStreak, milestones]);
+    }, [isWeb, isShowingAd, showMockAd]);
 
-    // Generate streak tree data for ProgressSection - memoized to update when milestones change
-    const generateStreakTree = React.useMemo(() => {
-        const tree = [];
-        for (let day = 1; day <= 30; day++) {
-            const isMilestoneDay = [7, 14, 21, 30].includes(day);
-            // Get reward from API milestones, fallback to defaults if not available
-            const milestone = milestones.find(m => m.day === day);
-            let reward = null;
+    // Auto-trigger watch_ad when the LAST completed streak day is a milestone with claimMode === 'watch_ad'
+    // currentStreak = last completed day number. If it lands exactly on a milestone day
+    // that requires watch_ad, show the ad. Previous milestones are never re-triggered
+    // because currentStreak only equals one day at a time.
+    useEffect(() => {
+        if (!currentStreak || !streakTree || streakTree.length === 0) return;
+        if (watchAdShownRef.current) return; // only once per page visit
 
-            if (isMilestoneDay) {
-                if (milestone && milestone.rewards) {
-                    const coins = milestone.rewards.find(r => r.type === 'coins')?.value || 0;
-                    const xp = milestone.rewards.find(r => r.type === 'xp')?.value || 0;
-                    reward = { coins, xp };
-                } else {
-                    // Fallback to defaults only if milestone data not loaded yet
-                    reward = {
-                        coins: day === 7 ? 50 : day === 14 ? 100 : day === 21 ? 150 : 250,
-                        xp: day === 7 ? 25 : day === 14 ? 50 : day === 21 ? 75 : 125
-                    };
-                }
-            }
+        const lastDay = streakTree.find(item => item.day === currentStreak);
+        if (!lastDay) return;
+        if (!lastDay.isMilestone || lastDay.claimMode !== 'watch_ad') return;
 
-            tree.push({
-                day,
-                isCompleted: completedDays.includes(day),
-                isCurrent: day === currentStreak + 1,
-                isMilestone: isMilestoneDay,
-                reward: reward
+        watchAdShownRef.current = true;
+        (async () => {
+            clearAdError();
+            const loaded = await loadAd();
+            if (!loaded) return;
+            await showAd({
+                onReward: () => {
+                    dispatch(fetchStreakStatus());
+                },
+                onError: () => {},
             });
+        })();
+    }, [currentStreak, streakTree]);
+
+    // commented — replaced by /api/streak/status which returns streakTree + rewards directly
+    // const loadAdditionalData = async () => { ... };
+    // const getRewardFromMilestones = (day) => { ... };
+
+    // Check for milestone rewards using streakTree from /api/streak/status
+    useEffect(() => {
+        if (!streakTree || streakTree.length === 0) return;
+        const reachedItem = streakTree.find(
+            item => item.isMilestone && item.isCompleted && item.rewards?.length > 0
+        );
+        if (reachedItem && !firedStreakMilestonesRef.current.has(reachedItem.day)) {
+            firedStreakMilestonesRef.current.add(reachedItem.day);
+            onStreakMilestone(reachedItem.day);
+            const coins = reachedItem.rewards.find(r => r.type === 'coins')?.value || 0;
+            const xp = reachedItem.rewards.find(r => r.type === 'xp')?.value || 0;
+            setRewardData({ milestone: reachedItem.day, coins, xp, badge: `Day ${reachedItem.day} Champion!` });
+            setShowRewardModal(true);
         }
-        return tree;
-    }, [completedDays, currentStreak, milestones]);
+    }, [streakTree]);
 
-    // Generate rewards data
-    const generateRewards = () => {
-        const rewards = [];
-        const milestoneDays = [7, 14, 21, 30];
-
-        milestoneDays.forEach(day => {
-            if (completedDays.includes(day)) {
-                // Get reward from API milestones, fallback to defaults if not available
-                const reward = getRewardFromMilestones(day) || {
-                    coins: day === 7 ? 50 : day === 14 ? 100 : day === 21 ? 150 : 250,
-                    xp: day === 7 ? 25 : day === 14 ? 50 : day === 21 ? 75 : 125
-                };
-
-                rewards.push({
-                    day,
-                    isReached: true,
-                    reward: {
-                        coins: reward.coins,
-                        xp: reward.xp,
-                        badge: `Day ${day} Champion!`
-                    }
-                });
-            }
+    // Build streak tree directly from /api/streak/status streakTree array
+    const generateStreakTree = React.useMemo(() => {
+        if (!streakTree || streakTree.length === 0) {
+            // No data yet — return 30 empty days
+            return Array.from({ length: 30 }, (_, i) => ({
+                day: i + 1,
+                isCompleted: false,
+                isCurrent: false,
+                isMilestone: [7, 14, 21, 30].includes(i + 1),
+                reward: null,
+            }));
+        }
+        return streakTree.map(item => {
+            const coins = item.rewards?.find(r => r.type === 'coins')?.value || 0;
+            const xp = item.rewards?.find(r => r.type === 'xp')?.value || 0;
+            return {
+                day: item.day,
+                isCompleted: item.isCompleted,
+                isCurrent: item.isCurrent,
+                isMilestone: item.isMilestone,
+                reward: item.isMilestone && (coins > 0 || xp > 0) ? { coins, xp } : null,
+            };
         });
-        return rewards;
+    }, [streakTree]);
+
+    // Generate rewards data from /api/streak/status rewards[] array
+    const generateRewards = () => {
+        return (rewards || []).map(item => {
+            const coins = item.rewards?.find(r => r.type === 'coins')?.value || 0;
+            const xp = item.rewards?.find(r => r.type === 'xp')?.value || 0;
+            return {
+                day: item.day,
+                isReached: item.isReached,
+                isNext: item.isNext,
+                reward: { coins, xp, badge: `Day ${item.day} Champion!` },
+            };
+        });
     };
 
     // Handle close button
@@ -288,13 +272,18 @@ export default function WinStreakPage() {
         setRewardData(null);
     };
 
+    // Handle mock ad complete/close (web only)
+    const handleMockAdComplete = () => setShowMockAd(false);
+    const handleMockAdClose = () => setShowMockAd(false);
+
     // Handle refresh
     const handleRefresh = () => {
         dispatch(fetchStreakStatus());
     };
 
     // Show loading state only if no data is available and we're loading
-    if (status === 'loading' && currentStreak === undefined) {
+    // Only show full-screen loader on very first load (no cached data at all)
+    if (status === 'loading' && streakTree.length === 0) {
         return (
             <div className="relative w-full min-h-screen bg-gradient-to-b from-gray-900 to-black overflow-hidden flex items-center justify-center">
                 <div className="text-white text-center">
@@ -305,8 +294,9 @@ export default function WinStreakPage() {
         );
     }
 
-    // Show error state only if there's an actual error
-    if (status === 'failed' && streakError) {
+    // Only show full-screen error if there is no cached data at all
+    // If cached streakTree exists, show it silently and retry in background
+    if (status === 'failed' && streakError && streakTree.length === 0) {
         return (
             <div className="relative w-full min-h-screen bg-gradient-to-b from-gray-900 to-black overflow-hidden flex items-center justify-center">
                 <div className="text-center p-4">
@@ -350,7 +340,7 @@ export default function WinStreakPage() {
                             rewards: generateRewards()
                         }}
                         streakHistory={streakHistory}
-                        leaderboard={leaderboard}
+                        leaderboard={[]}
                         onRefresh={handleRefresh}
                     />
 
@@ -377,8 +367,18 @@ export default function WinStreakPage() {
             <InfoModal
                 isVisible={showInfoModal}
                 onClose={() => setShowInfoModal(false)}
-                milestones={milestones}
+                milestones={[]}
             />
+
+            {/* Mock Ad Overlay — web only, mirrors ChallengeModal pattern */}
+            {isWeb && (
+                <MockAdOverlay
+                    isVisible={showMockAd}
+                    onComplete={handleMockAdComplete}
+                    onClose={handleMockAdClose}
+                    duration={15}
+                />
+            )}
         </div>
     );
 }

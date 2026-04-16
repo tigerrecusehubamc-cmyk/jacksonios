@@ -97,7 +97,7 @@ const DailyReward = () => {
                             <MemoizedImage
                                 className="w-full h-full"
                                 alt="Arrow back ios new"
-                                src="https://c.animaapp.com/ciot1lOr/img/arrow-back-ios-new-1@2x.png"
+                                src="/assets/animaapp/ciot1lOr/img/arrow-back-ios-new-1-2x.png"
                             />
                         </MemoizedButton>
 
@@ -118,7 +118,7 @@ const DailyReward = () => {
                         <MemoizedImage
                             className="w-full h-full"
                             alt="Arrow back ios new"
-                            src="https://c.animaapp.com/ciot1lOr/img/arrow-back-ios-new-1@2x.png"
+                            src="/assets/animaapp/ciot1lOr/img/arrow-back-ios-new-1-2x.png"
                         />
                     </MemoizedButton>
 
@@ -135,7 +135,7 @@ const DailyReward = () => {
                         <MemoizedImage
                             className="w-full h-full"
                             alt="Arrow back ios new"
-                            src="https://c.animaapp.com/ciot1lOr/img/arrow-back-ios-new-2@2x.png"
+                            src="/assets/animaapp/ciot1lOr/img/arrow-back-ios-new-2-2x.png"
                         />
                     </MemoizedButton>
                 </div>
@@ -181,7 +181,7 @@ const DailyReward = () => {
                         <MemoizedImage
                             className="w-full h-full"
                             alt="Arrow back ios new"
-                            src="https://c.animaapp.com/ciot1lOr/img/arrow-back-ios-new-1@2x.png"
+                            src="/assets/animaapp/ciot1lOr/img/arrow-back-ios-new-1-2x.png"
                         />
                     </MemoizedButton>
 
@@ -202,7 +202,7 @@ const DailyReward = () => {
                     <MemoizedImage
                         className="w-full h-full mt-1"
                         alt="Arrow back ios new"
-                        src="https://c.animaapp.com/ciot1lOr/img/arrow-back-ios-new-1@2x.png"
+                        src="/assets/animaapp/ciot1lOr/img/arrow-back-ios-new-1-2x.png"
                     />
                 </MemoizedButton>
 
@@ -219,7 +219,7 @@ const DailyReward = () => {
                     <MemoizedImage
                         className="w-full h-full rotate-180"
                         alt="Arrow forward ios new bg-white text-white"
-                        src="https://c.animaapp.com/ciot1lOr/img/arrow-back-ios-new-1@2x.png"
+                        src="/assets/animaapp/ciot1lOr/img/arrow-back-ios-new-1-2x.png"
                     />
                 </MemoizedButton>
             </div>

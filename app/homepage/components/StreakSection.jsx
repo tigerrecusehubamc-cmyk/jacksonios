@@ -24,7 +24,7 @@ const StreakSection = () => {
     const streakData = useMemo(() => {
         const hasStreak = currentStreak > 0;
         const dayText = hasStreak ? `Day ${currentStreak} of 30` : '30 Days Streak';
-        const statusText = hasStreak ? 'Keep it up! 🔥' : 'if you login daily';
+        const statusText = hasStreak ? 'Keep it up! 🔥' : 'if you play game daily';
         const titleText = hasStreak ? 'Great Progress!' : 'Exciting Rewards';
 
         return {
@@ -67,7 +67,7 @@ const StreakSection = () => {
                         <img
                             className="absolute w-[66px] h-[207px] top-0 left-[219px] aspect-[0.32]"
                             alt="Image"
-                            src="https://c.animaapp.com/xCaMzUYh/img/image-3995@2x.png"
+                            src="/assets/animaapp/xCaMzUYh/img/image-3995-2x.png"
                             loading="eager"
                             decoding="async"
                             width="66"

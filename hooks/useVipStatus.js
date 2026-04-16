@@ -73,7 +73,7 @@ export const useVipStatusWithRefresh = () => {
     const handleVisibilityChange = () => {
       if (!document.hidden && token) {
         console.log(
-          "🔄 [useVipStatusWithRefresh] Page became visible, refreshing VIP status..."
+          "🔄 [useVipStatusWithRefresh] Page became visible, refreshing VIP status...",
         );
         vipStatusHook.refreshVipStatus();
       }
@@ -82,7 +82,7 @@ export const useVipStatusWithRefresh = () => {
     const handleFocus = () => {
       if (token) {
         console.log(
-          "🔄 [useVipStatusWithRefresh] Page focused, refreshing VIP status..."
+          "🔄 [useVipStatusWithRefresh] Page focused, refreshing VIP status...",
         );
         vipStatusHook.refreshVipStatus();
       }

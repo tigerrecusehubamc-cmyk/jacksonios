@@ -8,7 +8,7 @@ export const CoinInfoModal = ({ isVisible, onClose }) => {
     return (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[999999]">
             <div
-                className="flex flex-col w-[335px] h-[315px] items-start pt-5 pb-0 px-0 relative bg-black rounded-[20px] border-t [border-top-style:solid] border-r [border-right-style:solid] border-l [border-left-style:solid] border-[#595959] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                className="flex flex-col w-[335px] h-[315px] items-start pt-5 pb-0 px-0  bg-black rounded-[20px] border-t [border-top-style:solid] border-r [border-right-style:solid] border-l [border-left-style:solid] border-[#595959] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
                 role="dialog"
                 aria-labelledby="modal-title"
                 aria-describedby="modal-description"
@@ -30,7 +30,7 @@ export const CoinInfoModal = ({ isVisible, onClose }) => {
                     >
                         <img
                             alt="Close"
-                            src="https://c.animaapp.com/2Z6cRMoo/img/close.svg"
+                            src="/assets/animaapp/2Z6cRMoo/img/close.svg"
                         />
                     </button>
                 </header>

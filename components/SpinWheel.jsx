@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSpinConfig, getSpinStatus, performSpin, redeemSpinReward } from "@/lib/api";
+import { onSpinnerUse } from "@/lib/adjustService";
+import { incrementAndGet } from "@/lib/adjustCounters";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchWalletScreen } from "@/lib/redux/slice/walletTransactionsSlice";
-import { fetchProfileStats } from "@/lib/redux/slice/profileSlice";
+import { fetchWalletScreen, fetchWalletTransactions, fetchFullWalletTransactions } from "@/lib/redux/slice/walletTransactionsSlice";
+import { fetchProfileStats, fetchUserProfile } from "@/lib/redux/slice/profileSlice";
 import { useAppLovinAds } from "@/hooks/useAppLovinAds";
 import { Capacitor } from "@capacitor/core";
 import MockAdOverlay from "@/app/games/components/MockAdOverlay";
@@ -47,7 +49,10 @@ export default function SpinWheel() {
             currentTier
         };
     }, [vipStatus]);
-    const [isLoading, setIsLoading] = useState(true);
+    // Start as false (optimistic) — show "PUSH TO SPIN" immediately.
+    // API confirms state in background; button corrects silently if needed.
+    // This eliminates the "LOADING..." flash for every navigation.
+    const [isLoading, setIsLoading] = useState(false);
     const [spins, setSpins] = useState(0);
     const [showResult, setShowResult] = useState(false);
     const [result, setResult] = useState("");
@@ -74,7 +79,10 @@ export default function SpinWheel() {
     const [appVersion] = useState("V0.0.1");
     const [dailySpinsUsed, setDailySpinsUsed] = useState(0);
     const [maxDailySpins, setMaxDailySpins] = useState(5);
-    const [canSpin, setCanSpin] = useState(false);
+    // Optimistic: assume user can spin until API says otherwise
+    const [canSpin, setCanSpin] = useState(true);
+    // Tracks whether the real spin count has arrived from the API
+    const [spinsLoaded, setSpinsLoaded] = useState(false);
     const [spinConfig, setSpinConfig] = useState(null);
     const [spinStatus, setSpinStatus] = useState(null);
     const [error, setError] = useState(null);
@@ -249,7 +257,10 @@ export default function SpinWheel() {
     const loadSpinData = async (forceRefresh = false) => {
         if (!token) return;
 
-        setIsLoading(true);
+        // Only show the loading state when explicitly refreshing (e.g. after a spin).
+        // On the initial background load we leave the button in its optimistic state
+        // ("PUSH TO SPIN") so the user never sees a "LOADING..." flash on navigation.
+        if (forceRefresh) setIsLoading(true);
         setError(null);
 
         // Validate pending reward from previous session
@@ -279,10 +290,15 @@ export default function SpinWheel() {
 
             if (statusResponse.success && statusResponse.data) {
                 const status = statusResponse.data;
+                const rawRemainingSpins = Number(status.remainingSpins ?? 0);
+                const remainingSpins = Number.isFinite(rawRemainingSpins) ? Math.max(0, rawRemainingSpins) : 0;
+                const dailyLimit = Number(status.dailyLimit ?? 5);
+
                 setSpinStatus(status);
                 setCanSpin(status.canSpin || false);
-                setSpins(status.remainingSpins || 0);
-                setDailySpinsUsed((status.dailyLimit || 5) - (status.remainingSpins || 0));
+                setSpins(remainingSpins);
+                setSpinsLoaded(true);
+                setDailySpinsUsed(Math.max(0, (dailyLimit || 5) - remainingSpins));
                 // cooldownRemaining is in milliseconds — convert to whole minutes
                 setCooldownRemaining(Math.floor((status.cooldownRemaining || 0) / 60000));
             }
@@ -405,7 +421,10 @@ export default function SpinWheel() {
                             // Refresh Redux store with updated balance/XP
                             if (token) {
                                 dispatch(fetchWalletScreen({ token, force: true }));
+                                dispatch(fetchUserProfile({ token, force: true }));
                                 dispatch(fetchProfileStats({ token, force: true }));
+                                dispatch(fetchWalletTransactions({ token, force: true }));
+                                dispatch(fetchFullWalletTransactions({ token, page: 1, force: true }));
                             }
                         } else {
                             // No reward or unknown status
@@ -519,6 +538,9 @@ export default function SpinWheel() {
                 if (redeemResponse.success && redeemResponse.data) {
                     const redeemData = redeemResponse.data;
 
+                    // Track spinner use milestone (Adjust) — counter seeded from server at login
+                    try { onSpinnerUse(incrementAndGet("spin")); } catch { /* never block spin flow */ }
+
                     // Update spinReward with the actual credited amount from redemption
                     if (spinReward && redeemData.reward) {
                         setSpinReward(prev => ({
@@ -538,7 +560,10 @@ export default function SpinWheel() {
                     // Refresh Redux store with updated balance/XP
                     if (token) {
                         dispatch(fetchWalletScreen({ token, force: true }));
+                        dispatch(fetchUserProfile({ token, force: true }));
                         dispatch(fetchProfileStats({ token, force: true }));
+                        dispatch(fetchWalletTransactions({ token, force: true }));
+                        dispatch(fetchFullWalletTransactions({ token, page: 1, force: true }));
                     }
 
                     setIsAdWatched(true);
@@ -676,7 +701,10 @@ export default function SpinWheel() {
                             // Update state and refresh
                             setCoins(directCreditResponse.data?.newBalance || coins);
                             dispatch(fetchWalletScreen({ token, force: true }));
+                            dispatch(fetchUserProfile({ token, force: true }));
                             dispatch(fetchProfileStats({ token, force: true }));
+                            dispatch(fetchWalletTransactions({ token, force: true }));
+                            dispatch(fetchFullWalletTransactions({ token, page: 1, force: true }));
 
                             setPendingReward(0);
                             setPendingSpinId(null);
@@ -751,7 +779,10 @@ export default function SpinWheel() {
                                 // Update state and refresh
                                 setCoins(fallbackResponse.data?.newBalance || coins);
                                 dispatch(fetchWalletScreen({ token, force: true }));
+                                dispatch(fetchUserProfile({ token, force: true }));
                                 dispatch(fetchProfileStats({ token, force: true }));
+                                dispatch(fetchWalletTransactions({ token, force: true }));
+                                dispatch(fetchFullWalletTransactions({ token, page: 1, force: true }));
 
                                 setPendingReward(0);
                                 setPendingSpinId(null);
@@ -823,7 +854,10 @@ export default function SpinWheel() {
                 // Refresh wallet/XP in background so UI shows credit immediately
                 if (token) {
                     dispatch(fetchWalletScreen({ token, force: true }));
+                    dispatch(fetchUserProfile({ token, force: true }));
                     dispatch(fetchProfileStats({ token, force: true }));
+                    dispatch(fetchWalletTransactions({ token, force: true }));
+                    dispatch(fetchFullWalletTransactions({ token, page: 1, force: true }));
                 }
                 loadSpinData(true);
 
@@ -975,7 +1009,7 @@ export default function SpinWheel() {
                             ease: "easeInOut"
                         } : {}}
                     >
-                        {isLoading ? "..." : spins}
+                        {!spinsLoaded ? "🪙" : spins}
                     </motion.span>
                     <span
                         className="text-[#2C1810] text-xs font-bold tracking-wide"
@@ -1375,19 +1409,19 @@ export default function SpinWheel() {
                 <div className="absolute top-[67%] left-1/2  mr-2 transform -translate-x-1/2 -translate-y-1/2 z-20">
                     <motion.button
                         onClick={handleSpin}
-                        disabled={(isSpinning && !showResult) || cooldownRemaining > 0 || !canSpin || isLoading}
-                        className={`w-[200px] h-12 text-white text-lg font-bold px-8 rounded-lg border-2 whitespace-nowrap ${(isSpinning && !showResult) || cooldownRemaining > 0 || !canSpin || isLoading
-                            ? 'bg-gradient-to-b from-red-600 to-red-800 border-red-900 shadow-[0_8px_0px_#8f1a1a,inset_0_2px_4px_rgba(255,255,255,0.4)] cursor-not-allowed pointer-events-none'
-                            : 'bg-gradient-to-b from-red-600 to-red-800 border-red-900 shadow-[0_8px_0px_#8f1a1a,inset_0_2px_4px_rgba(255,255,255,0.4)]'
+                        disabled={!spinsLoaded || (isSpinning && !showResult) || cooldownRemaining > 0 || !canSpin || isLoading}
+                        className={`w-[200px] h-12 text-white text-lg font-bold px-4 rounded-lg border-2 whitespace-nowrap flex items-center justify-center bg-gradient-to-b from-red-600 to-red-800 border-red-900 shadow-[0_8px_0px_#8f1a1a,inset_0_2px_4px_rgba(255,255,255,0.4)] ${!spinsLoaded || (isSpinning && !showResult) || cooldownRemaining > 0 || !canSpin || isLoading
+                            ? 'cursor-not-allowed pointer-events-none'
+                            : ''
                             }`}
-                        whileHover={(isSpinning && !showResult) || cooldownRemaining > 0 || !canSpin || isLoading ? {} : { scale: 1.02 }}
-                        whileTap={(isSpinning && !showResult) || cooldownRemaining > 0 || !canSpin || isLoading ? {} : {
+                        whileHover={!spinsLoaded || (isSpinning && !showResult) || cooldownRemaining > 0 || !canSpin || isLoading ? {} : { scale: 1.02 }}
+                        whileTap={!spinsLoaded || (isSpinning && !showResult) || cooldownRemaining > 0 || !canSpin || isLoading ? {} : {
                             scale: 0.98,
                             y: 4,
                             boxShadow: '0 4px 0px #8f1a1a, inset 0 2px 4px rgba(255,255,255,0.4)'
                         }}
                     >
-                        {isSpinning ? "SPINNING..." : isLoading ? "LOADING..." : cooldownRemaining > 0 ? `Wait ${Math.floor(cooldownRemaining)} minute${Math.floor(cooldownRemaining) !== 1 ? 's' : ''}` : !canSpin ? "No Spins Available" : "PUSH TO SPIN"}
+                        {isSpinning ? "SPINNING..." : cooldownRemaining > 0 ? `Wait ${Math.floor(cooldownRemaining)} minute${Math.floor(cooldownRemaining) !== 1 ? 's' : ''}` : !canSpin && spinsLoaded ? "No Spins Available" : "PUSH TO SPIN"}
                     </motion.button>
                 </div>
             </div>
@@ -1547,8 +1581,8 @@ export default function SpinWheel() {
                                 )}
                             </motion.div>
 
-                            {/* Display reward breakdown: XP and Coins earned - Icon + Value only */}
-                            {spinReward && spinReward.amount > 0 && (
+                            {/* Display reward breakdown: XP and Coins earned - hidden when pending (ad not yet watched) */}
+                            {spinReward && spinReward.amount > 0 && !(pendingReward > 0 && pendingSpinId) && (
                                 <motion.div
                                     className="mb-4"
                                     initial={{ opacity: 0, scale: 0.8 }}
@@ -1583,15 +1617,17 @@ export default function SpinWheel() {
                                 </motion.div>
                             )}
 
-                            {/* Display ONLY the backend message - no hardcoded status info */}
-                            <motion.div
-                                className="text-base text-gray-300 mb-3 leading-snug whitespace-pre-line text-center px-4"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2, duration: 0.4 }}
-                            >
-                                {result}
-                            </motion.div>
+                            {/* Display ONLY the backend message - hidden when pending (ad not yet watched) */}
+                            {!(pendingReward > 0 && pendingSpinId) && (
+                                <motion.div
+                                    className="text-base text-gray-300 mb-3 leading-snug whitespace-pre-line text-center px-4"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2, duration: 0.4 }}
+                                >
+                                    {result}
+                                </motion.div>
+                            )}
 
                             {/* Pending reward indicator */}
                             {pendingReward > 0 && (
@@ -1615,7 +1651,11 @@ export default function SpinWheel() {
                                 >
                                     <div className="flex items-center justify-center gap-2">
                                         {spinReward && normalizeRewardType(spinReward.type) === 'xp' ? (
-                                            <span className="text-yellow-300">⭐</span>
+                                            <img
+                                                src="/xp.svg"
+                                                alt="XP"
+                                                className="w-4 h-4"
+                                            />
                                         ) : (
                                             <img
                                                 src="/dollor.png"

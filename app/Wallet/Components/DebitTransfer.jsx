@@ -30,22 +30,18 @@ export const DebitTransfer = ({ isOpen, onClose, methods, fundingSources, token 
             // Fetch wallet screen data for real-time balance updates
             await dispatch(fetchWalletScreen(token));
 
-            // Fetch both wallet transactions and full wallet transactions
-            await dispatch(fetchWalletTransactions({ token, limit: 5 }));
-            await dispatch(fetchFullWalletTransactions({ token, page: 1, limit: 20, type: "all" }));
+            // Fetch both wallet transactions and full wallet transactions with force: true
+            // This ensures we get fresh data after withdrawal, bypassing cache
+            await dispatch(fetchWalletTransactions({ token, limit: 5, force: true }));
+            await dispatch(fetchFullWalletTransactions({ token, page: 1, limit: 20, type: "all", force: true }));
 
         } catch (error) {
             // Error refetching wallet data
         }
     };
 
-    const profile = useSelector((state) => state?.profile?.profile || {}, (left, right) => {
-        return JSON.stringify(left) === JSON.stringify(right);
-    });
-
-    const walletScreen = useSelector((state) => state?.walletTransactions?.walletScreen || {}, (left, right) => {
-        return JSON.stringify(left) === JSON.stringify(right);
-    });
+    const profile = useSelector((state) => state?.profile?.profile ?? null);
+    const walletScreen = useSelector((state) => state?.walletTransactions?.walletScreen ?? null);
 
     const coinBalance = walletScreen?.wallet?.balance || 1000; // Set to 1000 coins = $100 USD for testing
 

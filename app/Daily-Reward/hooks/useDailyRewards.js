@@ -241,7 +241,7 @@ export const useDailyRewards = () => {
 
           // Refresh wallet screen data for real-time updates
           try {
-            await dispatch(fetchWalletScreen(token));
+            await dispatch(fetchWalletScreen({ token, force: true }));
           } catch (walletError) {
             // Failed to refresh wallet screen
             // Don't throw error - reward was still claimed successfully
@@ -266,7 +266,7 @@ export const useDailyRewards = () => {
 
           // Refresh profile stats for homepage components (RewardProgress, XPTierTracker)
           try {
-            await dispatch(fetchProfileStats(token));
+            await dispatch(fetchProfileStats({ token, force: true }));
           } catch (statsError) {
             // Failed to refresh profile stats
             // Don't throw error - reward was still claimed successfully

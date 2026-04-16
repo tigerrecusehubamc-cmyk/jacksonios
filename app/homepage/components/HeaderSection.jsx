@@ -10,10 +10,11 @@ const HeaderSection = () => {
     const profile = useSelector((state) => state.profile.details);
     const walletScreen = useSelector((state) => state.walletTransactions.walletScreen);
 
-    // Coin balance from profile API (https://rewardsuatapi.hireagent.co/api/profile) -> wallet.balance, fallback to wallet screen
+    // Coin balance: prefer walletScreen (live, refreshed after every spin/reward)
+    // Fall back to profile.details for first load before walletScreen arrives
     const headerData = useMemo(() => {
         const firstName = profile?.firstName || "Player";
-        const balance = profile?.wallet?.balance ?? profile?.data?.wallet?.balance ?? walletScreen?.wallet?.balance ?? 0;
+        const balance = walletScreen?.wallet?.balance ?? profile?.wallet?.balance ?? profile?.data?.wallet?.balance ?? 0;
 
         return {
             firstName,
@@ -41,7 +42,7 @@ const HeaderSection = () => {
         // Ensure proper protocol
         return avatarUrl.startsWith('http')
             ? avatarUrl
-            : `https://rewardsuatapi.hireagent.co${avatarUrl}`;
+            : `https://rewardsapi.hireagent.co${avatarUrl}`;
     }, [headerData.avatar]);
 
     return (
@@ -89,15 +90,15 @@ const HeaderSection = () => {
                 <div className="flex items-center">
                     <button
                         onClick={handleWalletClick}
-                        className="min-w-[87px] h-9 gap-[2px] rounded-3xl bg-[linear-gradient(180deg,rgba(158,173,247,0.4)_0%,rgba(113,106,231,0.4)_100%)] flex items-center justify-between px-2.5 hover:opacity-80 transition-opacity duration-200 cursor-pointer"
+                        className="min-w-[87px] max-w-[140px] h-9 rounded-3xl bg-[linear-gradient(180deg,rgba(158,173,247,0.4)_0%,rgba(113,106,231,0.4)_100%)] flex items-center gap-2 px-3 hover:opacity-80 transition-opacity duration-200 cursor-pointer flex-shrink-0"
                         type="button"
                         aria-label="Go to Wallet"
                     >
-                        <div className="text-white text-lg [font-family:'Poppins',Helvetica] font-semibold leading-[normal]">
+                        <span className="text-white text-base [font-family:'Poppins',Helvetica] font-semibold leading-normal truncate">
                             {headerData.balance || 0}
-                        </div>
+                        </span>
                         <img
-                            className="w-[23px] h-6"
+                            className="w-[23px] h-6 flex-shrink-0"
                             alt="Coin"
                             src="/dollor.png"
                             loading="eager"

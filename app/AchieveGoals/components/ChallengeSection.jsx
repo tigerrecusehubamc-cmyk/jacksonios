@@ -13,20 +13,20 @@ const ChallengeSection = () => {
         {
             id: 1,
             name: "Ayet Studios",
-            image: "https://c.animaapp.com/xCaMzUYh/img/image-3979@2x.png",
-            bgImage: "https://c.animaapp.com/xCaMzUYh/img/rectangle-74-2@2x.png",
+            image: "/assets/animaapp/xCaMzUYh/img/image-3979-2x.png",
+            bgImage: "/assets/animaapp/xCaMzUYh/img/rectangle-74-2-2x.png",
         },
         {
             id: 2,
             name: "BitLabs",
-            image: "https://c.animaapp.com/xCaMzUYh/img/image-3974@2x.png",
-            bgImage: "https://c.animaapp.com/xCaMzUYh/img/rectangle-73-3@2x.png",
+            image: "/assets/animaapp/xCaMzUYh/img/image-3974-2x.png",
+            bgImage: "/assets/animaapp/xCaMzUYh/img/rectangle-73-3-2x.png",
         },
         {
             id: 3,
             name: "CPX Research",
-            image: "https://c.animaapp.com/xCaMzUYh/img/image-3977@2x.png",
-            bgImage: "https://c.animaapp.com/xCaMzUYh/img/rectangle-74-2@2x.png",
+            image: "/assets/animaapp/xCaMzUYh/img/image-3977-2x.png",
+            bgImage: "/assets/animaapp/xCaMzUYh/img/rectangle-74-2-2x.png",
         },
     ];
 

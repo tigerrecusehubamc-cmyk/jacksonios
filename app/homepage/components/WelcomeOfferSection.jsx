@@ -2,6 +2,7 @@
 import React, { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getWelcomeBonusTasks } from "@/lib/api";
+import { onWelcomeBonusComplete } from "@/lib/adjustService";
 import { WelcomeOffer } from "../../../components/WelcomeOffer";
 import { QuestCard } from "../../../components/QuestCard";
 
@@ -14,6 +15,7 @@ const WelcomeOfferSection = () => {
     const [touchEnd, setTouchEnd] = useState(null);
     const containerRef = useRef(null);
     const pollingIntervalRef = useRef(null);
+    const welcomeBonusFiredRef = useRef(false); // fire onWelcomeBonusComplete only once
 
     // Map API response to QuestCard expected format
     const mapApiResponseToGames = (apiData) => {
@@ -114,6 +116,14 @@ const WelcomeOfferSection = () => {
                 if (mapped) {
                     setBonusTasksData(mapped);
                     setError(null);
+                    // Fire Adjust event when all welcome bonus tasks are complete (once per session)
+                    if (!welcomeBonusFiredRef.current && mapped.games.length > 0) {
+                        const allDone = mapped.games.every(g => g.goals.every(goal => goal.completed));
+                        if (allDone) {
+                            welcomeBonusFiredRef.current = true;
+                            onWelcomeBonusComplete();
+                        }
+                    }
                 } else {
                     setBonusTasksData({ games: [], rewards: null, userBalance: null });
                 }

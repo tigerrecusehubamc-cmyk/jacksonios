@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { appLovinPlugin, APPLOVIN_CONFIG } from "@/lib/applovinPlugin";
+import { canRequestAds, showPrivacyOptionsForm } from "@/lib/umpConsent";
+import { Capacitor } from "@capacitor/core";
 import {
   getAppLovinHealth,
   getAppLovinConfig,
@@ -35,6 +37,15 @@ export const useAppLovinAds = () => {
   const currentAdRecordIdRef = useRef(null);
   const initializationAttemptedRef = useRef(false);
   const preloadInFlightRef = useRef(false);
+
+  // Get platform-specific ad unit ID
+  const getPlatformAdUnitId = useCallback(() => {
+    const platform = Capacitor.getPlatform();
+    if (platform === 'ios') {
+      return APPLOVIN_CONFIG.AD_UNIT_ID.IOS_REWARDED;
+    }
+    return APPLOVIN_CONFIG.AD_UNIT_ID.ANDROID_REWARDED;
+  }, []);
 
   const normalizeRevenue = useCallback((rev) => {
     // Backend expects: { amount: number, currency: string }
@@ -146,6 +157,31 @@ export const useAppLovinAds = () => {
     );
 
     try {
+      // Wait for UMP consent (AdMob) so we can request ads legally; give consent flow up to 5s
+      console.log(
+        "[AdMob/UMP] Checking consent before ad init (mob id / AdMob)...",
+      );
+      let consented = await canRequestAds();
+      console.log("[AdMob/UMP] Initial canRequestAds:", consented);
+      for (let i = 0; i < 10 && !consented; i++) {
+        await new Promise((r) => setTimeout(r, 500));
+        consented = await canRequestAds();
+        console.log("[AdMob/UMP] Retry", i + 1, "canRequestAds:", consented);
+      }
+      console.log(
+        "[AdMob/UMP] Final consent for ads:",
+        consented,
+        "(AdMob app id used in AndroidManifest)",
+      );
+      if (!consented) {
+        console.warn(
+          "[useAppLovinAds] ⚠️ UMP consent not yet ready; initializing anyway (consent may complete later)",
+        );
+        console.log(
+          "[AdMob/UMP] If consent form never appeared: NOT app error – AdMob/Google (mob) side. AdMob console → Privacy & messaging → add message for app ID ca-app-pub-2800391972465887~5310386906",
+        );
+      }
+
       // Health route commented out so ad init is faster; SDK proceeds without waiting on backend health
       // console.log('[useAppLovinAds] 🔍 Step 1: Verifying backend connection...');
       // console.log('[useAppLovinAds] 🌐 Backend URL:', process.env.NEXT_PUBLIC_API_URL || 'https://rewardsuatapi.hireagent.co');
@@ -167,10 +203,15 @@ export const useAppLovinAds = () => {
       // but the actual AppLovin Ad Unit ID is different
       let config = {
         sdkKey: "",
-        adUnitId: APPLOVIN_CONFIG.AD_UNIT_ID.IOS_REWARDED, // Real ad unit ID: 6e87990ef5f63cce
+        adUnitId: getPlatformAdUnitId(), // Use platform-specific ad unit ID
         placement: "rewarded",
       };
 
+      console.log(
+        "[AdMob/UMP] Google AdMob App ID (Android):",
+        APPLOVIN_CONFIG.GOOGLE_ADMOB_APP_ID?.ANDROID ||
+          "ca-app-pub-2800391972465887~5310386906",
+      );
       console.log(
         "[useAppLovinAds] 🔍 Step 2: Fetching SDK configuration from backend...",
       );
@@ -197,15 +238,16 @@ export const useAppLovinAds = () => {
           if (configResponse?.success && configResponse?.data) {
             // Use SDK key from backend, but keep the actual ad unit ID from config
             // Backend's adUnitId is the placement name ("rewarded"), not the actual ad unit ID
+            const platformAdUnitId = getPlatformAdUnitId();
             config = {
               sdkKey: configResponse.data.sdkKey || "",
-              // IMPORTANT: Use our hardcoded ad unit ID, not the placement name from backend
-              adUnitId: APPLOVIN_CONFIG.AD_UNIT_ID.IOS_REWARDED, // 6e87990ef5f63cce
+              // IMPORTANT: Use platform-specific ad unit ID
+              adUnitId: platformAdUnitId,
               placement: configResponse.data.adUnitId || "rewarded", // This is actually the placement
             };
             setSdkConfig({
               ...configResponse.data,
-              actualAdUnitId: APPLOVIN_CONFIG.AD_UNIT_ID.IOS_REWARDED,
+              actualAdUnitId: platformAdUnitId,
             });
             console.log(
               "[useAppLovinAds] ✅ Using backend SDK key with actual ad unit ID",
@@ -271,11 +313,44 @@ export const useAppLovinAds = () => {
         );
         setupListeners();
 
-        // Preload first ad (but don't show it automatically)
-        // Only load when user actually wants to watch
-        // await loadAd(); // Commented out - only load when needed
+        // FIX 1: Preload first ad immediately after SDK init (fire and forget)
+        // Big apps (TikTok, Candy Crush, etc.) always preload on launch so the
+        // ad is cached and shows INSTANTLY when user clicks — no spinner, no wait.
         console.log(
-          "[useAppLovinAds] ✅ Initialization complete - ready to load ads",
+          "[useAppLovinAds] 🔍 Step 5: Preloading first ad in background...",
+        );
+        const _preloadPlatformInfo = appLovinPlugin.getPlatformInfo();
+        if (token) {
+          trackAppLovinAdLoad(
+            {
+              adUnitId: "rewarded",
+              placement: "rewarded",
+              platform: _preloadPlatformInfo.platform,
+              deviceType: _preloadPlatformInfo.deviceType,
+              appVersion: "1.0.0",
+              sdkVersion: "11.0.0",
+            },
+            token,
+          )
+            .then((resp) => {
+              if (resp?.success && resp?.data?.adRecordId) {
+                currentAdRecordIdRef.current = resp.data.adRecordId;
+                console.log(
+                  "[useAppLovinAds] ✅ Preload ad record set:",
+                  currentAdRecordIdRef.current,
+                );
+              }
+            })
+            .catch(() => {});
+        }
+        appLovinPlugin.loadAd().catch((err) => {
+          console.warn(
+            "[useAppLovinAds] ⚠️ Background preload failed:",
+            err?.message,
+          );
+        });
+        console.log(
+          "[useAppLovinAds] ✅ Initialization complete — ad preloading in background",
         );
 
         return true;
@@ -349,51 +424,38 @@ export const useAppLovinAds = () => {
           loadTrackingData,
         );
 
-        try {
-          const loadResponse = await trackAppLovinAdLoad(
-            loadTrackingData,
-            token,
-          );
-          console.log(
-            "[useAppLovinAds] 📥 Backend load response received:",
-            loadResponse,
-          );
-          console.log("[useAppLovinAds] 📊 Response data:", {
-            success: loadResponse?.success,
-            hasData: !!loadResponse?.data,
-            adRecordId: loadResponse?.data?.adRecordId,
-            message: loadResponse?.data?.message,
-          });
-
-          if (loadResponse?.success && loadResponse?.data?.adRecordId) {
-            currentAdRecordIdRef.current = loadResponse.data.adRecordId;
-            console.log(
-              "[useAppLovinAds] ✅ Ad record created and stored:",
-              currentAdRecordIdRef.current,
+        // FIX 2: Fire backend tracking WITHOUT awaiting — start native ad load immediately
+        // Before: backend call blocked the ad request, adding 300ms–2s delay every load
+        trackAppLovinAdLoad(loadTrackingData, token)
+          .then((loadResponse) => {
+            if (loadResponse?.success && loadResponse?.data?.adRecordId) {
+              currentAdRecordIdRef.current = loadResponse.data.adRecordId;
+              console.log(
+                "[useAppLovinAds] ✅ Ad record created:",
+                currentAdRecordIdRef.current,
+              );
+            }
+          })
+          .catch((backendError) => {
+            console.error(
+              "[useAppLovinAds] ❌ Backend load tracking failed:",
+              backendError?.message,
             );
-          } else {
-            console.warn(
-              "[useAppLovinAds] ⚠️ Backend did not return adRecordId",
-            );
-            console.warn("[useAppLovinAds] 📝 Response:", loadResponse);
-          }
-        } catch (backendError) {
-          console.error(
-            "[useAppLovinAds] ❌ Backend load tracking failed:",
-            backendError,
-          );
-          console.error("[useAppLovinAds] 🐛 Backend error details:", {
-            message: backendError?.message,
-            response: backendError?.response,
-            status: backendError?.response?.status,
-            data: backendError?.response?.data,
           });
-          // Continue with ad load even if backend tracking fails
-        }
       } else {
         console.warn(
           "[useAppLovinAds] ⚠️ No auth token, skipping backend tracking",
         );
+      }
+
+      // FIX 3: If the background preload already loaded an ad, skip the native load entirely
+      // This prevents a double-load glitch when user clicks before preload finishes
+      if (appLovinPlugin.isAdReady()) {
+        console.log(
+          "[useAppLovinAds] ✅ Ad already preloaded and ready — skipping native load",
+        );
+        setIsAdReady(true);
+        return true;
       }
 
       // Load ad via plugin
@@ -512,34 +574,24 @@ export const useAppLovinAds = () => {
         console.log(
           "[useAppLovinAds] 🔍 Step 1: Tracking ad display with backend...",
         );
+        // FIX 4: Fire display tracking WITHOUT awaiting — show ad IMMEDIATELY
+        // Before: backend call added 300ms–2s delay between user click and ad appearing
         if (token && currentAdRecordIdRef.current) {
-          console.log("[useAppLovinAds] 📤 Sending display tracking:", {
-            adRecordId: currentAdRecordIdRef.current,
-          });
-          try {
-            await trackAppLovinAdDisplay(currentAdRecordIdRef.current, token);
-            console.log("[useAppLovinAds] ✅ Ad display tracked with backend");
-          } catch (displayError) {
-            console.error(
-              "[useAppLovinAds] ❌ Backend display tracking failed:",
-              displayError,
-            );
-            console.error("[useAppLovinAds] 🐛 Display error details:", {
-              message: displayError?.message,
-              response: displayError?.response,
-              status: displayError?.response?.status,
-              data: displayError?.response?.data,
+          trackAppLovinAdDisplay(currentAdRecordIdRef.current, token)
+            .then(() =>
+              console.log(
+                "[useAppLovinAds] ✅ Ad display tracked with backend",
+              ),
+            )
+            .catch((displayError) => {
+              console.error(
+                "[useAppLovinAds] ❌ Backend display tracking failed:",
+                displayError?.message,
+              );
             });
-            // Continue with ad display even if backend tracking fails
-          }
-        } else {
-          console.warn("[useAppLovinAds] ⚠️ Cannot track display:", {
-            hasToken: !!token,
-            hasAdRecordId: !!currentAdRecordIdRef.current,
-          });
         }
 
-        // Show ad via plugin
+        // Show ad via plugin — now fires INSTANTLY after user clicks
         console.log(
           "[useAppLovinAds] 🔍 Step 2: Showing ad via native plugin...",
         );
@@ -789,12 +841,17 @@ export const useAppLovinAds = () => {
     return initializeSDK();
   }, [initializeSDK]);
 
-  // Initialize SDK on mount when token is available
+  // Initialize SDK on mount when token is available.
+  // initializeSDK is intentionally omitted from deps: the initializationAttemptedRef
+  // ref guard inside the function already prevents repeated calls, and including the
+  // callback reference would cause the effect to re-run every time initializeSDK is
+  // recreated (e.g. when sdkConfig or token changes), bypassing the ref guard.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (token && !isInitialized && !initializationAttemptedRef.current) {
       initializeSDK();
     }
-  }, [token, isInitialized, initializeSDK]);
+  }, [token, isInitialized]);
 
   // Fetch stats when initialized
   useEffect(() => {
@@ -831,5 +888,12 @@ export const useAppLovinAds = () => {
 
     // Platform info
     platformInfo: appLovinPlugin.getPlatformInfo(),
+
+    // Ad consent (Google UMP) – use in Settings for "Manage ad choices" / "Privacy options"
+    showPrivacyOptionsForm,
+
+    // Opens AppLovin Mediation Debugger — shows which networks are active/verified
+    // Only works on real device after APK build (not in browser)
+    showMediationDebugger: () => appLovinPlugin.showMediationDebugger(),
   };
 };

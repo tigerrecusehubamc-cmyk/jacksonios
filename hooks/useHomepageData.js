@@ -23,7 +23,7 @@ export const useHomepageData = (token, user) => {
 
   const { userDataStatus, userData } = useSelector((state) => state.games);
   const { walletScreenStatus, walletScreen } = useSelector(
-    (state) => state.walletTransactions,
+    (state) => state.walletTransactions
   );
 
   // OPTIMIZED: Enhanced data availability check with persistence awareness
@@ -37,9 +37,7 @@ export const useHomepageData = (token, user) => {
       userData && (userDataStatus === "succeeded" || userDataStatus === "idle");
     // Check for walletScreen data existence (persisted data is available even if status is "idle")
     // This is CRITICAL for RewardProgress and XPTierTracker to show immediately
-    const hasWalletData =
-      walletScreen &&
-      (walletScreenStatus === "succeeded" || walletScreenStatus === "idle");
+    const hasWalletData = walletScreen && (walletScreenStatus === "succeeded" || walletScreenStatus === "idle");
     const hasDashboardData = dashboardData && dashboardStatus === "succeeded";
 
     // OPTIMIZED: Only check loading for walletScreen (core data)
@@ -83,20 +81,10 @@ export const useHomepageData = (token, user) => {
         fetchUserData({
           userId: user._id,
           token: token,
-        }),
+        })
       );
     }
-  }, [
-    token,
-    user,
-    userDataStatus,
-    userData,
-    statsStatus,
-    dashboardStatus,
-    stats,
-    dashboardData,
-    dispatch,
-  ]);
+  }, [token, user, userDataStatus, userData, statsStatus, dashboardStatus, stats, dashboardData, dispatch]);
 
   // Refresh balance/XP when app comes to foreground (admin changes)
   useEffect(() => {

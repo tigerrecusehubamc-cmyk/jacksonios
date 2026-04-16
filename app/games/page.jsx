@@ -47,7 +47,7 @@ export default function GamesPage() {
               <Image
                 className="w-12 h-12"
                 alt="Search"
-                src="https://c.animaapp.com/3mn7waJw/img/search.svg"
+                src="/assets/animaapp/3mn7waJw/img/search.svg"
                 width={48}
                 height={48}
                 loading="eager"

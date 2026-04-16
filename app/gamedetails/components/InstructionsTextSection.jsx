@@ -1,10 +1,10 @@
 import React, { useState } from "react";
+import { normalizeGameDescription } from "@/lib/gameDataNormalizer";
 
 export const InstructionsTextSection = ({ game }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Clean HTML tags from game description - use normalizer for both besitos and bitlab
-    const { normalizeGameDescription } = require('@/lib/gameDataNormalizer');
     const rawDescription = normalizeGameDescription(game) || game?.description || game?.card_text || game?.details?.description || "No description available";
     const instructionText = rawDescription.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 

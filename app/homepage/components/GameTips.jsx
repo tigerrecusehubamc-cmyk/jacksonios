@@ -116,7 +116,8 @@ export const Frame = () => {
         const gameCategory = game.details?.category || (game.categories && game.categories.length > 0
             ? (typeof game.categories[0] === 'object' ? game.categories[0].name || 'Casual' : game.categories[0])
             : 'Casual');
-        router.push(`/game-tips-details?title=${encodeURIComponent(gameTitle)}&image=${encodeURIComponent(gameImage)}&category=${encodeURIComponent(gameCategory)}`);
+        const gameDescription = game.description || game.details?.description || '';
+        router.push(`/game-tips-details?title=${encodeURIComponent(gameTitle)}&image=${encodeURIComponent(gameImage)}&category=${encodeURIComponent(gameCategory)}&description=${encodeURIComponent(gameDescription)}`);
     }, [router]);
 
     const isLoading = gameTipsStatus === 'loading';

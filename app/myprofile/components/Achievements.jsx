@@ -69,7 +69,9 @@ const Achievements = () => {
                         See All
                     </button>
                 </div>
-                <div className="flex items-center justify-center w-full h-32">
+                <div className="flex items-center justify-center w-full h-22
+                
+                ">
                     <p className="text-gray-400 text-sm">No achievements yet</p>
                 </div>
             </section>
@@ -101,14 +103,14 @@ const Achievements = () => {
                 >
                     <div
                         className="absolute w-16 h-16 top-3.5 left-4 bg-cover bg-center"
-                        style={{ backgroundImage: `url(${achievement.bgImage || 'https://c.animaapp.com/V1uc3arn/img/oval@2x.png'})` }}
+                        style={{ backgroundImage: `url(${achievement.bgImage || '/assets/animaapp/V1uc3arn/img/oval-2x.png'})` }}
                     >
                         <Image
                             width={63}
                             height={49}
                             className="absolute top-[15px] left-0"
                             alt={achievement.title || achievement.name}
-                            src={achievement.image || achievement.icon || 'https://c.animaapp.com/V1uc3arn/img/image-3926@2x.png'}
+                            src={achievement.image || achievement.icon || '/assets/animaapp/V1uc3arn/img/image-3926-2x.png'}
                             loading="lazy"
                             decoding="async"
                         />
@@ -132,9 +134,8 @@ const Achievements = () => {
                             className="absolute top-1 left-[38px]"
                             alt="Coin"
                             src="/dollor.png"
-                            loading="eager"
+                            loading="lazy"
                             decoding="async"
-                            priority
                         />
                         <div className="absolute w-[59px] h-6 top-[33px] left-0 bg-[#201f58] rounded">
                             <div className="relative w-[49px] h-[15px] top-[5px] left-[5px] flex items-center">

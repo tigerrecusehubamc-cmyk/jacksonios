@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../../contexts/AuthContext";
 import Image from "next/image";
@@ -50,79 +50,235 @@ const ErrorIcon = () => (
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { handleSocialAuthCallback, user, isLoading, token } = useAuth();
+  const { handleSocialAuthCallback } = useAuth();
+
+  // Guard: processAuth must only run once even if deps change mid-flight.
+  // Root cause: handleSocialAuthCallback had a new reference on every AuthProvider
+  // re-render (setIsLoading/setUser/setToken re-renders), re-triggering the effect.
+  const hasProcessed = useRef(false);
 
   // State to manage UI: 'processing', 'success', or 'error'
   const [status, setStatus] = useState("processing");
   const [errorMessage, setErrorMessage] = useState("");
-  const [authCompleted, setAuthCompleted] = useState(false);
-  const [userStatusFlags, setUserStatusFlags] = useState(null); // New state for flags
+  // Collect all backend message params into one display string (no duplicates, preserve order)
+  const collectBackendMessages = (params) => {
+    const messages = [];
+    const seen = new Set();
+    const keys = [
+      "message",
+      "error",
+      "error_description",
+      "error_message",
+      "msg",
+      "detail",
+      "details",
+    ];
+    for (const key of keys) {
+      const raw = params.get(key);
+      if (raw == null || raw === "") continue;
+      let text = raw;
+      if (key === "details") {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) text = parsed.filter(Boolean).join(". ");
+          else if (typeof parsed === "string") text = parsed;
+        } catch (_) {
+          // use as-is
+        }
+      }
+      const normalized = String(text).trim();
+      if (normalized && !seen.has(normalized)) {
+        seen.add(normalized);
+        messages.push(normalized);
+      }
+    }
+    return messages.length ? messages.join(" ") : null;
+  };
+
   useEffect(() => {
+    // Prevent duplicate execution if the effect re-fires due to reference changes
+    if (hasProcessed.current) return;
+    hasProcessed.current = true;
+
     const processAuth = async () => {
       const token = searchParams.get("token");
-      const authError =
-        searchParams.get("message") || searchParams.get("error");
       const provider = searchParams.get("provider");
       const userId = searchParams.get("userId");
+      const allBackendMessages = collectBackendMessages(searchParams);
+      const hasError =
+        allBackendMessages ||
+        searchParams.get("message") ||
+        searchParams.get("error");
 
-      // 1. Handle Native Deep Link (Keep as is)
+      console.log("📄 [AuthCallback] processAuth started →", {
+        isNative: Capacitor.isNativePlatform(),
+        hasToken: !!token,
+        hasError: !!hasError,
+        allParams: Object.fromEntries(searchParams),
+        allBackendMessages,
+      });
+
+      // 1. Handle Native platform
       if (Capacitor.isNativePlatform()) {
-        let deepLink = "com.jackson.app://auth/callback";
-        if (token) {
-          deepLink += `?token=${encodeURIComponent(token)}`;
-          if (provider) deepLink += `&provider=${encodeURIComponent(provider)}`;
-          if (userId) deepLink += `&userId=${encodeURIComponent(userId)}`;
-        } else {
-          const message = authError || "Authentication token not found.";
-          deepLink += `?message=${encodeURIComponent(message)}`;
-        }
+        const source = searchParams.get("source");
 
-        try {
-          await Browser.close();
-          setTimeout(() => {
+        if (source === "native") {
+          // Arrived here via router.replace() from the appUrlOpen deep link handler.
+          // Browser is already closed — skip the browser-close redirect and fall through
+          // to the normal web auth processing below (token is already in searchParams).
+          console.log("📄 [AuthCallback] Native source=native → processing auth directly (browser already closed)");
+        } else {
+          // Arrived here because the OAuth browser loaded /auth/callback normally.
+          // Need to close the browser and fire the deep link back to the app.
+          let deepLink = "jacksonrewards://auth/callback";
+          if (token) {
+            deepLink += `?token=${encodeURIComponent(token)}`;
+            if (provider) deepLink += `&provider=${encodeURIComponent(provider)}`;
+            if (userId) deepLink += `&userId=${encodeURIComponent(userId)}`;
+            console.log("📄 [AuthCallback] Native browser → building deep link with token:", deepLink);
+          } else {
+            const message =
+              allBackendMessages || "Authentication token not found.";
+            deepLink += `?message=${encodeURIComponent(message)}`;
+            console.log("📄 [AuthCallback] Native browser ERROR → building error deep link:", deepLink);
+          }
+
+          try {
+            console.log("📄 [AuthCallback] Closing browser, then firing deep link in 500ms...");
+            await Browser.close();
+            setTimeout(() => {
+              console.log("📄 [AuthCallback] Firing deep link now:", deepLink);
+              window.location.href = deepLink;
+            }, 500);
+          } catch (closeError) {
+            console.warn("📄 [AuthCallback] Browser.close() failed, firing deep link immediately:", closeError);
             window.location.href = deepLink;
-          }, 500);
-        } catch (closeError) {
-          window.location.href = deepLink;
+          }
+          return;
         }
-        return;
       }
 
-      // 2. Handle Errors
-      if (authError) {
-        setErrorMessage(authError);
+      // 2. Handle Errors – show all messages from backend
+      if (hasError) {
+        let errorMessage =
+          allBackendMessages ||
+          searchParams.get("message") ||
+          searchParams.get("error") ||
+          "Authentication failed.";
+
+        console.log("❌ [AuthCallback] Web ERROR path → raw errorMessage:", errorMessage);
+
+        // Improve message for suspended/pending accounts
+        const lowerError = errorMessage.toLowerCase();
+        if (
+          lowerError.includes("suspend") ||
+          lowerError.includes("pending") ||
+          lowerError.includes("not active") ||
+          lowerError.includes("deactiv") ||
+          lowerError.includes("forbidden") ||
+          lowerError.includes("unauthorized")
+        ) {
+          errorMessage =
+            "Your account is currently suspended or pending. Please contact support for assistance.";
+          console.log("❌ [AuthCallback] Web ERROR → mapped to account-status message:", errorMessage);
+        }
+
+        console.log("❌ [AuthCallback] Web ERROR → setting error UI, will redirect to /login in 4s");
+        setErrorMessage(errorMessage);
         setStatus("error");
         setTimeout(() => router.replace("/login"), 4000);
         return;
       }
 
       // 3. Process Login (WEB FLOW)
+      // Same pattern as normal email/password login: navigate directly after the
+      // auth function resolves. We do NOT gate on isLoading from AuthContext —
+      // that flag stays true while handleAuthSuccess prefetches background data,
+      // which would block navigation for many seconds.
       if (token) {
         try {
-          console.log(
-            "✅ [Auth Callback] Token received, processing via Context..."
-          );
+          console.log("✅ [Auth Callback] Token received, processing via Context...");
 
-          // result now contains: { ok: true, statusData: { needsDisclosure, needsLocation } }
           const result = await handleSocialAuthCallback(token);
 
           if (result.ok) {
-            console.log("✅ [Auth Callback] Login and Status check successful");
+            console.log("✅ [Auth Callback] Login successful, navigating...");
 
-            // NEW: Set the flags directly from the AuthContext result
-            if (result.statusData) {
-              setUserStatusFlags(result.statusData);
+            // Show the success UI briefly, then navigate — identical timing to
+            // the normal login page redirect after signIn() resolves.
+            setStatus("success");
+
+            setTimeout(() => {
+              const { needsDisclosure, needsLocation } = result.statusData || {};
+
+              if (!needsDisclosure) localStorage.setItem("permissionsAccepted", "true");
+              if (!needsLocation)   localStorage.setItem("locationCompleted",   "true");
+
+              if (needsDisclosure) {
+                router.replace("/permissions");
+              } else if (needsLocation) {
+                router.replace("/location");
+              } else {
+                router.replace("/homepage");
+              }
+            }, 800);
+
+          } else {
+            let errorMsg = "";
+            if (typeof result.error === "string") {
+              errorMsg = result.error;
+            } else if (result.error?.message) {
+              errorMsg = result.error.message;
+            } else if (result.error?.error) {
+              errorMsg = result.error.error;
+            } else {
+              errorMsg = JSON.stringify(result.error) || "Authentication failed";
             }
 
-            setStatus("success");
-            setAuthCompleted(true);
-          } else {
-            setErrorMessage(result.error || "Authentication failed");
+            const lowerError = errorMsg.toLowerCase();
+            if (
+              lowerError.includes("suspend") ||
+              lowerError.includes("pending") ||
+              lowerError.includes("not active") ||
+              lowerError.includes("deactiv") ||
+              lowerError.includes("forbidden") ||
+              lowerError.includes("unauthorized")
+            ) {
+              errorMsg =
+                "Your account is currently suspended or pending. Please contact support for assistance.";
+            }
+
+            setErrorMessage(errorMsg);
             setStatus("error");
             setTimeout(() => router.replace("/login"), 4000);
           }
         } catch (error) {
-          setErrorMessage(error.message);
+          const msg = error?.response?.data
+            ? [
+                error.response.data.message,
+                error.response.data.error,
+                error.response.data.detail,
+                error.message,
+              ]
+                .filter(Boolean)
+                .join(". ")
+            : error?.message || "Authentication failed";
+
+          let finalMsg = msg;
+          const lowerMsg = msg.toLowerCase();
+          if (
+            lowerMsg.includes("suspend") ||
+            lowerMsg.includes("pending") ||
+            lowerMsg.includes("not active") ||
+            lowerMsg.includes("deactiv") ||
+            lowerMsg.includes("forbidden") ||
+            lowerMsg.includes("unauthorized")
+          ) {
+            finalMsg =
+              "Your account is currently suspended or pending. Please contact support for assistance.";
+          }
+
+          setErrorMessage(finalMsg);
           setStatus("error");
           setTimeout(() => router.replace("/login"), 4000);
         }
@@ -136,117 +292,74 @@ function AuthCallbackContent() {
     processAuth();
   }, [router, searchParams, handleSocialAuthCallback]);
 
-  // Wait for auth state to be ready before redirecting
-  // useEffect(() => {
-  //   if (authCompleted && !isLoading && user) {
-  //     // Small delay to ensure state is fully propagated
-  //     const redirectTimer = setTimeout(() => {
-  //       router.replace("/permissions");
-  //     }, 500);
-  //     return () => clearTimeout(redirectTimer);
-  //   }
-  // }, [authCompleted, isLoading, user, router]);
-
-  useEffect(() => {
-    // 1. Log why the effect is (or isn't) running
-
-    if (authCompleted && !isLoading && user && userStatusFlags) {
-      const { needsDisclosure, needsLocation } = userStatusFlags;
-
-      // Start the redirect timer
-      console.log("⏱️ [DEBUG-REDIRECT] Starting 800ms redirect timer...");
-
-      const redirectTimer = setTimeout(() => {
-        console.log("🚀 [DEBUG-REDIRECT] Timer Fired. Executing Logic...");
-
-        // 2. Log LocalStorage Actions
-        if (!needsDisclosure) {
-          console.log(
-            "💾 [DEBUG-REDIRECT] Setting local: permissionsAccepted = true"
-          );
-          localStorage.setItem("permissionsAccepted", "true");
-        }
-        if (!needsLocation) {
-          console.log(
-            "💾 [DEBUG-REDIRECT] Setting local: locationCompleted = true"
-          );
-          localStorage.setItem("locationCompleted", "true");
-        }
-
-        // 3. Log the Final Decision
-        if (needsDisclosure) {
-          console.log(
-            "👉 [DEBUG-REDIRECT] DECISION: Redirecting to /permissions (Disclosure Required)"
-          );
-          router.replace("/permissions");
-        } else if (needsLocation) {
-          console.log(
-            "👉 [DEBUG-REDIRECT] DECISION: Redirecting to /location (Location Required)"
-          );
-          router.replace("/location");
-        } else {
-          console.log(
-            "👉 [DEBUG-REDIRECT] DECISION: Redirecting to /homepage (All steps complete)"
-          );
-          router.replace("/homepage");
-        }
-      }, 800);
-
-      return () => {
-        console.log("🧹 [DEBUG-REDIRECT] Cleaning up timer");
-        clearTimeout(redirectTimer);
-      };
-    } else {
-      // Log what is missing if the condition fails
-      const missing = [];
-      if (!authCompleted) missing.push("authCompleted");
-      if (isLoading) missing.push("isLoading (still true)");
-      if (!user) missing.push("user object");
-      if (!userStatusFlags) missing.push("userStatusFlags");
-
-      console.log(
-        "⚠️ [DEBUG-REDIRECT] Condition not met yet. Waiting for:",
-        missing.join(", ")
-      );
-    }
-  }, [authCompleted, isLoading, user, userStatusFlags, router]);
-
   // Helper function to render content based on status
   const renderContent = () => {
     switch (status) {
       case "success":
         return (
           <>
-            <SuccessIcon />
-            <h1 className="text-2xl font-semibold text-white mt-4">Success!</h1>
-            <p className="text-neutral-400 mt-2">
-              Welcome! Setting up your account...
-            </p>
-            <p className="text-neutral-500 text-sm mt-1">
-              Please wait, we&apos;re almost there...
+            <div className="relative flex items-center justify-center mb-2">
+              <Image
+                src="/jacksonicon.jpg"
+                alt="Jackson Rewards"
+                width={90}
+                height={90}
+                className="rounded-2xl shadow-lg"
+                priority
+              />
+            </div>
+            <h1 className="text-2xl font-semibold text-white mt-4 [font-family:'Poppins',Helvetica]">
+              You&apos;re in! 🎉
+            </h1>
+            <p className="text-neutral-400 mt-2 text-center text-sm [font-family:'Poppins',Helvetica]">
+              Setting up your account, just a moment…
             </p>
           </>
         );
       case "error":
         return (
           <>
-            <ErrorIcon />
-            <h1 className="text-2xl font-semibold text-red-400 mt-4">
-              Authentication Failed
+            <div className="relative flex items-center justify-center mb-2">
+              <Image
+                src="/jacksonicon.jpg"
+                alt="Jackson Rewards"
+                width={90}
+                height={90}
+                className="rounded-2xl shadow-lg opacity-60"
+                priority
+              />
+            </div>
+            <h1 className="text-xl font-semibold text-red-400 mt-4 [font-family:'Poppins',Helvetica]">
+              Sign-in failed
             </h1>
-            <p className="text-neutral-400 mt-2 text-center">{errorMessage}</p>
+            <p className="text-neutral-400 mt-2 text-center text-sm [font-family:'Poppins',Helvetica]">
+              {errorMessage}
+            </p>
+            <p className="text-neutral-500 text-xs mt-3 [font-family:'Poppins',Helvetica]">
+              Redirecting you back…
+            </p>
           </>
         );
       case "processing":
       default:
         return (
           <>
-            <Spinner />
-            <h1 className="text-2xl font-semibold text-white mt-4">
-              Authenticating...
+            <div className="relative flex items-center justify-center mb-2">
+              <div className="absolute w-[106px] h-[106px] rounded-[26px] border-4 border-t-[#af7de6] border-r-[#af7de6] border-b-transparent border-l-transparent animate-spin" />
+              <Image
+                src="/jacksonicon.jpg"
+                alt="Jackson Rewards"
+                width={90}
+                height={90}
+                className="rounded-2xl shadow-lg"
+                priority
+              />
+            </div>
+            <h1 className="text-2xl font-semibold text-white mt-6 [font-family:'Poppins',Helvetica]">
+              Signing you in…
             </h1>
-            <p className="text-neutral-400 mt-2">
-              Please wait while we securely sign you in.
+            <p className="text-neutral-400 mt-2 text-center text-sm [font-family:'Poppins',Helvetica]">
+              Securely connecting your Google account
             </p>
           </>
         );
@@ -262,14 +375,14 @@ function AuthCallbackContent() {
             <Image
               className="absolute w-[83px] h-[125px] top-[140px] left-3.5"
               alt="Front shapes"
-              src="https://c.animaapp.com/bkGH9LUL/img/front-shapes@2x.png"
+              src="/assets/animaapp/bkGH9LUL/img/front-shapes-2x.png"
               width={83}
               height={125}
             />
             <Image
               className="absolute w-[18px] h-[275px] top-[160px] left-[371px]"
               alt="Saly"
-              src="https://c.animaapp.com/bkGH9LUL/img/saly-16@2x.png"
+              src="/assets/animaapp/bkGH9LUL/img/saly-16-2x.png"
               width={18}
               height={275}
             />
@@ -289,8 +402,21 @@ export default function AuthCallbackPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen w-full bg-[#272052] flex justify-center items-center">
-          <div className="border-gray-500 h-16 w-16 animate-spin rounded-full border-4 border-t-[#af7de6]" />
+        <div className="min-h-screen w-full bg-[#272052] flex flex-col justify-center items-center gap-4">
+          <div className="relative flex items-center justify-center">
+            <div className="absolute w-[106px] h-[106px] rounded-[26px] border-4 border-t-[#af7de6] border-r-[#af7de6] border-b-transparent border-l-transparent animate-spin" />
+            <Image
+              src="/jacksonicon.jpg"
+              alt="Jackson Rewards"
+              width={90}
+              height={90}
+              className="rounded-2xl shadow-lg"
+              priority
+            />
+          </div>
+          <p className="text-neutral-400 text-sm [font-family:'Poppins',Helvetica]">
+            Signing you in…
+          </p>
         </div>
       }
     >

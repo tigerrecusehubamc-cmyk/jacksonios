@@ -32,9 +32,9 @@ export const Coins = ({ game, viewCount, onBack, onChat }) => {
                 title: category.title,
                 points: points,
                 backgroundColor: category.backgroundColor,
-                vectorLeft: `https://c.animaapp.com/ltgoa7L3/img/vector-4235-${index + 2}.svg`,
-                vectorRight: `https://c.animaapp.com/ltgoa7L3/img/vector-4234-${index + 2}.svg`,
-                pic: `https://c.animaapp.com/ltgoa7L3/img/pic-${index + 2}.svg`,
+                vectorLeft: `/assets/animaapp/ltgoa7L3/img/vector-4235-${index + 2}.svg`,
+                vectorRight: `/assets/animaapp/ltgoa7L3/img/vector-4234-${index + 2}.svg`,
+                pic: `/assets/animaapp/ltgoa7L3/img/pic-${index + 2}.svg`,
             };
         });
     };
@@ -62,7 +62,7 @@ export const Coins = ({ game, viewCount, onBack, onChat }) => {
                     <img
                         className="relative w-3.5 h-3.5 aspect-[0.97]"
                         alt="Coin icon"
-                        src="/dollor.png"
+                        src="/assets/animaapp/ltgoa7L3/img/image-3937-7-2x.png"
                     />
 
                     <div className="relative w-fit mt-[-1.00px] font-normal text-xs flex items-start justify-center [font-family:'Poppins',Helvetica] text-white tracking-[0] leading-[normal]">
@@ -73,7 +73,7 @@ export const Coins = ({ game, viewCount, onBack, onChat }) => {
                     <img
                         className="relative w-[19px] h-[15px]"
                         alt="XP icon"
-                        src="https://c.animaapp.com/ltgoa7L3/img/pic-7.svg"
+                        src="/assets/animaapp/ltgoa7L3/img/pic-7.svg"
                     />
                 </div>
 
@@ -95,7 +95,7 @@ export const Coins = ({ game, viewCount, onBack, onChat }) => {
                             <img
                                 className="absolute top-2 left-[272px] w-[23px] h-6 aspect-[0.97]"
                                 alt="Coin icon"
-                                src="/dollor.png"
+                                src="/assets/animaapp/ltgoa7L3/img/image-3937-6-2x.png"
                             />
 
                             <div className="absolute top-[20px] left-[calc(50.00%_-_38px)] w-[89px] h-[22px]">

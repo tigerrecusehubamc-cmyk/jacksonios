@@ -110,7 +110,7 @@ export const HighestTransctionCard = ({
                     <Image
                         className="w-[27px] h-7  -mr-[2.5px] flex-shrink-0"
                         alt="Left decoration"
-                        src="https://c.animaapp.com/UNpBPFIY/img/vector-4235.svg"
+                        src="/assets/animaapp/UNpBPFIY/img/vector-4235.svg"
                         width={27}
                         height={28}
                         loading="eager"
@@ -151,7 +151,7 @@ export const HighestTransctionCard = ({
                         className="w-[26px] h-[27px]  -ml-[3px] flex-shrink-0 relative"
                         style={{ top: "2px" }}
                         alt="Right decoration"
-                        src="https://c.animaapp.com/UNpBPFIY/img/vector-4234.svg"
+                        src="/assets/animaapp/UNpBPFIY/img/vector-4234.svg"
                         width={26}
                         height={27}
                         loading="lazy"

@@ -7,6 +7,7 @@ import { CoinInfoModal } from "./CoinInfoModal";
 import { OptInModal } from "./OptInModal";
 import { transferGameEarnings, getBatchStatus } from "../../../lib/api";
 import { fetchWalletTransactions, fetchFullWalletTransactions } from "@/lib/redux/slice/walletTransactionsSlice";
+import { normalizeGameTitle } from "@/lib/gameDataNormalizer";
 
 
 export const Coin = ({
@@ -298,7 +299,6 @@ export const Coin = ({
 
             // Calculate starting batch number (1-indexed: first batch is 1, second is 2, etc.)
             const startingBatchNumber = claimedGroups + 1;
-            const { normalizeGameTitle } = require('@/lib/gameDataNormalizer');
             const gameTitle = normalizeGameTitle(game);
 
             // Prepare earning data for API call with batch fields for backend integration
@@ -436,8 +436,7 @@ export const Coin = ({
                     <img
                         className="w-[18px] h-[18px] object-contain flex-shrink-0"
                         alt="Coin icon"
-                        src="/dollor.png"
-                    />
+                        src="/dollor.png" />
 
                     <span className={`[font-family:'Poppins',Helvetica] font-bold text-[15px] tracking-[0] leading-[17px] whitespace-nowrap transition-all duration-500 ${locallyClaimed ? 'text-green-400' : 'text-white'
                         }`}>
@@ -447,7 +446,7 @@ export const Coin = ({
                     <img
                         className="w-[18px] h-[18px] object-contain flex-shrink-0"
                         alt="Level icon"
-                        src="https://c.animaapp.com/WucpRujl/img/pic.svg"
+                        src="/assets/animaapp/WucpRujl/img/pic.svg"
                     />
                 </div>
 
@@ -494,7 +493,7 @@ export const Coin = ({
                 >
                     <img
                         alt="Information icon"
-                        src="https://c.animaapp.com/WucpRujl/img/frame-1000005263.svg"
+                        src="/assets/animaapp/WucpRujl/img/frame-1000005263.svg"
                         className="w-6 h-6"
                         loading="eager"
                         decoding="async"
@@ -521,7 +520,7 @@ export const Coin = ({
                             <img
                                 className="w-[22px] h-[23px] object-contain"
                                 alt="Coin icon"
-                                src="/dollor.png"
+                                src="/assets/animaapp/WucpRujl/img/image-3938-2x.png"
                             />
                         </div>
                     </div>

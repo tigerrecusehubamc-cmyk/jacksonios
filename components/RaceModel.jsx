@@ -77,17 +77,17 @@ export const RaceModal = ({ isOpen, isAnimating, onClose, token }) => {
                 >
                     <div className="relative p-5">
                         <button className="absolute w-6 h-6 top-4 right-4 z-10" onClick={onClose}>
-                            <img alt="Close" src="https://c.animaapp.com/b76V1iGo/img/close.svg" />
+                            <img alt="Close" src="/assets/animaapp/b76V1iGo/img/close.svg" />
                         </button>
 
                         <div className="flex justify-center mb-2 mt-1">
-                            <img className="w-[85px] h-[74px]" alt="XP icon" src="https://c.animaapp.com/b76V1iGo/img/pic.svg" />
+                            <img className="w-[85px] h-[74px]" alt="XP icon" src="/assets/animaapp/b76V1iGo/img/pic.svg" />
                         </div>
 
                         <header className="flex flex-col items-center mb-3">
                             <div className="flex items-center gap-1.5">
                                 <h1 className="text-white font-bold text-[22px]">XP Points</h1>
-                                <img className="w-[14px] h-[14px]" alt="" src="https://c.animaapp.com/b76V1iGo/img/vector-8.svg" />
+                                <img className="w-[14px] h-[14px]" alt="" src="/assets/animaapp/b76V1iGo/img/vector-8.svg" />
                             </div>
                         </header>
 
@@ -98,7 +98,7 @@ export const RaceModal = ({ isOpen, isAnimating, onClose, token }) => {
                         </div>
 
                         <section className="flex flex-col w-full items-center gap-3">
-                            <img className="w-[42px] h-[45px]" alt="Unlock icon" src="https://c.animaapp.com/b76V1iGo/img/image-3966@2x.png" />
+                            <img className="w-[42px] h-[45px]" alt="Unlock icon" src="/assets/animaapp/b76V1iGo/img/image-3966-2x.png" />
                             <div className="border-b border-[#383838] w-full pb-2">
                                 <div className="text-[#ffb568] font-semibold text-[11px] text-center uppercase tracking-wider">{progressData.achievementText}</div>
                             </div>
@@ -127,7 +127,7 @@ export const RaceModal = ({ isOpen, isAnimating, onClose, token }) => {
 
                             <div className="flex items-center gap-1 mt-1">
                                 <span className="text-[#d2d2d2] text-xs font-bold">{progressData.currentPoints.toLocaleString()}</span>
-                                <img className="w-4 h-[14px]" alt="XP icon" src="https://c.animaapp.com/b76V1iGo/img/pic-1.svg" />
+                                <img className="w-4 h-[14px]" alt="XP icon" src="/assets/animaapp/b76V1iGo/img/pic-1.svg" />
                                 <span className="text-[#888] text-[11px]">out of {progressData.maxPoints.toLocaleString()}</span>
                             </div>
                         </section>

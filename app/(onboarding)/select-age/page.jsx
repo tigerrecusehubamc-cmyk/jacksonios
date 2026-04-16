@@ -4,13 +4,21 @@ import { useRouter } from 'next/navigation'
 import useOnboardingStore from '@/stores/useOnboardingStore'
 import { useSelector } from 'react-redux';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { useSplash } from '@/components/SplashScreen';
 
 export default function AgeSelection() {
+  const { hideSplash } = useSplash()
   const router = useRouter()
   const { ageRange, setAgeRange, setCurrentStep, currentStep } = useOnboardingStore()
   const { ageOptions, status: onboardingStatus, error } = useSelector((state) => state.onboarding);
   const [selectedIndex, setSelectedIndex] = useState(0)
   const itemHeight = 50
+
+  // Hold the native splash until Redux options are loaded — prevents a blank
+  // page flash during the 400ms splash fade while options are still fetching.
+  useEffect(() => {
+    if (onboardingStatus !== 'loading') hideSplash();
+  }, [hideSplash, onboardingStatus])
 
   useEffect(() => {
     setCurrentStep(1)

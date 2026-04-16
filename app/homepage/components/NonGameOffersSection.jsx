@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchNonGameOffers } from "@/lib/redux/slice/surveysSlice";
+import { onNonGamingOfferComplete } from "@/lib/adjustService";
+import { incrementAndGet } from "@/lib/adjustCounters";
 
 const NonGameOffersSection = ({ skipFetch = false }) => {
     const { token } = useAuth();
@@ -33,12 +35,7 @@ const NonGameOffersSection = ({ skipFetch = false }) => {
         const { nonGameOffers: currentOffers, nonGameOffersCacheTimestamp: currentTs, nonGameOffersStatus: currentStatus } = currentState;
 
         const hasFreshCache = currentOffers?.length && currentTs && (Date.now() - currentTs < CACHE_STALE_MS);
-        console.log("[DEBUG-NONGAME-OFFERS] mount effect fired | currentStatus:", currentStatus, "| hasFreshCache:", hasFreshCache, "| currentTs:", currentTs);
-        if (hasFreshCache || currentStatus === "loading" || currentStatus === "failed") {
-            console.log("[DEBUG-NONGAME-OFFERS] skipping dispatch — reason:", hasFreshCache ? "fresh cache" : currentStatus);
-            return;
-        }
-        console.log("[DEBUG-NONGAME-OFFERS] dispatching fetchNonGameOffers");
+        if (hasFreshCache || currentStatus === "loading" || currentStatus === "failed") return;
         dispatch(fetchNonGameOffers({ token, offerType: "cashback_shopping" }));
     }, [token, skipFetch]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -50,15 +47,25 @@ const NonGameOffersSection = ({ skipFetch = false }) => {
             const state = require("@/lib/redux/store").store.getState();
             const ts = state.surveys.nonGameOffersCacheTimestamp;
             const isStale = !ts || Date.now() - ts > FOCUS_REFRESH_STALE_MS;
-            console.log("[DEBUG-NONGAME-OFFERS] focus/visibility fired | isStale:", isStale, "| ts:", ts, "| at:", new Date().toISOString());
             if (!isStale) return;
-            console.log("[DEBUG-NONGAME-OFFERS] focus: dispatching fetchNonGameOffers (background)");
             dispatch(fetchNonGameOffers({ token, force: true, background: true, offerType: "cashback_shopping" }));
         };
 
-        const handleFocus = () => handleRefreshIfStale();
+        // Check if user is returning from a non-gaming offer — fire completion event
+        const checkOfferReturn = () => {
+            try {
+                const offerId = localStorage.getItem("adjust_nongame_offer_opened");
+                if (offerId) {
+                    localStorage.removeItem("adjust_nongame_offer_opened");
+                    // counter seeded from server at login — survives reinstalls
+                    onNonGamingOfferComplete(incrementAndGet("nongameOffer"));
+                }
+            } catch { }
+        };
+
+        const handleFocus = () => { checkOfferReturn(); handleRefreshIfStale(); };
         const handleVisibility = () => {
-            if (!document.hidden) handleRefreshIfStale();
+            if (!document.hidden) { checkOfferReturn(); handleRefreshIfStale(); }
         };
 
         window.addEventListener("focus", handleFocus);
@@ -85,6 +92,10 @@ const NonGameOffersSection = ({ skipFetch = false }) => {
         const clickUrl = getOfferLink(offer);
 
         if (clickUrl) {
+            // Flag that an offer was opened — completion event fires when user returns
+            try {
+                localStorage.setItem("adjust_nongame_offer_opened", offer.id || offer.externalId || "1");
+            } catch { }
             window.open(clickUrl, '_blank', 'noopener,noreferrer');
         }
     };
@@ -193,7 +204,7 @@ const NonGameOffersSection = ({ skipFetch = false }) => {
         <div className={`w-[335px] mx-auto flex flex-col items-center ${nonGameOffers?.length ? 'h-[275px]' : 'min-h-20'}`}>
             <div className="w-full h-[24px] px-4 mb-2.5 mr-4">
                 <h2 className="font-['Poppins',Helvetica] text-[16px] font-semibold leading-normal tracking-[0] text-[#FFFFFF]">
-                    Non- Gaming Offers
+                    Non Gaming Offers
                 </h2>
             </div>
 

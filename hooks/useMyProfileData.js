@@ -31,7 +31,7 @@ export const useMyProfileData = (token, user) => {
 
   const { userDataStatus, userData } = useSelector((state) => state.games);
   const { walletScreenStatus, walletScreen } = useSelector(
-    (state) => state.walletTransactions,
+    (state) => state.walletTransactions
   );
 
   // OPTIMIZED: Enhanced data availability check with persistence awareness
@@ -112,7 +112,7 @@ export const useMyProfileData = (token, user) => {
           token,
           category: "games",
           status: "completed",
-        }),
+        })
       );
     }
 
@@ -122,7 +122,7 @@ export const useMyProfileData = (token, user) => {
         fetchUserData({
           userId: user._id,
           token: token,
-        }),
+        })
       );
     }
 
@@ -160,6 +160,8 @@ export const useMyProfileData = (token, user) => {
       vipStatus?.data?.currentTier &&
       vipStatus?.data?.currentTier !== "Free";
     const currentTier = vipStatus?.data?.currentTier || "Bronze";
+
+   
 
     return {
       coinBalance,

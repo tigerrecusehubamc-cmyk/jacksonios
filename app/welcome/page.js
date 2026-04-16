@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSplash } from "@/components/SplashScreen";
 import {
   Star,
   Coins,
@@ -21,8 +22,11 @@ import {
 } from "lucide-react";
 
 export default function Home() {
+  const { hideSplash } = useSplash();
   const router = useRouter();
   const [showAuth, setShowAuth] = useState(false);
+
+  useEffect(() => { hideSplash(); }, [hideSplash]);
   const [isSignIn, setIsSignIn] = useState(false);
 
   const reviews = [

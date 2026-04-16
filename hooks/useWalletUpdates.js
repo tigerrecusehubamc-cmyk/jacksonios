@@ -11,7 +11,7 @@ export const useWalletUpdates = (token) => {
 
   // Get wallet screen data from Redux store
   const { walletScreen, walletScreenStatus } = useSelector(
-    (state) => state.walletTransactions,
+    (state) => state.walletTransactions
   );
 
   // Monitor wallet screen changes
@@ -20,18 +20,17 @@ export const useWalletUpdates = (token) => {
   const refreshWalletData = async () => {
     if (!token) {
       console.warn(
-        "⚠️ [useWalletUpdates] No token provided for wallet refresh",
+        "⚠️ [useWalletUpdates] No token provided for wallet refresh"
       );
       return;
     }
 
-    try {
-      // STALE-WHILE-REVALIDATE: Force refresh to get latest admin changes
+    try {      // STALE-WHILE-REVALIDATE: Force refresh to get latest admin changes
       await dispatch(fetchWalletScreen({ token, force: true }));
     } catch (error) {
       console.error(
         "❌ [useWalletUpdates] Error refreshing wallet data:",
-        error,
+        error
       );
     }
   };

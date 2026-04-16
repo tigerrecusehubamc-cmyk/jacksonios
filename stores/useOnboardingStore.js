@@ -52,8 +52,8 @@ const useOnboardingStore = create(
     {
       name: "onboarding-storage",
       storage: createJSONStorage(() => localStorage),
-    },
-  ),
+    }
+  )
 );
 
 export default useOnboardingStore;

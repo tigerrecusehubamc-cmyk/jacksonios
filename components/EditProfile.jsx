@@ -251,7 +251,7 @@ export const EditProfile = () => {
               <img
                 className="w-full h-full"
                 alt="Close"
-                src="https://c.animaapp.com/mFM2C37Z/img/close.svg"
+                src="/assets/animaapp/mFM2C37Z/img/close.svg"
               />
             </button>
           </div>

@@ -38,7 +38,7 @@ export const PageHeader = ({ title, onBack, rightElement, className = "", showBa
                                 height={24}
                                 className="w-6 h-6"
                                 alt="Back"
-                                src="https://c.animaapp.com/V1uc3arn/img/arrow-back-ios-new@2x.png"
+                                src="/assets/animaapp/V1uc3arn/img/arrow-back-ios-new-2x.png"
                             />
                         </button>
                     )}

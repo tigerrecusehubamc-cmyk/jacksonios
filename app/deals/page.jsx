@@ -81,25 +81,52 @@ const DealsPage = () => {
         [token] // stable — hasLocalData read via ref, not as a dep
     );
 
-    // Initial load with stale-while-revalidate: show cached data instantly if fresh,
-    // then refresh in background.
+    // Initial load with stale-while-revalidate: show any cached data instantly,
+    // then always refresh in background. Only show loader if no cache exists after waiting.
     useEffect(() => {
         if (!token) return;
 
-        const now = Date.now();
-        const hasFreshCache =
-            dealsCache &&
-            dealsCacheTimestamp &&
-            now - dealsCacheTimestamp < DEALS_CACHE_TTL;
+        const checkCacheAndLoad = () => {
+            const hasAnyCache = dealsCache && dealsCache.allOffers && dealsCache.allOffers.length > 0;
 
-        if (hasFreshCache) {
-            setAllOffers(dealsCache.allOffers || []);
+            if (hasAnyCache) {
+                // Show cached deals immediately (even if stale)
+                setAllOffers(dealsCache.allOffers);
 
-            // Background refresh
-            fetchAllDeals({ background: true });
+                // Always refresh in background to get fresh data
+                fetchAllDeals({ background: true });
+            } else {
+                // No cached data at all – show loader until API responds
+                fetchAllDeals({ background: false });
+            }
+        };
+
+        // Check immediately
+        const hasImmediateCache = dealsCache && dealsCache.allOffers && dealsCache.allOffers.length > 0;
+
+        if (hasImmediateCache) {
+            checkCacheAndLoad();
         } else {
-            // No fresh cache – show loader once
-            fetchAllDeals({ background: false });
+            // Wait up to 2 seconds for AuthContext prefetching to complete
+            const timeoutId = setTimeout(() => {
+                checkCacheAndLoad();
+            }, 2000);
+
+            // Also check every 100ms for cache availability
+            const intervalId = setInterval(() => {
+                const hasCacheNow = dealsCache && dealsCache.allOffers && dealsCache.allOffers.length > 0;
+                if (hasCacheNow) {
+                    clearTimeout(timeoutId);
+                    clearInterval(intervalId);
+                    checkCacheAndLoad();
+                }
+            }, 100);
+
+            // Cleanup
+            return () => {
+                clearTimeout(timeoutId);
+                clearInterval(intervalId);
+            };
         }
     }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -198,19 +225,13 @@ const DealsPage = () => {
                         type="button"
                         aria-label="Go back"
                         onClick={handleBack}
-                        className="relative w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                        className="relative w-6 h-6 flex items-center justify-center"
                     >
-                        <svg
-                            viewBox="0 0 24 24"
-                            className="w-4 h-4 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <path d="M15 18l-6-6 6-6" />
-                        </svg>
+                        <img
+                            src="/assets/animaapp/ciot1lOr/img/arrow-back-ios-new-1-2x.png"
+                            alt="Back"
+                            className="w-full h-full"
+                        />
                     </button>
 
                     <h1 className="relative [font-family:'Poppins',Helvetica] font-semibold text-white text-xl tracking-[0] leading-5">

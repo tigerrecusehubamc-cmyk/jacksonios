@@ -29,7 +29,7 @@ export const TitleSection = ({ currentStreak = 1, onClose, onInfoClick }) => {
                     <img
                         className="absolute w-[256.04%] h-[20.65%] top-[40.18%] left-[-92.51%] rotate-90"
                         alt=""
-                        src="https://c.animaapp.com/1RFP1hGC/img/vector-352.svg"
+                        src="/assets/animaapp/1RFP1hGC/img/vector-352.svg"
                         role="presentation"
                         loading="eager"
                         decoding="async"
@@ -38,7 +38,7 @@ export const TitleSection = ({ currentStreak = 1, onClose, onInfoClick }) => {
                     <img
                         className="absolute w-[345.60%] h-[20.63%] top-[41.93%] left-[-128.87%] rotate-90"
                         alt=""
-                        src="https://c.animaapp.com/1RFP1hGC/img/vector-351.svg"
+                        src="/assets/animaapp/1RFP1hGC/img/vector-351.svg"
                         role="presentation"
                         loading="eager"
                         decoding="async"
@@ -49,7 +49,7 @@ export const TitleSection = ({ currentStreak = 1, onClose, onInfoClick }) => {
                         <img
                             className="absolute w-[90.18%] h-[95.03%] top-[-3.14%] left-0 -rotate-90"
                             alt=""
-                            src="https://c.animaapp.com/1RFP1hGC/img/vector-349.svg"
+                            src="/assets/animaapp/1RFP1hGC/img/vector-349.svg"
                             role="presentation"
                             loading="eager"
                             decoding="async"
@@ -58,7 +58,7 @@ export const TitleSection = ({ currentStreak = 1, onClose, onInfoClick }) => {
                         <img
                             className="absolute w-[95.13%] h-[105.03%] top-[-2%] left-[-3.62%] -rotate-90"
                             alt=""
-                            src="https://c.animaapp.com/1RFP1hGC/img/vector-350.svg"
+                            src="/assets/animaapp/1RFP1hGC/img/vector-350.svg"
                             role="presentation"
                             loading="eager"
                             decoding="async"
@@ -86,7 +86,7 @@ export const TitleSection = ({ currentStreak = 1, onClose, onInfoClick }) => {
                     <img
                         className="relative flex-[0_0_auto] w-6 h-6"
                         alt="Close"
-                        src="https://c.animaapp.com/1RFP1hGC/img/close.svg"
+                        src="/assets/animaapp/1RFP1hGC/img/close.svg"
                         loading="eager"
                         decoding="async"
                         width="24"
@@ -100,7 +100,7 @@ export const TitleSection = ({ currentStreak = 1, onClose, onInfoClick }) => {
                 <img
                     className="relative w-[305px] h-[73.86px] ml-[-1.00px] mt-1 mr-[-1.00px] aspect-[4.13]"
                     alt="Reach levels without falling down! The higher you reach, the cooler reward you will get."
-                    src="https://c.animaapp.com/1RFP1hGC/img/image-3996@2x.png"
+                    src="/assets/animaapp/1RFP1hGC/img/image-3996-2x.png"
                     loading="eager"
                     decoding="async"
                     width="305"

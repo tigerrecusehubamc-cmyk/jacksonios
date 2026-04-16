@@ -6,12 +6,16 @@ import useOnboardingStore from "@/stores/useOnboardingStore";
 import { acceptDisclosure, submitOnboarding, updateProfile } from "@/lib/api";
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
+import { useSplash } from "@/components/SplashScreen";
 
 export default function PermissionsPage() {
+  const { hideSplash } = useSplash();
   const router = useRouter();
   const { token, user, isLoading, updateUserInContext } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => { hideSplash(); }, [hideSplash]);
 
   // Block Android hardware back button — user must tap Agree to proceed
   useEffect(() => {

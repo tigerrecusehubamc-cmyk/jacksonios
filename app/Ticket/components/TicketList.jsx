@@ -125,12 +125,12 @@ export const TicketList = () => {
     const loadingState = useSelector(selectTicketLoadingState);
     const errors = useSelector(selectTicketErrors);
     const paginatedData = useSelector(selectPaginatedTickets);
+    const allTickets = useSelector(selectTickets);
 
     // ============================================================================
     // LOCAL STATE
     // ============================================================================
     const [retryCount, setRetryCount] = useState(0);
-    const [hasLoadedData, setHasLoadedData] = useState(false);
 
     // ============================================================================
     // ROUTER
@@ -145,6 +145,11 @@ export const TicketList = () => {
         const token = localStorage.getItem('authToken');
         if (!token) return;
 
+        // Check if tickets are already loaded (prefetched from TicketForm)
+        if (allTickets.length > 0) {
+            return;
+        }
+
         const now = Date.now();
         if (initialFetchDone && now - lastTicketsFetchTime < TICKETS_FETCH_DEBOUNCE_MS) return;
         initialFetchDone = true;
@@ -152,7 +157,6 @@ export const TicketList = () => {
 
         dispatch(fetchUserTickets({ filters: { page: 1, limit: 100 }, token }));
         dispatch(fetchTicketStats({ token }));
-        setHasLoadedData(true);
 
         return () => {
             const t = setTimeout(() => { initialFetchDone = false; }, 500);
@@ -202,7 +206,6 @@ export const TicketList = () => {
 
     const handleRetry = useCallback(() => {
         setRetryCount(prev => prev + 1);
-        setHasLoadedData(false); // Reset flag to allow retry
         const token = localStorage.getItem('authToken');
         if (token) {
             // Retry loading tickets and stats
@@ -219,7 +222,8 @@ export const TicketList = () => {
     // ============================================================================
     const { isLoading, isFiltering } = loadingState;
     const error = errors.tickets;
-    const isInitialLoading = isLoading && paginatedData.totalCount === 0;
+    // Only show initial loading if no tickets are loaded at all (not just filtered to empty)
+    const isInitialLoading = isLoading && allTickets.length === 0;
 
     return (
         <div className="flex flex-col w-full h-screen bg-black overflow-x-hidden">

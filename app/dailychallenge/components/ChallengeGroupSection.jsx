@@ -61,62 +61,30 @@ export const ChallengeGroupSection = ({ streak }) => {
         ? Math.max(...milestones.map(m => m.value))
         : 0;
 
-    // Calculate progress percentage based on actual milestone positions
-    // Interpolate current streak position between milestones to get accurate visual position
+    // Use API's progressPercentage directly — MUST NOT compute from currentStreak.
+    // currentStreak can be > 0 even when today is not completed, in which case the
+    // API returns progressPercentage: 0 and the bar must show 0% (TC-PB-01).
     let progressPercentage = 0;
-    if (milestones.length > 0 && currentStreak > 0) {
-        // Sort milestones by day number to ensure correct order
+    if (milestones.length > 0) {
         const sortedMilestones = [...milestones].sort((a, b) => a.value - b.value);
+        const allReached = sortedMilestones.every(m => m.isReached);
 
-        // If streak is less than first milestone, interpolate from 0% to first milestone position
-        if (currentStreak < minMilestone) {
-            const firstMilestone = sortedMilestones[0];
-            const firstPosition = parseFloat(firstMilestone.leftPosition);
-            const firstDay = firstMilestone.value;
-
-            // Linear interpolation from Day 1 (0%) to first milestone
-            progressPercentage = (currentStreak / firstDay) * firstPosition;
-        }
-        // If streak is at or beyond last milestone, show 100% progress
-        else if (currentStreak >= maxMilestone) {
+        if (allReached) {
             progressPercentage = 100;
-        }
-        // Otherwise, interpolate between milestones to find exact position
-        else {
-            // Find the two milestones that bracket the current streak
-            let lowerMilestone = null;
-            let upperMilestone = null;
+        } else {
+            const firstUnreachedIdx = sortedMilestones.findIndex(m => !m.isReached);
+            const firstUnreached = sortedMilestones[firstUnreachedIdx];
+            const prevMilestone = firstUnreachedIdx > 0 ? sortedMilestones[firstUnreachedIdx - 1] : null;
 
-            for (let i = 0; i < sortedMilestones.length; i++) {
-                // Check if current streak exactly matches this milestone
-                if (currentStreak === sortedMilestones[i].value) {
-                    progressPercentage = parseFloat(sortedMilestones[i].leftPosition);
-                    break;
-                }
-                // Find milestones that bracket the current streak
-                if (currentStreak > sortedMilestones[i].value) {
-                    lowerMilestone = sortedMilestones[i];
-                } else {
-                    upperMilestone = sortedMilestones[i];
-                    break;
-                }
-            }
+            const bonusDay = bonusDays.find(b => b.dayNumber === firstUnreached.value);
+            const apiProgress = bonusDay?.progressPercentage ?? 0;
 
-            // If we have both milestones, interpolate between them
-            if (lowerMilestone && upperMilestone && progressPercentage === 0) {
-                const lowerPosition = parseFloat(lowerMilestone.leftPosition);
-                const upperPosition = parseFloat(upperMilestone.leftPosition);
-                const lowerDay = lowerMilestone.value;
-                const upperDay = upperMilestone.value;
+            const targetVisual = parseFloat(firstUnreached.leftPosition);
+            const startVisual = prevMilestone ? parseFloat(prevMilestone.leftPosition) : 0;
 
-                // Linear interpolation
-                const dayRange = upperDay - lowerDay;
-                const progressInRange = (currentStreak - lowerDay) / dayRange;
-                progressPercentage = lowerPosition + (progressInRange * (upperPosition - lowerPosition));
-            }
+            progressPercentage = startVisual + (apiProgress / 100) * (targetVisual - startVisual);
         }
 
-        // Ensure progress is between 0 and 100
         progressPercentage = Math.max(0, Math.min(100, progressPercentage));
     }
 
@@ -153,16 +121,16 @@ export const ChallengeGroupSection = ({ streak }) => {
 
                         {/* Milestone indicators with treasure chests and rewards */}
                         {milestones.map((milestone, index) => {
-                            const isCompleted = milestone.isReached || currentStreak >= milestone.value;
+                            const isCompleted = milestone.isReached;
                             const containerWidth = 340; // Max width of container
                             const position = parseFloat(milestone.leftPosition) / 100 * containerWidth; // Convert percentage to pixels
                             const isLastMilestone = index === milestones.length - 1;
 
                             // Green treasure chest images (for all except last)
                             const greenChestImages = [
-                                "https://c.animaapp.com/b23YVSTi/img/2211-w030-n003-510b-p1-510--converted--02-2@2x.png", // Small green chest
-                                "https://c.animaapp.com/b23YVSTi/img/2211-w030-n003-510b-p1-510--converted--02-3@2x.png", // Medium green chest
-                                "https://c.animaapp.com/b23YVSTi/img/2211-w030-n003-510b-p1-510--converted--02-4@2x.png", // Large green chest
+                                "/assets/animaapp/b23YVSTi/img/2211-w030-n003-510b-p1-510--converted--02-2-2x.png", // Small green chest
+                                "/assets/animaapp/b23YVSTi/img/2211-w030-n003-510b-p1-510--converted--02-3-2x.png", // Medium green chest
+                                "/assets/animaapp/b23YVSTi/img/2211-w030-n003-510b-p1-510--converted--02-4-2x.png", // Large green chest
                             ];
 
                             // Golden treasure chest image (for last milestone) - use tesurebox.png

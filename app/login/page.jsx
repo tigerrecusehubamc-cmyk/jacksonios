@@ -348,7 +348,7 @@ function LoginPageContent() {
       try {
         // For mobile apps, pass the deep link callback URL to the backend
         // The backend should redirect to this URL after OAuth completes
-        const deepLinkCallback = "com.jackson.app://auth/callback";
+        const deepLinkCallback = "jacksonrewards://auth/callback";
         const webCallbackUrl = typeof window !== 'undefined'
           ? `${window.location.origin}/auth/callback`
           : "https://jacksonrewardsapp.vercel.app/auth/callback";

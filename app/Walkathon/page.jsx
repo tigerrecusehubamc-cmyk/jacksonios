@@ -30,8 +30,8 @@ export default function WalkathonPage() {
     const { token, user } = useAuth();
     const router = useRouter();
 
-    // State management - ALL hooks at top level
-    const [loading, setLoading] = useState(true);
+    // State management - loading starts as false since we use cached data
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [isEligible, setIsEligible] = useState(false);
     const [isJoined, setIsJoined] = useState(false);
@@ -50,15 +50,10 @@ export default function WalkathonPage() {
     // Tab state
     const [activeTab, setActiveTab] = useState("milestones");
 
-    // Tab change handler - navigates to new page
+    // Tab change handler - inline switch (no page navigation)
     const handleTabChange = useCallback((tabId) => {
         setActiveTab(tabId);
-        if (tabId === "milestones") {
-            router.push('/Walkathon/milestones');
-        } else if (tabId === "leaderboard") {
-            router.push('/Walkathon/leaderboard');
-        }
-    }, [router]);
+    }, []);
 
     // Debug logging helper - useCallback to prevent recreation
     const logWalkathon = useCallback((label, data) => {
@@ -82,7 +77,7 @@ export default function WalkathonPage() {
 
         try {
             logWalkathon("Loading Status", { timestamp: new Date().toISOString() });
-            setLoading(true);
+            // Don't set loading=true - we use cached data, so don't show loading state
             setError(null);
 
             const response = await getWalkathonStatus(token);
@@ -148,6 +143,23 @@ export default function WalkathonPage() {
                         logWalkathon("User Not Joined Yet", {});
                     }
 
+                    // Save to cache
+                    try {
+                        const cacheData = {
+                            data: {
+                                walkathon: data.walkathon,
+                                progress: data.userProgress?.progress || null,
+                                leaderboard: [],
+                                userRank: data.userProgress?.userRank || null,
+                                timeRemaining: data.userProgress?.timeRemaining || null,
+                                isJoined: hasProgress,
+                                isEligible: data.eligibility?.isEligible || false,
+                            },
+                            cacheTime: Date.now(),
+                        };
+                        localStorage.setItem("walkathon_cache", JSON.stringify(cacheData));
+                    } catch (_e) {}
+
                     // Load leaderboard
                     await loadLeaderboard();
                     
@@ -177,8 +189,6 @@ export default function WalkathonPage() {
             console.error("Error loading walkathon status:", err);
             setError(err.message || "Failed to load walkathon.");
             setIsEligible(false);
-        } finally {
-            setLoading(false);
         }
     }, [token, logWalkathon]);
 
@@ -207,6 +217,22 @@ export default function WalkathonPage() {
                     setUserRank(data.userRank);
                     setTimeRemaining(data.timeRemaining);
                     setIsJoined(true);
+
+                    // Save progress to cache
+                    try {
+                        const cached = localStorage.getItem("walkathon_cache");
+                        if (cached) {
+                            const parsed = JSON.parse(cached);
+                            if (parsed?.data) {
+                                parsed.data.progress = data.progress;
+                                parsed.data.userRank = data.userRank;
+                                parsed.data.timeRemaining = data.timeRemaining;
+                                parsed.data.isJoined = true;
+                                parsed.cacheTime = Date.now();
+                                localStorage.setItem("walkathon_cache", JSON.stringify(parsed));
+                            }
+                        }
+                    } catch (_e) {}
                 } else {
                     logWalkathon("No Progress Found", { userNotJoined: true });
                     setIsJoined(false);
@@ -249,6 +275,20 @@ export default function WalkathonPage() {
                         totalParticipants: data.totalParticipants
                     } : null);
                 }
+
+                // Save leaderboard to cache
+                try {
+                    const cached = localStorage.getItem("walkathon_cache");
+                    if (cached) {
+                        const parsed = JSON.parse(cached);
+                        if (parsed?.data) {
+                            parsed.data.leaderboard = data.leaderboard || [];
+                            parsed.data.totalParticipants = data.totalParticipants;
+                            parsed.cacheTime = Date.now();
+                            localStorage.setItem("walkathon_cache", JSON.stringify(parsed));
+                        }
+                    }
+                } catch (_e) {}
             }
         } catch (err) {
             logWalkathon("Leaderboard Load Error", { error: err.message });
@@ -285,6 +325,10 @@ export default function WalkathonPage() {
 
                     setIsJoined(true);
                     setProgress(data.progress);
+                    
+                    // Clear cache to force fresh fetch
+                    localStorage.removeItem("walkathon_cache");
+                    
                     await loadProgress();
                     await loadLeaderboard();
                 } else {
@@ -342,10 +386,11 @@ export default function WalkathonPage() {
                             count: data.newMilestones.length
                         });
                         setNewMilestones(data.newMilestones);
-                        await loadProgress();
                     }
 
-                    // Reload leaderboard
+                    // Clear cache and reload
+                    localStorage.removeItem("walkathon_cache");
+                    await loadProgress();
                     await loadLeaderboard();
                 } else {
                     logWalkathon("Sync Failed", { message: data.message });
@@ -391,6 +436,8 @@ export default function WalkathonPage() {
                         xpReward: data.reward?.xpReward || 0
                     });
 
+                    // Clear cache and reload
+                    localStorage.removeItem("walkathon_cache");
                     await loadProgress();
                     await loadLeaderboard();
                 } else {
@@ -422,6 +469,35 @@ export default function WalkathonPage() {
         // Navigation disabled - leaderboard shown inline
     }, []);
 
+    // Load from localStorage cache immediately for instant display (stale-while-revalidate)
+    useEffect(() => {
+        try {
+            const CACHE_KEY = "walkathon_cache";
+            const cachedData = localStorage.getItem(CACHE_KEY);
+            if (cachedData) {
+                const parsed = JSON.parse(cachedData);
+                const cacheAge = Date.now() - (parsed.cacheTime || 0);
+                const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+
+                if (parsed.data && cacheAge < CACHE_TTL * 2) {
+                    const { walkathon: cachedWalkathon, progress: cachedProgress, leaderboard: cachedLeaderboard, userRank: cachedRank, timeRemaining: cachedTime, isJoined: cachedJoined, isEligible: cachedEligible } = parsed.data;
+                    
+                    if (cachedWalkathon) setWalkathon(cachedWalkathon);
+                    if (cachedProgress) setProgress(cachedProgress);
+                    if (cachedLeaderboard) setLeaderboard(cachedLeaderboard);
+                    if (cachedRank) setUserRank(cachedRank);
+                    if (cachedTime) setTimeRemaining(cachedTime);
+                    if (cachedJoined !== undefined) setIsJoined(cachedJoined);
+                    if (cachedEligible !== undefined) setIsEligible(cachedEligible);
+                    
+                    logWalkathon("Loaded from cache", { cacheAge, cachedWalkathon: !!cachedWalkathon });
+                }
+            }
+        } catch (err) {
+            // Cache load failed - continue with API fetch
+        }
+    }, [logWalkathon]);
+
     // Initialize - load data on mount
     useEffect(() => {
         if (token) {
@@ -432,22 +508,8 @@ export default function WalkathonPage() {
         }
     }, [token, loadWalkathonStatus, logWalkathon]);
 
-    // Auto-refresh progress every 30 seconds
-    useEffect(() => {
-        if (isJoined && token) {
-            logWalkathon("Auto-Refresh Started", { interval: "30 seconds" });
-            const interval = setInterval(() => {
-                logWalkathon("Auto-Refresh Triggered", { timestamp: new Date().toISOString() });
-                loadProgress();
-                loadLeaderboard();
-            }, 30000);
-
-            return () => {
-                logWalkathon("Auto-Refresh Stopped", {});
-                clearInterval(interval);
-            };
-        }
-    }, [isJoined, token, loadProgress, loadLeaderboard, logWalkathon]);
+    // Auto-refresh disabled - using cache system instead for instant load
+    // Data refreshes when user performs actions or on app focus
 
     // Calculate level from progress
     const getCurrentLevel = useCallback(() => {
@@ -481,15 +543,24 @@ export default function WalkathonPage() {
         });
     }, [loading, isEligible, isJoined, isJoining, isClaiming, isSyncing, walkathon, progress, leaderboard.length, userRank, logWalkathon]);
 
-    // Loading state
-    if (loading) {
+    // Loading state - show skeleton only if no cached data and still loading
+    if (loading && !walkathon) {
         return (
-            <div className="relative w-full min-h-screen bg-black flex items-center justify-center">
-                <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full"
-                />
+            <div className="relative w-full min-h-screen bg-black pb-[150px]">
+                <WalkathonHeader title="Walkathon" />
+                <div className="flex flex-col w-full max-w-[375px] mx-auto items-center gap-6 pt-4 px-0">
+                    <div className="w-full px-4">
+                        <div className="h-4 w-48 bg-gray-800 rounded animate-pulse mx-auto mb-2" />
+                        <div className="h-3 w-32 bg-gray-800 rounded animate-pulse mx-auto" />
+                    </div>
+                    <div className="w-40 h-40 rounded-full bg-gray-800 animate-pulse" />
+                    <div className="w-full px-4 space-y-3">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="h-20 bg-gray-800/50 rounded-2xl animate-pulse" />
+                        ))}
+                    </div>
+                </div>
+                <HomeIndicator activeTab="home" />
             </div>
         );
     }
@@ -631,7 +702,7 @@ export default function WalkathonPage() {
                     totalSteps={totalSteps}
                 />
 
-                {/* Tab Navigation - navigates to new pages */}
+                {/* Tab Navigation - inline switch */}
                 {isJoined && (
                     <TabNavigation
                         activeTab={activeTab}
@@ -639,10 +710,18 @@ export default function WalkathonPage() {
                     />
                 )}
 
-                {/* Show inline content based on tab (for preview before navigation) */}
-                {!isJoined && (
-                    <>
-                        {/* Leaderboard Section - for non-joined users */}
+                {/* Tab Content - inline switching */}
+                <div className="w-full">
+                    {activeTab === "milestones" ? (
+                        <RewardTiersSection
+                            rewardTiers={rewardTiers}
+                            milestonesReached={milestonesReached}
+                            rewardsClaimed={rewardsClaimed}
+                            onClaimReward={handleClaimReward}
+                            isClaiming={isClaiming}
+                            showHeader={true}
+                        />
+                    ) : (
                         <LeaderboardSection
                             leaderboard={leaderboard}
                             userRank={userRank}
@@ -651,8 +730,8 @@ export default function WalkathonPage() {
                             weekKey={walkathon?.weekKey || ""}
                             showHeader={true}
                         />
-                    </>
-                )}
+                    )}
+                </div>
             </div>
 
             {/* Milestone Celebration Modal */}

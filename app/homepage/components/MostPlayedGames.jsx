@@ -252,14 +252,14 @@ const MostPlayedGames = () => {
                                     <img
                                         className="w-full h-full object-cover rounded-full"
                                         alt={game.displayTitle || game.details?.name}
-                                        src={game.optimizedImage || "https://c.animaapp.com/DfFsihWg/img/image-3930@2x.png"}
+                                        src={game.optimizedImage || "/assets/animaapp/DfFsihWg/img/image-3930-2x.png"}
                                         loading="eager"
                                         decoding="async"
                                         width="72"
                                         height="72"
                                         onError={(e) => {
-                                            if (e.target.src !== "https://c.animaapp.com/DfFsihWg/img/image-3930@2x.png") {
-                                                e.target.src = "https://c.animaapp.com/DfFsihWg/img/image-3930@2x.png";
+                                            if (e.target.src !== "/assets/animaapp/DfFsihWg/img/image-3930-2x.png") {
+                                                e.target.src = "/assets/animaapp/DfFsihWg/img/image-3930-2x.png";
                                             }
                                         }}
                                     />
@@ -279,8 +279,8 @@ const MostPlayedGames = () => {
             ) : (
                 <div className="flex h-[110px] min-w-0 w-full items-center justify-center py-4">
                     <div className="flex flex-col items-center justify-center">
-                        <h3 className="[font-family:'Poppins',Helvetica] font-semibold text-white text-lg mb-2">Gaming - Most Played</h3>
-                        <p className="[font-family:'Poppins',Helvetica] font-normal text-gray-400 text-sm text-center">No games available</p>
+                        {/* <h3 className="[font-family:'Poppins',Helvetica] font-semibold text-white text-lg mb-2">Gaming - Most Played</h3> */}
+                        <p className="[font-family:'Poppins',Helvetica] font-normal text-gray-400 text-sm text-center"> No games available at the moment</p>
                     </div>
                 </div>
             )}

@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { getDailyActivityStats } from "@/lib/api";
+// import { getDailyActivityStats } from "@/lib/api"; // commented — /api/streak/status now provides currentStreak
 
 /**
  * ProgressSection Component
@@ -25,12 +25,12 @@ export const ProgressSection = ({
     onRefresh = () => { }
 }) => {
     const scrollContainerRef = useRef(null);
-    const [activityStats, setActivityStats] = useState(null);
-    const [activityLoading, setActivityLoading] = useState(false);
-    const hasScrolledRef = useRef(false); // Track if we've already scrolled
+    // const [activityStats, setActivityStats] = useState(null); // commented — using streakData.currentStreak from /api/streak/status
+    // const [activityLoading, setActivityLoading] = useState(false); // commented
+    const hasScrolledRef = useRef(false);
 
-    // Extract data from API response - prioritize activity stats if available
-    const currentStreak = activityStats?.currentStreak !== undefined ? activityStats.currentStreak : (streakData?.currentStreak || 0);
+    // currentStreak comes directly from /api/streak/status via Redux
+    const currentStreak = streakData?.currentStreak || 0;
     const streakTree = streakData?.streakTree || [];
     const rewards = streakData?.rewards || [];
     const progress = streakData?.progress || { current: 0, target: 7, percentage: 0 };
@@ -80,13 +80,13 @@ export const ProgressSection = ({
         if (shouldShowChestBox(day)) {
             return {
                 type: 'chest',
-                src: 'https://c.animaapp.com/b23YVSTi/img/2211-w030-n003-510b-p1-510--converted--02-2@2x.png', // Using the actual treasure chest from ChallengeGroupSection
+                src: '/assets/animaapp/b23YVSTi/img/2211-w030-n003-510b-p1-510--converted--02-2-2x.png', // Using the actual treasure chest from ChallengeGroupSection
                 alt: 'Treasure Chest'
             };
         } else {
             return {
                 type: 'leaf',
-                src: 'https://c.animaapp.com/1RFP1hGC/img/image-4016@2x.png', // Using the actual leaf icon from decorative images
+                src: '/assets/animaapp/1RFP1hGC/img/image-4016-2x.png', // Using the actual leaf icon from decorative images
                 alt: 'Leaf with Tick'
             };
         }
@@ -182,24 +182,11 @@ export const ProgressSection = ({
 
     // Preload images for faster display - optimized with link preload and early loading
     useEffect(() => {
-        // Add preconnect for external image domains to establish early connections
-        const preconnectDomains = [
-            'https://c.animaapp.com'
-        ];
-
-        preconnectDomains.forEach(domain => {
-            const link = document.createElement('link');
-            link.rel = 'preconnect';
-            link.href = domain;
-            link.crossOrigin = 'anonymous';
-            document.head.appendChild(link);
-        });
-
         // Add link preload tags for critical images (browser-level preloading)
         const imageUrls = [
             { url: "/tree.png", as: "image" },
-            { url: "https://c.animaapp.com/1RFP1hGC/img/image-4016@2x.png", as: "image" },
-            { url: "https://c.animaapp.com/b23YVSTi/img/2211-w030-n003-510b-p1-510--converted--02-2@2x.png", as: "image" }
+            { url: "/assets/animaapp/1RFP1hGC/img/image-4016-2x.png", as: "image" },
+            { url: "/assets/animaapp/b23YVSTi/img/2211-w030-n003-510b-p1-510--converted--02-2-2x.png", as: "image" }
         ];
 
         imageUrls.forEach(({ url, as }) => {
@@ -220,12 +207,12 @@ export const ProgressSection = ({
         treeImage.fetchPriority = 'high';
 
         const leafImage = new Image();
-        leafImage.src = "https://c.animaapp.com/1RFP1hGC/img/image-4016@2x.png";
+        leafImage.src = "/assets/animaapp/1RFP1hGC/img/image-4016-2x.png";
         leafImage.crossOrigin = 'anonymous';
         leafImage.fetchPriority = 'high';
 
         const chestImage = new Image();
-        chestImage.src = "https://c.animaapp.com/b23YVSTi/img/2211-w030-n003-510b-p1-510--converted--02-2@2x.png";
+        chestImage.src = "/assets/animaapp/b23YVSTi/img/2211-w030-n003-510b-p1-510--converted--02-2-2x.png";
         chestImage.crossOrigin = 'anonymous';
         chestImage.fetchPriority = 'high';
 
@@ -236,33 +223,8 @@ export const ProgressSection = ({
         };
     }, []);
 
-    // Fetch daily activity stats on component mount - optimized for fast loading
-    useEffect(() => {
-        const fetchActivityStats = async () => {
-            try {
-                // Don't block rendering - fetch in background
-                setActivityLoading(true);
-                const token = localStorage.getItem('authToken');
-                if (!token) {
-                    setActivityLoading(false);
-                    return;
-                }
-
-                // Fetch data without blocking UI
-                const response = await getDailyActivityStats(token);
-                if (response && response.success) {
-                    setActivityStats(response.data);
-                }
-            } catch (error) {
-                console.error('Failed to fetch daily activity stats:', error);
-            } finally {
-                setActivityLoading(false);
-            }
-        };
-
-        // Start fetching immediately without blocking
-        fetchActivityStats();
-    }, []);
+    // commented — /api/streak/status already returns currentStreak, no need for separate activity stats call
+    // useEffect(() => { fetchActivityStats(); }, []);
 
     // Auto-scroll to bottom of screen once when navigating to /win-streak
     useEffect(() => {
@@ -319,12 +281,7 @@ export const ProgressSection = ({
             aria-label="Progress tracker"
         >
             <div className="w-full flex justify-center relative px-4 pt-0 ladder-3d" style={{ height: '2940px' }}>
-                {/* Loading State - Non-blocking, show UI while loading */}
-                {activityLoading && !activityStats && (
-                    <div className="absolute top-4 right-4 z-50">
-                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
-                    </div>
-                )}
+                {/* Loading state handled by page.jsx Redux status */}
 
                 {/* No Data State */}
                 {streakData && streakTree.length === 0 && (
@@ -406,32 +363,6 @@ export const ProgressSection = ({
                         </div>
 
 
-                        {/* Milestone Reward Badge - Only show for completed milestone days */}
-                        {dayData.isMilestone && dayData.reward && dayData.isCompleted && (
-                            <div
-                                className="absolute flex items-center gap-2 bg-gradient-to-br from-amber-300 via-yellow-400 to-orange-500 rounded-full px-4 py-2.5 shadow-[0_8px_16px_rgba(251,191,36,0.5),0_4px_8px_rgba(245,158,11,0.4),inset_0_2px_4px_rgba(255,255,255,0.4)] z-10 border-2 border-amber-200 transform hover:scale-105 transition-all duration-300 cursor-pointer"
-                                style={{
-                                    top: `${dayData.top - 28 - (dayData.day === 28 || dayData.day === 29 ? 15 : 0)}px`,
-                                    left: `${dayData.left + 110}px`,
-                                    animation: 'glow 3s ease-in-out infinite'
-                                }}
-                            >
-                                {/* Coins */}
-                                {dayData.reward.coins > 0 && (
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-sm font-bold text-black drop-shadow-sm">{dayData.reward.coins}</span>
-                                        <img className="w-4 h-4 drop-shadow-sm" alt="coin" src="/dollor.png" />
-                                    </div>
-                                )}
-                                {/* XP */}
-                                {dayData.reward.xp > 0 && (
-                                    <div className="flex items-center gap-1 ml-1">
-                                        <span className="text-sm font-bold text-black drop-shadow-sm">{dayData.reward.xp}</span>
-                                        <img className="w-4 h-4 drop-shadow-sm" alt="XP" src="/xp.svg" onError={(e) => { e.target.src = "/xp.png"; }} />
-                                    </div>
-                                )}
-                            </div>
-                        )}
 
                         {/* Day Icons - Show leaves progressively based on current streak */}
                         {/* Only show leaf if day is within current streak range OR is a milestone day */}
@@ -450,7 +381,7 @@ export const ProgressSection = ({
                                         {/* Leaf background - natural proportions - increased size */}
                                         <img
                                             className="w-[140px] h-[100px] object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
-                                            src="https://c.animaapp.com/1RFP1hGC/img/image-4016@2x.png"
+                                            src="/assets/animaapp/1RFP1hGC/img/image-4016-2x.png"
                                             alt="Leaf with Treasure Box"
                                             style={{ aspectRatio: 'auto' }}
                                             loading="eager"
@@ -468,20 +399,16 @@ export const ProgressSection = ({
                                             fetchPriority="high"
                                         />
                                         {/* Show reward amount for milestone days - Coins and XP */}
-                                        {dayData.reward && (dayData.reward.coins > 0 || dayData.reward.xp > 0) && (
+                                        {dayData.reward && (
                                             <div className="absolute -top-1 -right-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full px-2 py-1 shadow-lg border-2 border-yellow-600 transform transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl z-20 flex items-center gap-1">
-                                                {dayData.reward.coins > 0 && (
-                                                    <>
-                                                        <span className="text-xs font-bold text-black">{dayData.reward.coins}</span>
-                                                        <img className="w-3 h-3" alt="coin" src="/dollor.png" />
-                                                    </>
-                                                )}
-                                                {dayData.reward.xp > 0 && (
-                                                    <>
-                                                        <span className="text-xs font-bold text-black">{dayData.reward.xp}</span>
-                                                        <img className="w-3 h-3" alt="XP" src="/xp.svg" onError={(e) => { e.target.src = "/xp.png"; }} />
-                                                    </>
-                                                )}
+                                                <>
+                                                    <span className="text-xs font-bold text-black">{dayData.reward.coins}</span>
+                                                    <img className="w-3 h-3" alt="coin" src="/dollor.png" />
+                                                </>
+                                                <>
+                                                    <span className="text-xs font-bold text-black">{dayData.reward.xp}</span>
+                                                    <img className="w-3 h-3" alt="XP" src="/xp.svg" onError={(e) => { e.target.src = "/xp.png"; }} />
+                                                </>
                                             </div>
                                         )}
                                     </div>
@@ -490,17 +417,11 @@ export const ProgressSection = ({
                                     <div className="relative group">
                                         <img
                                             className="w-[150px] h-[80px] drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
-                                            src="https://c.animaapp.com/1RFP1hGC/img/image-4016@2x.png"
+                                            src="/assets/animaapp/1RFP1hGC/img/image-4016-2x.png"
                                             alt="Leaf with Tick"
                                             loading="eager"
                                             decoding="async"
                                         />
-                                        {/* Show tick mark for completed days */}
-                                        {dayData.isCompleted && (
-                                            <div className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center text-white font-bold text-base bg-gradient-to-br from-emerald-400 via-emerald-500 to-green-700 rounded-full shadow-[0_6px_12px_rgba(16,185,129,0.5),0_3px_6px_rgba(5,150,105,0.4),inset_0_2px_4px_rgba(255,255,255,0.4)] border-2 border-emerald-300 transform transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl">
-                                                ✓
-                                            </div>
-                                        )}
                                         {/* Show "Next" indicator for the current day
                                         {dayData.isCurrent && !dayData.isCompleted && (
                                             <div className="absolute -top-2 -right-2 bg-gradient-to-br from-blue-400 to-blue-500 rounded-full px-2 py-1 shadow-lg">

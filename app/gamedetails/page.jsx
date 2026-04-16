@@ -14,25 +14,17 @@ import { Breakdown } from "./components/Breakdown";
 import { HomeIndicator } from "@/components/HomeIndicator";
 import { SessionStatus } from "./components/SessionStatus";
 import { LoadingOverlay } from "@/components/AndroidOptimizedLoader";
+import { normalizeGameImages, normalizeGameTitle, normalizeGameDescription, normalizeGameGoals, normalizeGameUrl, normalizeGameAmount, getSdkProvider, getTotalPromisedPoints } from "@/lib/gameDataNormalizer";
 
 // Optimized Image Component for Android - using normalizer for both besitos and bitlab
 const OptimizedGameImage = ({ game, isLoaded, onLoad, onError, className }) => {
     // Use normalizer to get images for both besitos and bitlab
-    const { normalizeGameImages, normalizeGameTitle, getSdkProvider } = require('@/lib/gameDataNormalizer');
     const images = normalizeGameImages(game);
     const provider = getSdkProvider(game);
     const imageUrl = images.large_image || images.banner || images.square_image || images.icon ||
         game?.images?.large_image || game?.large_image || game?.image || game?.square_image || game?.images?.banner;
 
     const displayTitle = normalizeGameTitle(game);
-
-    console.log('🖼️ OptimizedGameImage - Image URLs:', {
-        provider,
-        normalizedImages: images,
-        finalImageUrl: imageUrl,
-        rawCreatives: game?.besitosRawData?.creatives,
-        rawIconUrl: game?.besitosRawData?.icon_url
-    });
 
     if (!imageUrl) return null;
 
@@ -62,6 +54,8 @@ import sessionManager from "@/lib/sessionManager";
 import { transferGameEarnings, getBatchStatus } from "@/lib/api";
 import { fetchGameById, fetchUserData } from "@/lib/redux/slice/gameSlice";
 import { fetchWalletTransactions, fetchFullWalletTransactions } from "@/lib/redux/slice/walletTransactionsSlice";
+import { onGameDownload } from "@/lib/adjustService";
+import { incrementAndGet } from "@/lib/adjustCounters";
 
 /**
  * Game Details Page - Main content component
@@ -269,7 +263,6 @@ function GameDetailsContent() {
         if (!rawGame) return null;
 
         // Use normalizer to get correct values for both besitos and bitlab
-        const { normalizeGameImages, normalizeGameTitle, normalizeGameDescription, normalizeGameGoals, normalizeGameUrl, normalizeGameAmount, getSdkProvider, getTotalPromisedPoints } = require('@/lib/gameDataNormalizer');
 
         // Use besitosRawData if available; else use rawGame (e.g. BitLabs offer from localStorage)
         const rawData = rawGame.besitosRawData || rawGame;
@@ -397,7 +390,6 @@ function GameDetailsContent() {
     useEffect(() => {
         if (displayGame) {
             // Use normalizer to get images for both besitos and bitlab
-            const { normalizeGameImages } = require('@/lib/gameDataNormalizer');
             const images = normalizeGameImages(displayGame);
             const imageUrl = images.large_image || images.banner || images.square_image || images.icon ||
                 displayGame.images?.large_image || displayGame.large_image || displayGame.image ||
@@ -544,11 +536,13 @@ function GameDetailsContent() {
             const gameToDownload = displayGame || selectedGame;
             try {
                 // Use normalizer to get correct URL for both besitos and bitlab
-                const { normalizeGameUrl } = require('@/lib/gameDataNormalizer');
                 const downloadUrl = normalizeGameUrl(gameToDownload) || gameToDownload?.url || gameToDownload?.details?.downloadUrl;
                 const gameWithUrl = downloadUrl ? { ...gameToDownload, url: downloadUrl } : gameToDownload;
 
                 await handleGameDownload(gameWithUrl);
+
+                // Track game download milestone (Adjust) — counter seeded from server at login
+                try { onGameDownload(incrementAndGet("gameDownload")); } catch { /* never block download flow */ }
 
                 // Refresh downloaded games list after a short delay to allow server to update
                 // This ensures the button updates to "Start Playing" after download
@@ -676,6 +670,9 @@ function GameDetailsContent() {
             // Update local state - only mark as fully claimed if claiming all rewards
             // Otherwise, keep session active for remaining rewards
             const isFullyClaimed = claimData.coins === undefined || coinsToClaim >= sessionData.sessionCoins;
+
+            // Adjust: track game earnings (no per-batch event — download events tracked separately)
+            // Game download milestone events are fired from the download button handler
             setSessionData(prev => ({
                 ...prev,
                 isClaimed: isFullyClaimed,
@@ -1024,7 +1021,7 @@ function GameDetailsContent() {
                                     <img
                                         className="w-[19px]  mb-[2px] h-[20px] object-contain flex-shrink-0"
                                         alt="XP icon"
-                                        src="https://c.animaapp.com/ltgoa7L3/img/pic-7.svg"
+                                        src="/assets/animaapp/ltgoa7L3/img/pic-7.svg"
                                     />
                                 </span>
                             </span>

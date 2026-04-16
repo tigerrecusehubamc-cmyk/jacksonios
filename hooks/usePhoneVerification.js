@@ -28,10 +28,7 @@ export const usePhoneVerification = () => {
 
     if (!phoneNumber || !countryCode) {
       setError("Phone number and country code are required");
-      return {
-        success: false,
-        error: "Phone number and country code are required",
-      };
+      return { success: false, error: "Phone number and country code are required" };
     }
 
     setIsVerifying(true);
@@ -44,8 +41,7 @@ export const usePhoneVerification = () => {
 
       // Validate format
       if (!validateE164Phone(formattedPhone)) {
-        const errorMsg =
-          "Invalid phone number format. Please include country code.";
+        const errorMsg = "Invalid phone number format. Please include country code.";
         setError(errorMsg);
         return { success: false, error: errorMsg };
       }
@@ -59,14 +55,10 @@ export const usePhoneVerification = () => {
         return {
           success: true,
           verificationId,
-          message:
-            response?.message || "Phone verification initiated successfully",
+          message: response?.message || "Phone verification initiated successfully",
         };
       } else {
-        const errorMsg =
-          response?.error?.message ||
-          response?.message ||
-          "Failed to verify phone number";
+        const errorMsg = response?.error?.message || response?.message || "Failed to verify phone number";
         setError(errorMsg);
         return { success: false, error: errorMsg };
       }
@@ -97,8 +89,7 @@ export const usePhoneVerification = () => {
 
     // Validate format
     if (!validateE164Phone(formattedPhone)) {
-      const errorMsg =
-        "Invalid phone number format. Must be in E.164 format (e.g., +1234567890)";
+      const errorMsg = "Invalid phone number format. Must be in E.164 format (e.g., +1234567890)";
       setError(errorMsg);
       return { success: false, error: errorMsg };
     }
@@ -116,14 +107,10 @@ export const usePhoneVerification = () => {
         return {
           success: true,
           verificationId,
-          message:
-            response?.message || "Phone verification initiated successfully",
+          message: response?.message || "Phone verification initiated successfully",
         };
       } else {
-        const errorMsg =
-          response?.error?.message ||
-          response?.message ||
-          "Failed to verify phone number";
+        const errorMsg = response?.error?.message || response?.message || "Failed to verify phone number";
         setError(errorMsg);
         return { success: false, error: errorMsg };
       }

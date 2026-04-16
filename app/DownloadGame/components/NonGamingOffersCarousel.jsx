@@ -96,7 +96,7 @@ const NonGamingOffersCarousel = ({ offers = [], className = "" }) => {
                                     <img
                                         className="ml-1.5 h-[15px] w-[15px]"
                                         alt="$"
-                                        src="https://c.animaapp.com/xCaMzUYh/img/image-3937-2@2x.png"
+                                        src="/assets/animaapp/xCaMzUYh/img/image-3937-2-2x.png"
                                         loading="eager"
                                         decoding="async"
                                         width="15"

@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { fetchUserData, fetchGamesBySection, loadUserDataFromCache } from "@/lib/redux/slice/gameSlice";
 import { useAuth } from "@/contexts/AuthContext";
+import { normalizeGameImages, normalizeGameTitle, normalizeGameCategory, normalizeGameAmount, normalizeGameUrl } from "@/lib/gameDataNormalizer";
 import GameItemCard from "./GameItemCard";
 import WatchAdCard from "./WatchAdCard";
 // Removed getAgeGroupFromProfile and getGenderFromProfile - now passing user object directly
@@ -14,25 +15,25 @@ const nonGamingOffers = [
   {
     id: 1,
     name: "Albert- Mobile Banking",
-    image: "https://c.animaapp.com/xCaMzUYh/img/image-3982@2x.png",
-    bgImage: "https://c.animaapp.com/xCaMzUYh/img/rectangle-74@2x.png",
-    bottomBg: "https://c.animaapp.com/xCaMzUYh/img/rectangle-76@2x.png",
+    image: "/assets/animaapp/xCaMzUYh/img/image-3982-2x.png",
+    bgImage: "/assets/animaapp/xCaMzUYh/img/rectangle-74-2x.png",
+    bottomBg: "/assets/animaapp/xCaMzUYh/img/rectangle-76-2x.png",
     earnAmount: "Earn upto 100",
   },
   {
     id: 2,
     name: "Chime- Mobile Banking",
-    image: "https://c.animaapp.com/xCaMzUYh/img/image-3980@2x.png",
-    bgImage: "https://c.animaapp.com/xCaMzUYh/img/rectangle-73-1@2x.png",
-    bottomBg: "https://c.animaapp.com/xCaMzUYh/img/rectangle-74-1@2x.png",
+    image: "/assets/animaapp/xCaMzUYh/img/image-3980-2x.png",
+    bgImage: "/assets/animaapp/xCaMzUYh/img/rectangle-73-1-2x.png",
+    bottomBg: "/assets/animaapp/xCaMzUYh/img/rectangle-74-1-2x.png",
     earnAmount: "Earn upto 100",
   },
   {
     id: 3,
     name: "Albert- Mobile Banking",
-    image: "https://c.animaapp.com/xCaMzUYh/img/image-3982@2x.png",
-    bgImage: "https://c.animaapp.com/xCaMzUYh/img/rectangle-74@2x.png",
-    bottomBg: "https://c.animaapp.com/xCaMzUYh/img/rectangle-76@2x.png",
+    image: "/assets/animaapp/xCaMzUYh/img/image-3982-2x.png",
+    bgImage: "/assets/animaapp/xCaMzUYh/img/rectangle-74-2x.png",
+    bottomBg: "/assets/animaapp/xCaMzUYh/img/rectangle-76-2x.png",
     earnAmount: "Earn upto 100",
   },
 ];
@@ -262,7 +263,6 @@ export const GameListSection = ({ searchQuery = "", showSearch = false }) => {
 
   // Process games from new API into the same format - using normalizer for both besitos and bitlab
   const processNewApiGames = (games) => {
-    const { normalizeGameImages, normalizeGameTitle, normalizeGameCategory, normalizeGameAmount, normalizeGameUrl } = require('@/lib/gameDataNormalizer');
     const userId = getUserId();
 
     return games.map((game, index) => {
@@ -300,7 +300,7 @@ export const GameListSection = ({ searchQuery = "", showSearch = false }) => {
         genre: category,
         subtitle: "Available to Download",
         // Use normalized images
-        image: images.square_image || images.icon || game.images?.banner || game.images?.large_image || game.details?.square_image || game.details?.image || "https://c.animaapp.com/DfFsihWg/img/image-3930@2x.png",
+        image: images.square_image || images.icon || game.images?.banner || game.images?.large_image || game.details?.square_image || game.details?.image || "/assets/animaapp/DfFsihWg/img/image-3930-2x.png",
         overlayImage: images.icon || images.square_image || game.details?.image || game.details?.square_image,
         amount: displayCoins ? `$${displayCoins}` : "$0",
         score: String(displayCoins),
@@ -348,7 +348,7 @@ export const GameListSection = ({ searchQuery = "", showSearch = false }) => {
         name: cleanGameName,
         genre: game.categories?.[0]?.name || "Game",
         subtitle: "Available to Download",
-        image: game.square_image || game.image || "https://c.animaapp.com/DfFsihWg/img/image-3930@2x.png",
+        image: game.square_image || game.image || "/assets/animaapp/DfFsihWg/img/image-3930-2x.png",
         overlayImage: game.image || game.square_image,
         amount: displayCoins,
         score: displayCoins,
@@ -513,7 +513,7 @@ export const GameListSection = ({ searchQuery = "", showSearch = false }) => {
               <Image
                 className="relative w-5 h-5"
                 alt="Badge check"
-                src="https://c.animaapp.com/3mn7waJw/img/badgecheck.svg"
+                src="/assets/animaapp/3mn7waJw/img/badgecheck.svg"
                 width={20}
                 height={20}
                 loading="eager"

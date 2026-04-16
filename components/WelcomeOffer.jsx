@@ -368,7 +368,7 @@ export const WelcomeOffer = () => {
             <img
               className="absolute w-[109px] h-[109px] top-[45px] right-[2px] object-cover"
               alt="Png clipart buried"
-              src="https://c.animaapp.com/iuW6cMRd/img/png-clipart-buried-treasure-treasure-miscellaneous-treasure-tran@2x.png"
+              src="/assets/animaapp/iuW6cMRd/img/png-clipart-buried-treasure-treasure-miscellaneous-treasure-tran-2x.png"
               loading="eager"
               decoding="async"
               width={109}
@@ -385,7 +385,7 @@ export const WelcomeOffer = () => {
               <img
                 className="w-6 h-6"
                 alt="Information circle"
-                src="https://c.animaapp.com/iuW6cMRd/img/informationcircle.svg"
+                src="/assets/animaapp/iuW6cMRd/img/informationcircle.svg"
                 loading="eager"
                 decoding="async"
                 width={24}
@@ -407,7 +407,7 @@ export const WelcomeOffer = () => {
             <img
               className={`relative w-5 h-5 transition-all duration-300 ${isExpanded ? "rotate-90" : ""} group-hover:translate-x-1`}
               alt="Arrow"
-              src="https://c.animaapp.com/iuW6cMRd/img/arrow.svg"
+              src="/assets/animaapp/iuW6cMRd/img/arrow.svg"
               loading="eager"
               decoding="async"
               width={20}
@@ -488,7 +488,7 @@ export const WelcomeOffer = () => {
                   20
                 </span>
                 <img
-                  src="https://c.animaapp.com/mHRmJGe1/img/pic.svg"
+                  src="/assets/animaapp/mHRmJGe1/img/pic.svg"
                   alt="XP"
                   className="w-5 h-5 object-contain"
                   loading="eager"

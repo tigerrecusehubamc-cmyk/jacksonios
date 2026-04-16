@@ -22,6 +22,8 @@ import {
   getCashbackOffers,
   getShoppingOffers,
   getBitlabsSurveys,
+  getWalkathonStatus,
+  getWalkathonLeaderboard,
 } from "@/lib/api";
 import { setDealsCache, clearDealsCache } from "@/lib/dealsCache";
 import { getDeviceMetadata, clearVerisoulSessionId } from "@/lib/deviceUtils";
@@ -1140,6 +1142,63 @@ export function AuthProvider({ children }) {
       }
     };
     prefetchDailyRewards();
+    return () => controller.abort();
+  }, [token]);
+
+  // Prefetch Walkathon data so it's ready on navigation
+  useEffect(() => {
+    if (!token) return;
+    const controller = new AbortController();
+    const prefetchWalkathon = async () => {
+      try {
+        const existing = localStorage.getItem("walkathon_cache");
+        if (existing) {
+          try {
+            const parsed = JSON.parse(existing);
+            if (parsed?.cacheTime && Date.now() - parsed.cacheTime < 5 * 60 * 1000) {
+              return; // Fresh cache exists
+            }
+          } catch (_) {}
+        }
+
+        const data = await getWalkathonStatus(token);
+        if (data?.success && data?.data?.hasActiveWalkathon) {
+          const { data: walkathonData } = data;
+          const cacheData = {
+            data: {
+              walkathon: walkathonData.walkathon,
+              progress: walkathonData.userProgress?.progress || null,
+              leaderboard: [],
+              userRank: walkathonData.userProgress?.userRank || null,
+              timeRemaining: walkathonData.userProgress?.timeRemaining || null,
+              isJoined: walkathonData.userProgress?.hasProgress || false,
+              isEligible: walkathonData.eligibility?.isEligible || false,
+            },
+            cacheTime: Date.now(),
+          };
+          localStorage.setItem("walkathon_cache", JSON.stringify(cacheData));
+
+          // Also prefetch leaderboard in background
+          const leaderboardData = await getWalkathonLeaderboard(token);
+          if (leaderboardData?.success && leaderboardData?.data) {
+            try {
+              const cached = localStorage.getItem("walkathon_cache");
+              if (cached) {
+                const parsed = JSON.parse(cached);
+                if (parsed?.data) {
+                  parsed.data.leaderboard = leaderboardData.data.leaderboard || [];
+                  parsed.data.totalParticipants = leaderboardData.data.totalParticipants;
+                  localStorage.setItem("walkathon_cache", JSON.stringify(parsed));
+                }
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (_) {
+        // ignore prefetch errors
+      }
+    };
+    prefetchWalkathon();
     return () => controller.abort();
   }, [token]);
 

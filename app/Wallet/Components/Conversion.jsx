@@ -176,7 +176,7 @@ export const Conversion = () => {
             setTimeLeft((prevTime) => {
                 if (prevTime <= 1) {
                     clearInterval(timerRef.current);
-                    // Show conversion result after timer completes
+                    // Timer completed - settings are already loaded (fetched before timer started)
                     calculateConversion();
                     setTimerFlowState("idle");
                     return 0;
@@ -212,10 +212,10 @@ export const Conversion = () => {
             setIsLoadingSettings(false);
         }
 
-        // Subscribers skip ads — show conversion immediately (same as SpinWheel VIP path)
+        // Subscribers skip ads — wait for settings to load first
         if (vipData.isVipActive) {
-            setAdFlowState("completed");
-            calculateConversion();
+            setAdFlowState("loading");
+            setConversionAmount("...");
             return;
         }
 
@@ -239,8 +239,8 @@ export const Conversion = () => {
 
             await showAd({
                 onReward: () => {
-                    setAdFlowState("completed");
-                    calculateConversion();
+                    setAdFlowState("loading");
+                    setConversionAmount("...");
                 },
                 onError: (errorMsg) => {
                     setError(errorMsg || 'Failed to show ad. Please try again.');
@@ -299,6 +299,16 @@ export const Conversion = () => {
             setAdFlowState("idle");
         }
     }, [adError]);
+
+    // Calculate conversion when settings are loaded (handles VIP and non-VIP flows)
+    useEffect(() => {
+        if (!isLoadingSettings && conversionSettings && conversionAmount === "...") {
+            // Settings just finished loading and we were showing loading state
+            // This handles both VIP (no ad) and non-VIP (after ad) flows
+            setAdFlowState("completed");
+            calculateConversion();
+        }
+    }, [isLoadingSettings, conversionSettings, conversionAmount, adFlowState]);
 
     // Cleanup timer on component unmount
     useEffect(() => {
@@ -404,7 +414,7 @@ export const Conversion = () => {
                         <img
                             className="w-[23px] h-[23px] flex-shrink-0"
                             alt="Coin"
-                            src="https://c.animaapp.com/GgG4W9O5/img/image-3937@2x.png"
+                            src="/assets/animaapp/GgG4W9O5/img/image-3937-2x.png"
                             loading="eager"
                             decoding="async"
                             width={23}
@@ -501,7 +511,7 @@ export const Conversion = () => {
                                 <img
                                     className="w-7 h-7 mr-2"
                                     alt="Convert now icon"
-                                    src="https://c.animaapp.com/GgG4W9O5/img/image-3941@2x.png"
+                                    src="/assets/animaapp/GgG4W9O5/img/image-3941-2x.png"
                                     loading="eager"
                                     decoding="async"
                                     width={28}
@@ -546,20 +556,6 @@ export const Conversion = () => {
                         </div>
                     </div>
                 )}
-                <section className="mt-2">
-                    <div className="w-full max-w-[335px] sm:max-w-[375px] mx-auto">
-                        <div className="w-full p-4 sm:p-6 rounded-lg bg-[linear-gradient(to_right,rgba(255,255,255,0.25)_0%,rgba(255,255,255,0.1)_50%,rgba(0,0,0,0.9)_100%)] shadow-lg border border-white/20">
-                            <div className="flex flex-col justify-start gap-2">
-                                <h2 className="[font-family:'Poppins',Helvetica] font-semibold text-[#f4f3fc] text-[14px] sm:text-[14px]">
-                                    Disclaimer
-                                </h2>
-                                <p className="[font-family:'Poppins',Helvetica] font-light text-[#FFFFFF] text-[13px] sm:text-base text-start leading-5 sm:leading-6">
-                                    Points are for loyalty use only and do not reflect real-world currency
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
             </div>
         </div>
     );

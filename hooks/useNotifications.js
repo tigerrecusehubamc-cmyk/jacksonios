@@ -38,7 +38,10 @@ export const useNotifications = (token) => {
       setLoading(true);
       setError(null);
 
+      
+
       const response = await getUserNotifications(token);
+
 
       if (response && response.success && response.data) {
         // Filter out dismissed notifications.
@@ -49,22 +52,23 @@ export const useNotifications = (token) => {
           ? response.data.filter((notif) => {
               if (notif.dismissed) return false;
               if (notificationsReenabledAt && notif.createdAt) {
-                return (
-                  new Date(notif.createdAt).getTime() >=
-                  notificationsReenabledAt
-                );
+                return new Date(notif.createdAt).getTime() >= notificationsReenabledAt;
               }
               return true;
             })
           : [];
 
+        
+
         setNotifications(unreadNotifications);
       } else if (response && !response.success) {
+       
         setError(
-          response.error || response.message || "Failed to fetch notifications",
+          response.error || response.message || "Failed to fetch notifications"
         );
         setNotifications([]);
       } else {
+        
         setNotifications([]);
       }
     } catch (err) {
@@ -85,19 +89,19 @@ export const useNotifications = (token) => {
       if (response.success) {
         // Remove dismissed notification from state
         setNotifications((prev) =>
-          prev.filter((notif) => notif._id !== notificationId),
+          prev.filter((notif) => notif._id !== notificationId)
         );
       } else {
         // Even if API call fails, remove from UI to prevent re-showing
         setNotifications((prev) =>
-          prev.filter((notif) => notif._id !== notificationId),
+          prev.filter((notif) => notif._id !== notificationId)
         );
       }
     } catch (error) {
       console.error("Error dismissing notification:", error);
       // Remove from UI anyway to prevent showing again
       setNotifications((prev) =>
-        prev.filter((notif) => notif._id !== notificationId),
+        prev.filter((notif) => notif._id !== notificationId)
       );
     }
   };

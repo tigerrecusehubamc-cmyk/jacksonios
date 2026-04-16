@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { createTicket, fetchUserGames, clearErrors, clearSuccessStates } from "@/lib/redux/slice/ticketSlice";
+import { createTicket, fetchUserGames, clearErrors, clearSuccessStates, fetchUserTickets, fetchTicketStats } from "@/lib/redux/slice/ticketSlice";
 import { fetchUserData } from "@/lib/redux/slice/gameSlice";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserId } from "@/lib/gameDownloadUtils";
@@ -45,6 +45,10 @@ export const RaiseATicket = () => {
     const [errors, setErrors] = useState({});
     const [gameOptions, setGameOptions] = useState([]);
     const [loadingGames, setLoadingGames] = useState(true);
+
+    // ============================================================================
+    // KEYBOARD HANDLING
+    // ============================================================================
 
     // ============================================================================
     // REFS & ROUTER
@@ -115,6 +119,15 @@ export const RaiseATicket = () => {
         };
     }, [dispatch]);
 
+    // Prefetch tickets on component mount to avoid loading when user clicks "View All"
+    useEffect(() => {
+        if (token) {
+            // Fetch tickets in background so they're ready when user navigates to ticket list
+            dispatch(fetchUserTickets({ filters: { page: 1, limit: 100 }, token }));
+            dispatch(fetchTicketStats({ token }));
+        }
+    }, [dispatch, token]);
+
     // ============================================================================
     // API FUNCTIONS - COMMENTED OUT TO USE REDUX STORE INSTEAD
     // ============================================================================
@@ -149,10 +162,6 @@ export const RaiseATicket = () => {
     // Validation functions
     const validateForm = () => {
         const newErrors = {};
-
-        if (!selectedGame) {
-            newErrors.game = "Please select a game";
-        }
 
         if (!description.trim()) {
             newErrors.description = "Please describe the issue";
@@ -295,6 +304,10 @@ export const RaiseATicket = () => {
             const resultAction = await dispatch(createTicket({ ticketData, token, profile }));
 
             if (createTicket.fulfilled.match(resultAction)) {
+                // Refetch tickets to show the newly created ticket in the list
+                dispatch(fetchUserTickets({ filters: { page: 1, limit: 100 }, token }));
+                dispatch(fetchTicketStats({ token }));
+
                 // Fast redirect on success
                 router.push(`/Ticket/success?ticketId=${resultAction.payload.ticketId}`);
             } else {
@@ -309,8 +322,8 @@ export const RaiseATicket = () => {
     }, [validateForm, isSubmitting, selectedGame, description, category, uploadedFiles, router, dispatch, token]);
 
     const isFormValid = useMemo(() => {
-        return selectedGame && description.trim().length > 0 && getWordCount() <= 200;
-    }, [selectedGame, description, getWordCount]);
+        return description.trim().length > 0 && getWordCount() <= 200;
+    }, [description, getWordCount]);
 
     return (
         <div className="flex flex-col w-full h-screen bg-black">
@@ -363,7 +376,7 @@ export const RaiseATicket = () => {
                 {/* Game Selection */}
                 <div className="flex flex-col items-start gap-1 w-full">
                     <label className="[font-family:'Poppins',Helvetica] font-medium text-neutral-400 text-sm tracking-[0] leading-[normal]">
-                        Game <span className="text-red-400">*</span>
+                        Game
                     </label>
 
                     <div className="relative w-full" ref={dropdownRef}>

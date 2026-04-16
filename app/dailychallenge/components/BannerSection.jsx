@@ -195,7 +195,7 @@ export const BannerSection = ({ calendar, today, onDayClick, onPreviousMonth, on
                         <img
                             className="w-full h-full"
                             alt=""
-                            src="https://c.animaapp.com/b23YVSTi/img/group-1@2x.png"
+                            src="/assets/animaapp/b23YVSTi/img/group-1-2x.png"
                             loading="eager"
                             decoding="async"
                             width="30"
@@ -234,7 +234,7 @@ export const BannerSection = ({ calendar, today, onDayClick, onPreviousMonth, on
                         <img
                             className="w-full h-full"
                             alt=""
-                            src="https://c.animaapp.com/b23YVSTi/img/group-2@2x.png"
+                            src="/assets/animaapp/b23YVSTi/img/group-2-2x.png"
                             loading="eager"
                             decoding="async"
                             width="30"

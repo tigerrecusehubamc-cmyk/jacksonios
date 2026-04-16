@@ -145,7 +145,7 @@ export const OptInModal = ({
                             {/* <img
                                 className="w-11 h-11 aspect-[1] object-cover"
                                 alt="Game controller icon"
-                                src="https://c.animaapp.com/hVj7UvM7/img/image-4075@2x.png"
+                                src="/assets/animaapp/hVj7UvM7/img/image-4075-2x.png"
                             /> */}
                             <div className="flex-1">
                                 <h2 className="[font-family:'Poppins',Helvetica] font-semibold text-white text-base tracking-[0] leading-[normal]">
@@ -195,7 +195,7 @@ export const OptInModal = ({
                                             <img
                                                 className="w-[19px] h-[20px]"
                                                 alt="Reward Icon"
-                                                src="https://c.animaapp.com/hVj7UvM7/img/image-3938@2x.png"
+                                                src="/assets/animaapp/hVj7UvM7/img/image-3938-2x.png"
                                             />
                                         </div>
                                     </div>
@@ -206,7 +206,7 @@ export const OptInModal = ({
                                             <img
                                                 className="w-[14px] h-[14px] flex-shrink-0"
                                                 alt="Clock"
-                                                src="https://c.animaapp.com/hVj7UvM7/img/clock.svg"
+                                                src="/assets/animaapp/hVj7UvM7/img/clock.svg"
                                             />
                                             <span className="font-normal text-[11px] text-[#f4f3fc]">
                                                 72 hrs
@@ -250,7 +250,7 @@ export const OptInModal = ({
                                             <img
                                                 className="w-[19px] h-[20px]"
                                                 alt="Reward Icon"
-                                                src="https://c.animaapp.com/hVj7UvM7/img/image-3938@2x.png"
+                                                src="/assets/animaapp/hVj7UvM7/img/image-3938-2x.png"
                                             />
                                         </div>
                                     </div>
@@ -261,7 +261,7 @@ export const OptInModal = ({
                                             <img
                                                 className="w-[14px] h-[14px] flex-shrink-0"
                                                 alt="Clock"
-                                                src="https://c.animaapp.com/hVj7UvM7/img/clock.svg"
+                                                src="/assets/animaapp/hVj7UvM7/img/clock.svg"
                                             />
                                             <span className="font-normal text-[11px] text-[#f4f3fc]">
                                                 No limit
@@ -310,7 +310,7 @@ export const OptInModal = ({
                             <img
                                 className="absolute top- w-[303px] h-[141px]"
                                 alt="Card background"
-                                src="https://c.animaapp.com/hVj7UvM7/img/card@2x.png"
+                                src="/assets/animaapp/hVj7UvM7/img/card-2x.png"
                             />
                             <ul className="absolute top-[18px] left-[15px] w-[273px] [font-family:'Poppins',Helvetica] font-normal text-neutral-400 text-sm tracking-[0] leading-[normal] list-none">
                                 <li>

@@ -8,23 +8,23 @@ const NotificationBanner = ({ notification, onDismiss }) => {
         switch (type) {
             case "success":
                 return {
-                    backgroundColor: "#10b981",
+                    borderColor: "#10b981",
                     color: "#ffffff",
                 };
             case "warning":
                 return {
-                    backgroundColor: "#f59e0b",
+                    borderColor: "#f59e0b",
                     color: "#ffffff",
                 };
             case "error":
                 return {
-                    backgroundColor: "#ef4444",
+                    borderColor: "#ef4444",
                     color: "#ffffff",
                 };
             case "info":
             default:
                 return {
-                    backgroundColor: "#3b82f6",
+                    borderColor: "#3b82f6",
                     color: "#ffffff",
                 };
         }
@@ -34,21 +34,28 @@ const NotificationBanner = ({ notification, onDismiss }) => {
 
     return (
         <div
-            className="fixed top-0 left-0 right-0 z-[9999] px-4 py-3 shadow-lg"
-            style={{ backgroundColor: style.backgroundColor }}
+            className="fixed top-4 left-1/2 z-[9999] w-[min(100%,650px)] -translate-x-1/2 px-4 py-3 shadow-2xl backdrop-blur-xl bg-slate-900/95 border border-slate-700/80 rounded-2xl"
+            style={{ borderLeftWidth: 4, borderLeftStyle: 'solid', borderLeftColor: style.borderColor }}
         >
-            <div className="max-w-md mx-auto flex items-center justify-between gap-3">
-                <p
-                    className="flex-1 text-sm font-medium"
-                    style={{ color: style.color }}
-                >
-                    {notification.message}
-                </p>
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                    <div
+                        className="flex h-9 w-9 items-center justify-center rounded-2xl"
+                        style={{ backgroundColor: style.borderColor + '22' }}
+                    >
+                        <span className="text-sm font-semibold text-white">!</span>
+                    </div>
+                    <p
+                        className="text-sm font-medium text-white leading-5"
+                        style={{ color: style.color }}
+                    >
+                        {notification.message}
+                    </p>
+                </div>
                 <button
                     onClick={() => onDismiss(notification._id)}
-                    className="flex-shrink-0 p-1 hover:opacity-80 transition-opacity"
+                    className="flex-shrink-0 rounded-full p-2 text-white transition hover:bg-white/10"
                     aria-label="Close notification"
-                    style={{ color: style.color }}
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"

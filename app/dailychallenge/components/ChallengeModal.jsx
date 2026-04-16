@@ -13,8 +13,16 @@ import {
 } from "../../../lib/redux/slice/dailyChallengeSlice";
 import { SimpleSpinWheel } from "./SimpleSpinWheel";
 import { spinForChallenge } from "../../../lib/api";
+import { onDailyChallengeComplete } from "../../../lib/adjustService";
+import { incrementAndGet } from "../../../lib/adjustCounters";
 import { useAppLovinAds } from "@/hooks/useAppLovinAds";
 import MockAdOverlay from "@/app/games/components/MockAdOverlay";
+import {
+    fetchWalletScreen,
+    fetchWalletTransactions,
+    fetchFullWalletTransactions,
+} from "../../../lib/redux/slice/walletTransactionsSlice";
+import { fetchProfileStats } from "../../../lib/redux/slice/profileSlice";
 
 export const ChallengeModal = ({
     isOpen,
@@ -148,6 +156,9 @@ export const ChallengeModal = ({
                 return;
             }
 
+            // Track daily challenge completion milestone (Adjust) — counter seeded from server at login
+            try { onDailyChallengeComplete(incrementAndGet("challenge"), today?.challenge?.id); } catch { /* never block completion flow */ }
+
             const now = new Date();
             const year = now.getFullYear();
             const month = now.getMonth();
@@ -157,6 +168,14 @@ export const ChallengeModal = ({
                 dispatch(fetchToday({ token: effectiveToken, force: true })),
                 dispatch(fetchBonusDays({ token: effectiveToken, force: true })),
             ]);
+
+            // Fire wallet + transaction refresh in background — non-blocking, UI shows success immediately
+            Promise.all([
+                dispatch(fetchWalletScreen({ token: effectiveToken, force: true })),
+                dispatch(fetchProfileStats({ token: effectiveToken, force: true })),
+                dispatch(fetchWalletTransactions({ token: effectiveToken, limit: 5, background: true })),
+                dispatch(fetchFullWalletTransactions({ token: effectiveToken, page: 1, limit: 20, type: "all", background: true })),
+            ]).catch(() => {});
 
             setShowCompletionSuccess(true);
         } catch (e) {
@@ -548,6 +567,14 @@ export const ChallengeModal = ({
                     dispatch(fetchToday({ token, force: true })),
                     dispatch(fetchBonusDays({ token, force: true })),
                 ]);
+
+                // Fire wallet + transaction refresh in background — non-blocking
+                Promise.all([
+                    dispatch(fetchWalletScreen({ token, force: true })),
+                    dispatch(fetchProfileStats({ token, force: true })),
+                    dispatch(fetchWalletTransactions({ token, limit: 5, background: true })),
+                    dispatch(fetchFullWalletTransactions({ token, page: 1, limit: 20, type: "all", background: true })),
+                ]).catch(() => {});
             }
 
             onClose();

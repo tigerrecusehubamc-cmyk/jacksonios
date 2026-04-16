@@ -20,7 +20,7 @@ export const DailyRewardsSection = ({ weekData, isCurrentWeek, isFutureWeek, onC
                 buttonBg: "bg-[#2a2f50]",
                 buttonText: "CLAIMED",
                 buttonTextColor: "text-[#8b92de]",
-                image: "https://c.animaapp.com/ciot1lOr/img/2211-w030-n003-510b-p1-510--converted--02-1-3@2x.png"
+                image: "/assets/animaapp/ciot1lOr/img/2211-w030-n003-510b-p1-510--converted--02-1-3-2x.png"
             },
             claimable: {
                 bgColor: "bg-[linear-gradient(180deg,rgba(18,24,60,1)_0%,rgba(18,24,60,1)_100%)]",
@@ -28,22 +28,22 @@ export const DailyRewardsSection = ({ weekData, isCurrentWeek, isFutureWeek, onC
                 buttonText: "CLAIM NOW",
                 buttonTextColor: "text-white",
                 image: dayNumber === 7 && isBigRewardEligible
-                    ? "https://c.animaapp.com/ciot1lOr/img/golden-treasure-chest.png" // Big reward chest
-                    : "https://c.animaapp.com/ciot1lOr/img/2211-w030-n003-510b-p1-510--converted--02-1-3@2x.png"
+                    ? "/treasure-chest.png" // Big reward chest
+                    : "/assets/animaapp/ciot1lOr/img/2211-w030-n003-510b-p1-510--converted--02-1-3-2x.png"
             },
             missed: {
                 bgColor: "bg-[linear-gradient(180deg,rgba(18,24,60,1)_0%,rgba(18,24,60,1)_100%)]",
                 buttonBg: "bg-[#2a2f50]",
                 buttonText: "UNCLAIMED",
                 buttonTextColor: "text-[#8b92de]",
-                image: "https://c.animaapp.com/ciot1lOr/img/2211-w030-n003-510b-p1-510--converted--02-1-3@2x.png"
+                image: "/assets/animaapp/ciot1lOr/img/2211-w030-n003-510b-p1-510--converted--02-1-3-2x.png"
             },
             locked: {
                 bgColor: "bg-[linear-gradient(180deg,rgba(18,24,60,1)_0%,rgba(18,24,60,1)_100%)]",
                 buttonBg: "bg-[linear-gradient(331deg,rgba(237,131,0,1)_0%,rgba(237,166,0,1)_100%)]",
                 buttonText: "LOCKED",
                 buttonTextColor: "text-[#ffffff66]",
-                image: "https://c.animaapp.com/ciot1lOr/img/2211-w030-n003-510b-p1-510--converted--02-2-1@2x.png"
+                image: "/assets/animaapp/ciot1lOr/img/2211-w030-n003-510b-p1-510--converted--02-2-1-2x.png"
             }
         };
 
@@ -52,7 +52,7 @@ export const DailyRewardsSection = ({ weekData, isCurrentWeek, isFutureWeek, onC
             buttonBg: "bg-[#ef890f4c]",
             buttonText: "LOCKED",
             buttonTextColor: "text-[#ffffff66]",
-            image: "https://c.animaapp.com/ciot1lOr/img/2211-w030-n003-510b-p1-510--converted--02-2-1@2x.png"
+            image: "/assets/animaapp/ciot1lOr/img/2211-w030-n003-510b-p1-510--converted--02-2-1-2x.png"
         };
     }, []);
 
@@ -598,7 +598,7 @@ export const DailyRewardsSection = ({ weekData, isCurrentWeek, isFutureWeek, onC
                     <img
                         className="absolute w-[166px] h-11 top-0 left-0"
                         alt="Clip path group"
-                        src="https://c.animaapp.com/ciot1lOr/img/clip-path-group-5@2x.png"
+                        src="/assets/animaapp/ciot1lOr/img/clip-path-group-5-2x.png"
                         loading="eager"
                         decoding="async"
                         width="166"
@@ -726,7 +726,7 @@ export const DailyRewardsSection = ({ weekData, isCurrentWeek, isFutureWeek, onC
                             <MemoizedImage
                                 className="w-[92.41px] h-[92.41px] object-cover"
                                 alt="Future week treasure reward"
-                                src="https://c.animaapp.com/ciot1lOr/img/png-clipart-buried-treasure-treasure-miscellaneous-treasure-tran@2x.png"
+                                src="/assets/animaapp/ciot1lOr/img/png-clipart-buried-treasure-treasure-miscellaneous-treasure-tran-2x.png"
                                 loading="eager"
                                 decoding="async"
                                 width="92"
@@ -739,7 +739,7 @@ export const DailyRewardsSection = ({ weekData, isCurrentWeek, isFutureWeek, onC
                             <MemoizedImage
                                 className="w-[92.41px] h-[92.41px] object-cover"
                                 alt="Big treasure reward"
-                                src="https://c.animaapp.com/ciot1lOr/img/png-clipart-buried-treasure-treasure-miscellaneous-treasure-tran@2x.png"
+                                src="/assets/animaapp/ciot1lOr/img/png-clipart-buried-treasure-treasure-miscellaneous-treasure-tran-2x.png"
                                 loading="eager"
                                 decoding="async"
                                 width="92"
@@ -754,7 +754,7 @@ export const DailyRewardsSection = ({ weekData, isCurrentWeek, isFutureWeek, onC
                                 <MemoizedImage
                                     className="w-full h-full object-contain"
                                     alt="Cancelled big reward"
-                                    src="https://c.animaapp.com/ciot1lOr/img/png-clipart-buried-treasure-treasure-miscellaneous-treasure-tran@2x.png"
+                                    src="/assets/animaapp/ciot1lOr/img/png-clipart-buried-treasure-treasure-miscellaneous-treasure-tran-2x.png"
                                     loading="lazy"
                                 />
                                 {/* Red X overlay with custom SVG - COMMENTED OUT for UX improvement */}
@@ -814,7 +814,7 @@ export const DailyRewardsSection = ({ weekData, isCurrentWeek, isFutureWeek, onC
                                 <MemoizedImage
                                     className="w-full h-full object-contain"
                                     alt="Normal reward"
-                                    src="https://c.animaapp.com/ciot1lOr/img/2211-w030-n003-510b-p1-510--converted--02-1-3@2x.png"
+                                    src="/assets/animaapp/ciot1lOr/img/2211-w030-n003-510b-p1-510--converted--02-1-3-2x.png"
                                     loading="lazy"
                                 />
                             </div>
@@ -830,7 +830,7 @@ export const DailyRewardsSection = ({ weekData, isCurrentWeek, isFutureWeek, onC
                     <MemoizedImage
                         className="absolute top-[calc(50.00%_-_28px)] left-[-789px] w-[55px] h-[55px] aspect-[1] object-cover"
                         alt=""
-                        src="https://c.animaapp.com/ciot1lOr/img/image-3943@2x.png"
+                        src="/assets/animaapp/ciot1lOr/img/image-3943-2x.png"
                         loading="lazy"
                     />
 
@@ -853,7 +853,7 @@ export const DailyRewardsSection = ({ weekData, isCurrentWeek, isFutureWeek, onC
                         <img
                             className="absolute w-full h-11 top-0 left-0"
                             alt="Clip path group"
-                            src="https://c.animaapp.com/ciot1lOr/img/clip-path-group-6@2x.png"
+                            src="/assets/animaapp/ciot1lOr/img/clip-path-group-6-2x.png"
                         />
 
                         <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${day7Data.status === 'claimed'

@@ -189,7 +189,7 @@ export const useRealTimeCountdown = ({
         setIsExpired(result.isExpired);
       }
     },
-    [persist, storageKey, calculateRemainingTime],
+    [persist, storageKey, calculateRemainingTime]
   );
 
   return {

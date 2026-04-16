@@ -7,9 +7,13 @@ import { getCityAndCountry } from "@/lib/locationUtils";
 import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
+import { useSplash } from "@/components/SplashScreen";
 
 export default function LocationPage() {
+  const { hideSplash } = useSplash();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => { hideSplash(); }, [hideSplash]);
 
   // Block Android hardware back button — user must grant or skip location to proceed
   useEffect(() => {
@@ -253,7 +257,7 @@ export default function LocationPage() {
             <img
               className="w-full h-full"
               alt=""
-              src="https://c.animaapp.com/gGYGC01x/img/arrow-back-ios-new@2x.png"
+              src="/assets/animaapp/gGYGC01x/img/arrow-back-ios-new-2x.png"
             />
           </button>
 
@@ -271,7 +275,7 @@ export default function LocationPage() {
               <img
                 className="w-full h-full object-contain"
                 alt="Location access illustration"
-                src="https://c.animaapp.com/gGYGC01x/img/image-4028@2x.png"
+                src="/assets/animaapp/gGYGC01x/img/image-4028-2x.png"
                 loading="eager"
               />
             </div>

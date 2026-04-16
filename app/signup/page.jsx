@@ -1,13 +1,29 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react'
+import { Capacitor, registerPlugin } from "@capacitor/core";
+const SoftInput = registerPlugin("SoftInputPlugin");
 import Image from "next/image";
 import Link from "next/link";
+import { useDispatch } from "react-redux";
+import { fetchStreakStatus } from "@/lib/redux/slice/streakSlice";
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import useOnboardingStore from '@/stores/useOnboardingStore';
 import { sendOtp, verifyOtp, checkMobileAvailability } from '@/lib/api';
 import Script from 'next/script';
-// import { sendFirebaseOtp, verifyFirebaseOtp } from "@/lib/firebaseOtp"; // OTP commented out
+import { sendFirebaseOtp, verifyFirebaseOtp } from "@/lib/firebaseOtp";
+import { onRegistrationStart, onRegistrationComplete } from "@/lib/adjustService";
+import { defaultCountries, parseCountry } from 'react-international-phone';
+
+const getFlagEmoji = (iso2) =>
+  iso2.toUpperCase().split('').map(char =>
+    String.fromCodePoint(127397 + char.charCodeAt(0))
+  ).join('');
+
+const parsedCountries = defaultCountries.map(c => {
+  const country = parseCountry(c);
+  return { ...country, flag: getFlagEmoji(country.iso2) };
+});
 
 const validateName = (name, fieldName = 'Name') => {
   const trimmedName = name.trim();
@@ -35,6 +51,7 @@ const validateName = (name, fieldName = 'Name') => {
 const SignUp = () => {
   const router = useRouter();
   const { signUpAndSignIn, signIn } = useAuth();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     firstname: "",
     lastname: "",
@@ -54,16 +71,34 @@ const SignUp = () => {
   const [error, setError] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [countryCode, setCountryCode] = useState("+91");
+  const [countryCode, setCountryCode] = useState("+1");
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    SoftInput.setMode({ mode: showCountryPicker ? "resize" : "pan" });
+    // Match page background so keyboard gap never reveals splash image
+    document.body.style.backgroundColor = "#272052";
+    document.documentElement.style.backgroundColor = "#272052";
+    return () => {
+      document.body.style.backgroundColor = "";
+      document.documentElement.style.backgroundColor = "";
+    };
+  }, [showCountryPicker]);
+
+  const [countrySearch, setCountrySearch] = useState('');
+  const [selectedFlag, setSelectedFlag] = useState('🇺🇸');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isMobileVerified, setIsMobileVerified] = useState(false);
   const [countdown, setCountdown] = useState(180);
   const [isResending, setIsResending] = useState(false);
   const otpInputs = useRef([]);
+  const otpSectionRef = useRef(null);
   const [turnstileToken, setTurnstileToken] = useState(null);
   const [isTurnstileLoading, setIsTurnstileLoading] = useState(true);
   const turnstileRef = useRef(null);
   const turnstileWidgetId = useRef(null);
+  const safetyTimerId = useRef(null);
 
   useEffect(() => {
     let timer;
@@ -72,6 +107,15 @@ const SignUp = () => {
     }
     return () => clearInterval(timer);
   }, [isOtpSent, countdown, isMobileVerified]);
+
+  // Scroll OTP section into view when it appears so Verify button is never hidden by keyboard
+  useEffect(() => {
+    if (isOtpSent && !isMobileVerified) {
+      setTimeout(() => {
+        otpSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350);
+    }
+  }, [isOtpSent]);
 
   const formatTime = (sec) => {
     const m = Math.floor(sec / 60);
@@ -91,65 +135,27 @@ const SignUp = () => {
   // ============================================================
   // CLOUDFLARE TURNSTILE - MANUAL RENDERING FOR CLIENT-SIDE NAVIGATION
   // ============================================================
-  // Manually render Turnstile widget to ensure it works on client-side navigation
   useEffect(() => {
     const renderTurnstile = () => {
       if (typeof window !== 'undefined' && window.turnstile && turnstileRef.current) {
-        // Check if widget is already rendered by checking for existing widget ID
-        if (turnstileWidgetId.current) {
-          return; // Widget already rendered
-        }
-
-        // Check if element already has a widget rendered (from previous navigation)
+        if (turnstileWidgetId.current) return;
         const existingWidget = turnstileRef.current.querySelector('[data-widget-id]');
         if (existingWidget) {
           const existingId = existingWidget.getAttribute('data-widget-id');
-          if (existingId) {
-            try {
-              window.turnstile.remove(existingId);
-            } catch (e) {
-              // Ignore errors when removing
-            }
-          }
+          if (existingId) { try { window.turnstile.remove(existingId); } catch (e) { } }
         }
-
         try {
-          // Clear the container first
           turnstileRef.current.innerHTML = '';
-
-          // Manually render the widget
           setIsTurnstileLoading(true);
           const widgetId = window.turnstile.render(turnstileRef.current, {
-            sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || (() => {
-              console.warn("⚠️ [Turnstile] NEXT_PUBLIC_TURNSTILE_SITE_KEY is not set. Please add it to your .env file.");
-              return '1x00000000000000000000AA'; // Test key - replace with production key
-            })(),
-            callback: (token) => {
-              setTurnstileToken(token);
-              setIsTurnstileLoading(false);
-              console.log('✅ Turnstile verified:', token);
-            },
-            'error-callback': () => {
-              setTurnstileToken(null);
-              setIsTurnstileLoading(false);
-              console.error('❌ Turnstile error');
-            },
-            'expired-callback': () => {
-              setTurnstileToken(null);
-              setIsTurnstileLoading(true);
-              console.warn('⏰ Turnstile token expired');
-            },
+            sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA',
+            callback: (token) => { setTurnstileToken(token); setIsTurnstileLoading(false); console.log('✅ Turnstile verified:', token); },
+            'error-callback': () => { setTurnstileToken(null); setIsTurnstileLoading(false); console.error('❌ Turnstile error'); },
+            'expired-callback': () => { setTurnstileToken(null); setIsTurnstileLoading(true); console.warn('⏰ Turnstile token expired'); },
             theme: 'dark',
             size: 'normal',
-
           });
-
-          // Mark as loaded after widget renders (usually takes ~500ms)
-          setTimeout(() => {
-            setIsTurnstileLoading(false);
-          }, 800);
-
-          // Store widget ID for cleanup
+          setIsTurnstileLoading(false);
           turnstileWidgetId.current = widgetId;
         } catch (err) {
           console.error('Failed to render Turnstile widget:', err);
@@ -157,61 +163,37 @@ const SignUp = () => {
       }
     };
 
-    // Function to check and render when both script and DOM are ready
     const checkAndRender = () => {
       if (typeof window !== 'undefined' && window.turnstile && turnstileRef.current) {
-        renderTurnstile();
-        return true;
+        renderTurnstile(); return true;
       }
       return false;
     };
 
-    // Try immediate render if script is already loaded
     if (checkAndRender()) {
       return () => {
         if (turnstileWidgetId.current && typeof window !== 'undefined' && window.turnstile) {
-          try {
-            window.turnstile.remove(turnstileWidgetId.current);
-            turnstileWidgetId.current = null;
-          } catch (e) {
-            console.warn('Failed to remove Turnstile widget:', e);
-          }
+          try { window.turnstile.remove(turnstileWidgetId.current); turnstileWidgetId.current = null; } catch (e) { }
         }
       };
     }
 
-    // Wait for script to load and DOM to be ready
     let checkInterval = null;
     let timeoutId = null;
-
     checkInterval = setInterval(() => {
-      if (checkAndRender()) {
-        if (checkInterval) clearInterval(checkInterval);
-        if (timeoutId) clearTimeout(timeoutId);
-      }
+      if (checkAndRender()) { clearInterval(checkInterval); clearTimeout(timeoutId); }
     }, 100);
+    timeoutId = setTimeout(() => { if (checkInterval) clearInterval(checkInterval); }, 10000);
 
-    // Cleanup interval after 10 seconds
-    timeoutId = setTimeout(() => {
-      if (checkInterval) clearInterval(checkInterval);
-    }, 10000);
-
-    // Cleanup function
     return () => {
       if (checkInterval) clearInterval(checkInterval);
       if (timeoutId) clearTimeout(timeoutId);
       if (turnstileWidgetId.current && typeof window !== 'undefined' && window.turnstile) {
-        try {
-          window.turnstile.remove(turnstileWidgetId.current);
-          turnstileWidgetId.current = null;
-        } catch (e) {
-          console.warn('Failed to remove Turnstile widget:', e);
-        }
+        try { window.turnstile.remove(turnstileWidgetId.current); turnstileWidgetId.current = null; } catch (e) { }
       }
     };
   }, []);
 
-  // Helper function to reset Turnstile widget
   const resetTurnstileWidget = () => {
     if (typeof window !== 'undefined' && window.turnstile && turnstileWidgetId.current) {
       try {
@@ -219,7 +201,6 @@ const SignUp = () => {
         setTurnstileToken(null);
         setIsTurnstileLoading(true);
       } catch (err) {
-        console.warn('Failed to reset Turnstile widget:', err);
         setTurnstileToken(null);
         setIsTurnstileLoading(true);
       }
@@ -319,10 +300,10 @@ const SignUp = () => {
     e.preventDefault();
     setError({});
 
-    // if (!isMobileVerified) {
-    //   setError({ form: "Please verify your mobile number before signing up." });
-    //   return;
-    // }
+    if (!isMobileVerified) {
+      setError({ form: "Please verify your mobile number before signing up." });
+      return;
+    }
 
     const clientErrors = {};
     const firstNameError = validateName(formData.firstname, "First name");
@@ -373,6 +354,9 @@ const SignUp = () => {
       return;
     }
 
+    // Track registration started (Adjust) — only after all validation passes
+    onRegistrationStart();
+
     setIsLoading(true);
     const fullMobile = `${countryCode}${formData.mobile}`;
 
@@ -395,6 +379,12 @@ const SignUp = () => {
       };
 
       const result = await signUpAndSignIn(fullSignupData);
+
+      if (result.ok) {
+        dispatch(fetchStreakStatus());
+        // Track registration completed (Adjust)
+        onRegistrationComplete();
+      }
 
       // CHANGE: The AuthProvider now handles the redirect.
       // We only need to handle the error case here.
@@ -515,9 +505,9 @@ const SignUp = () => {
 
     // Step 2: Send OTP only if number is available
     try {
-      // await sendFirebaseOtp(fullNumber); // OTP commented out
-      // setIsOtpSent(true);
-      // setCountdown(180);
+      await sendFirebaseOtp(fullNumber);
+      setIsOtpSent(true);
+      setCountdown(180);
     } catch (err) {
       setError({ mobile: err.message || "Failed to send OTP. Please try again." });
     } finally {
@@ -527,7 +517,7 @@ const SignUp = () => {
   const handleResendOtp = async () => {
     if (countdown > 0) return;
     try {
-      // await sendFirebaseOtp(`${countryCode}${formData.mobile}`); // OTP commented out
+      await sendFirebaseOtp(`${countryCode}${formData.mobile}`);
       setCountdown(180);
       setFormData(prev => ({ ...prev, otp: new Array(6).fill("") }));
     } catch (err) {
@@ -536,71 +526,47 @@ const SignUp = () => {
   };
   const handleVerifyOtp = async () => {
     const otpCode = formData.otp.join("");
+    setIsLoadings(true);
     try {
-      // const idToken = await verifyFirebaseOtp(otpCode); // OTP commented out
-      // setFirebaseIdToken(idToken);
-      // setIsMobileVerified(true);
+      const idToken = await verifyFirebaseOtp(otpCode);
+      setFirebaseIdToken(idToken);
+      setIsMobileVerified(true);
     } catch (err) {
-      setError({ otp: "Invalid code" });
+      console.error("OTP verify error:", err);
+      const msg = err?.message || "";
+      if (msg.toLowerCase().includes("session") || msg.toLowerCase().includes("no otp")) {
+        setError({ otp: "Session expired. Please tap Resend OTP and try again." });
+      } else if (msg.toLowerCase().includes("expired")) {
+        setError({ otp: "Code expired. Please tap Resend OTP." });
+      } else {
+        setError({ otp: "Invalid code. Please check and try again." });
+      }
+    } finally {
+      setIsLoadings(false);
     }
   };
 
   return (
     <>
-      {/* ============================================================
-          CLOUDFLARE TURNSTILE SCRIPT LOADING
-          ============================================================
-          
-          This script:
-          1. Loads Turnstile JavaScript library
-          2. Makes window.turnstile available globally
-          3. Widget is manually rendered via useEffect to work with client-side navigation
-          
-          Strategy: "afterInteractive" = Load after page is interactive
-          ============================================================ */}
       <Script
         src="https://challenges.cloudflare.com/turnstile/v0/api.js"
         strategy="afterInteractive"
         onLoad={() => {
-          // Trigger widget rendering when script loads
-          // Use a small delay to ensure DOM is ready
           setTimeout(() => {
             if (turnstileRef.current && typeof window !== 'undefined' && window.turnstile && !turnstileWidgetId.current) {
               try {
-                // Clear any existing content
                 turnstileRef.current.innerHTML = '';
-
                 setIsTurnstileLoading(true);
                 const widgetId = window.turnstile.render(turnstileRef.current, {
-                  sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || (() => {
-                    console.warn("⚠️ [Turnstile] NEXT_PUBLIC_TURNSTILE_SITE_KEY is not set. Please add it to your .env file.");
-                    return '1x00000000000000000000AA'; // Test key - replace with production key
-                  })(),
-                  callback: (token) => {
-                    setTurnstileToken(token);
-                    setIsTurnstileLoading(false);
-                    console.log('✅ Turnstile verified:', token);
-                  },
-                  'error-callback': () => {
-                    setTurnstileToken(null);
-                    setIsTurnstileLoading(false);
-                    console.error('❌ Turnstile error');
-                  },
-                  'expired-callback': () => {
-                    setTurnstileToken(null);
-                    setIsTurnstileLoading(true);
-                    console.warn('⏰ Turnstile token expired');
-                  },
+                  sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA',
+                  callback: (token) => { setTurnstileToken(token); setIsTurnstileLoading(false); console.log('✅ Turnstile verified:', token); },
+                  'error-callback': () => { setTurnstileToken(null); setIsTurnstileLoading(false); console.error('❌ Turnstile error'); },
+                  'expired-callback': () => { setTurnstileToken(null); setIsTurnstileLoading(true); console.warn('⏰ Turnstile token expired'); },
                   theme: 'dark',
                   size: 'normal',
-
                 });
                 turnstileWidgetId.current = widgetId;
-
-                // Mark as loaded after widget renders
-                setTimeout(() => {
-                  setIsTurnstileLoading(false);
-                }, 800);
+                setIsTurnstileLoading(false);
               } catch (err) {
                 console.error('Failed to render Turnstile widget on script load:', err);
               }
@@ -622,7 +588,7 @@ const SignUp = () => {
                 <Image
                   className="absolute w-[83px] h-[125px] top-[-22px] left-3.5"
                   alt="Front shapes"
-                  src="https://c.animaapp.com/bkGH9LUL/img/front-shapes@2x.png"
+                  src="/assets/animaapp/bkGH9LUL/img/front-shapes-2x.png"
                   width={83}
                   height={125}
                 />
@@ -631,7 +597,7 @@ const SignUp = () => {
                   <Image
                     className="absolute w-[43px] h-[106px] top-0 left-1.5"
                     alt="Front shapes"
-                    src="https://c.animaapp.com/bkGH9LUL/img/front-shapes-1@2x.png"
+                    src="/assets/animaapp/bkGH9LUL/img/front-shapes-1-2x.png"
                     width={43}
                     height={106}
                   />
@@ -639,7 +605,7 @@ const SignUp = () => {
                   <Image
                     className="absolute w-[18px] h-[275px] top-[13px] left-[23px]"
                     alt="Saly"
-                    src="https://c.animaapp.com/bkGH9LUL/img/saly-16@2x.png"
+                    src="/assets/animaapp/bkGH9LUL/img/saly-16-2x.png"
                     width={18}
                     height={275}
                   />
@@ -649,7 +615,7 @@ const SignUp = () => {
               <Image
                 className="absolute w-[26px] h-[23px] top-[187px] left-[338px]"
                 alt="Gem"
-                src="https://c.animaapp.com/bkGH9LUL/img/gem-1@2x.png"
+                src="/assets/animaapp/bkGH9LUL/img/gem-1-2x.png"
                 width={21}
                 height={22}
               />
@@ -666,7 +632,7 @@ const SignUp = () => {
                     <Image
                       className="absolute w-[17px] h-[17px] top-5 left-5"
                       alt="User icon"
-                      src="https://c.animaapp.com/bkGH9LUL/img/vector-2.svg"
+                      src="/assets/animaapp/bkGH9LUL/img/vector-2.svg"
                       width={17}
                       height={17}
                     />
@@ -696,7 +662,7 @@ const SignUp = () => {
                     <Image
                       className="absolute w-[17px] h-[17px] top-5 left-5"
                       alt="User icon"
-                      src="https://c.animaapp.com/bkGH9LUL/img/vector-2.svg"
+                      src="/assets/animaapp/bkGH9LUL/img/vector-2.svg"
                       width={17}
                       height={17}
                     />
@@ -726,7 +692,7 @@ const SignUp = () => {
                     <Image
                       className="absolute w-[17px] h-[17px] top-5 left-5"
                       alt="Email icon"
-                      src="https://c.animaapp.com/2Y7fJDnh/img/vector.svg" // Using the correct email icon from your login example
+                      src="/assets/animaapp/2Y7fJDnh/img/vector.svg" // Using the correct email icon from your login example
                       width={17}
                       height={17}
                     />
@@ -752,47 +718,51 @@ const SignUp = () => {
                   <label className="[font-family:'Poppins',Helvetica] font-medium text-neutral-400 text-[14.3px] tracking-[0] mb-[1px] leading-[normal]">
                     Mobile Number <span className="text-red-400">*</span>
                   </label>
-                  <div className="relative w-[314px] h-[55px] rounded-[12px] bg-white/10 backdrop-blur-lg border border-white/20 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-colors">
-                    <Image className="absolute w-[17px] h-[17px] top-5 left-5" alt="Phone icon" src="https://c.animaapp.com/bkGH9LUL/img/vector-2.svg" width={17} height={17} />
-                    <select
-                      value={countryCode}
-                      onChange={(e) => setCountryCode(e.target.value)}
-                      className="absolute top-7 -translate-y-1/2 left-[50px] appearance-none [font-family:'Poppins',Helvetica] font-medium text-[#d3d3d3] text-[14.3px] bg-transparent border-none outline-none pr-2"
+                  <div className="w-[314px] h-[55px] rounded-[12px] bg-white/10 backdrop-blur-lg border border-white/20 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-colors flex items-center px-3 gap-2">
+                    <Image className="w-[17px] h-[17px] shrink-0" alt="Phone icon" src="/assets/animaapp/bkGH9LUL/img/vector-2.svg" width={17} height={17} />
+                    <button
+                      type="button"
+                      onClick={() => { if (!isOtpSent && !isMobileVerified) setShowCountryPicker(true); }}
+                      disabled={isOtpSent || isMobileVerified}
+                      className="flex items-center gap-1 shrink-0 [font-family:'Poppins',Helvetica] font-medium text-[#d3d3d3] text-[14.3px] bg-transparent border-none outline-none disabled:opacity-50"
                     >
-                      <option value="+91" className="bg-[#272052] text-[#d3d3d3]">+91</option>
-                      <option value="+1" className="bg-[#272052] text-[#d3d3d3]">+1</option>
-                    </select>
+                      <span className="text-[18px] leading-none">{selectedFlag}</span>
+                      <span className="whitespace-nowrap">{countryCode}</span>
+                      <span className="text-[10px] text-[#a0a0a0]">▼</span>
+                    </button>
+                    <div className="w-px self-stretch my-3 bg-white/20 shrink-0" />
                     <input
                       type="tel"
                       value={formData.mobile}
                       onChange={(e) => handleInputChange("mobile", e.target.value.replace(/\D/g, ''))}
                       maxLength={15}
-                      className="absolute top-[17px] left-[87px] [font-family:'Poppins',Helvetica] font-medium text-[#d3d3d3] text-[14.3px] tracking-[0] leading-[normal] bg-transparent border-none outline-none w-[240px]"
-                      placeholder="Enter your mobile number"
+                      className="flex-1 min-w-0 [font-family:'Poppins',Helvetica] font-medium text-[#d3d3d3] text-[14.3px] tracking-[0] leading-[normal] bg-transparent border-none outline-none disabled:opacity-50"
+                      placeholder="Enter mobile number"
                       required
+                      disabled={isOtpSent || isMobileVerified}
                     />
-                    {/* {!isOtpSent && !isMobileVerified && formData.mobile.length > 0 && (
+                    {!isOtpSent && !isMobileVerified && formData.mobile.length > 0 && (
                       <button
                         type="button"
                         onClick={handleSendOtp}
                         disabled={isLoadingss}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-[35px] px-3 rounded-sm bg-[linear-gradient(180deg,rgba(158,173,247,1)_0%,rgba(113,106,231,1)_100%)] text-white text-[14px] font-semibold shadow-md disabled:opacity-50 transition-all"
+                        className="shrink-0 h-[35px] px-3 rounded-sm bg-[linear-gradient(180deg,rgba(158,173,247,1)_0%,rgba(113,106,231,1)_100%)] text-white text-[14px] font-semibold shadow-md disabled:opacity-50 transition-all"
                       >
                         {isLoadingss ? 'Sending...' : 'Send OTP'}
                       </button>
-                    )} */}
-                    {/* {isMobileVerified && (
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-400 text-sm font-semibold flex items-center">✓ Verified</div>
-                    )} */}
+                    )}
+                    {isMobileVerified && (
+                      <div className="shrink-0 text-green-400 text-sm font-semibold flex items-center">✓ Verified</div>
+                    )}
                   </div>
                   {error.mobile && <p className="text-red-400 text-xs mt-1 ml-2 max-w-[314px] break-words">{error.mobile}</p>}
                   {/* reCAPTCHA — inside mobile field wrapper so it doesn't create extra gap */}
-                  {/* <div id="recaptcha-container" className={`flex justify-center ${isOtpSent || isMobileVerified ? 'hidden' : 'mt-1 '}`}></div> */}
+                  <div id="recaptcha-container" className={`flex justify-center ${isOtpSent || isMobileVerified ? 'hidden' : 'mt-1 '}`}></div>
                 </div>
 
                 {/* OTP SECTION */}
-                {/* {isOtpSent && !isMobileVerified && (
-                  <div className="w-full flex flex-col items-center justify-center ">
+                {isOtpSent && !isMobileVerified && (
+                  <div ref={otpSectionRef} className="w-full flex flex-col items-center justify-center ">
                     <h3 className="[font-family:'Poppins',Helvetica] mb-1 ml-4 font-medium text-[#A4A4A4] text-[14.3px] tracking-[0] leading-[normal]">
                       Verify OTP sent to your mobile number
                     </h3>
@@ -809,7 +779,6 @@ const SignUp = () => {
                           onFocus={e => e.target.select()}
                           ref={el => otpInputs.current[index] = el}
                           className={`w-[45px] h-[55px] text-center bg-white/10 backdrop-blur-lg border-white/20 text-2xl font-semibold text-white rounded-[8px] border ${error.otp ? 'border-red-500' : 'border-gray-600'} focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors`}
-                        // Note: Reduced width to 45px slightly to fit 6 boxes comfortably
                         />
                       ))}
                     </div>
@@ -840,7 +809,7 @@ const SignUp = () => {
                       </button>
                     </div>
                   </div>
-                )} */}
+                )}
                 <div className="flex flex-col">
                   <label className="[font-family:'Poppins',Helvetica] font-medium text-neutral-400 text-[14.3px] tracking-[0] mb-[1px] leading-[normal]">
                     Password <span className="text-red-500">*</span>
@@ -987,7 +956,7 @@ const SignUp = () => {
                 {/* Sign Up Button */}
                 <div className='flex justify-between items-center'>
                   <button
-                    onClick={handleSubmit} disabled={isLoading}
+                    onClick={handleSubmit} disabled={isLoading || !isMobileVerified}
 
                     className="all-[unset] box-border w-full h-[50px] cursor-pointer disabled:opacity-50 mt-1"
                     type="submit"
@@ -1031,6 +1000,75 @@ const SignUp = () => {
           </div>
         </div>
       </div>
+      {/* COUNTRY PICKER BOTTOM SHEET */}
+      {showCountryPicker && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 z-50"
+            onClick={() => { setShowCountryPicker(false); setCountrySearch(''); }}
+          />
+          <div
+            className="fixed left-0 right-0 z-50 bg-[#272052] rounded-t-[24px] flex flex-col border-t border-[#af7de6]/30 overflow-hidden"
+            style={{
+              bottom: 0,
+              // adjustResize shrinks the WebView so 100dvh = space above keyboard.
+              // The sheet sits flush with the keyboard top with no JS height needed.
+              maxHeight: `calc(100dvh - env(safe-area-inset-top, 0px) - 20px)`,
+            }}
+          >
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-10 h-1 bg-white/20 rounded-full" />
+            </div>
+            <div className="flex items-center justify-between px-5 pb-3">
+              <h3 className="[font-family:'Poppins',Helvetica] font-semibold text-white text-[16px]">Select Country</h3>
+              <button
+                type="button"
+                onClick={() => { setShowCountryPicker(false); setCountrySearch(''); }}
+                className="text-[#d3d3d3] text-xl w-8 h-8 flex items-center justify-center"
+              >✕</button>
+            </div>
+            <div className="px-4 pb-3">
+              <div className="flex items-center bg-white/10 rounded-[10px] px-3 h-[42px] border border-white/20">
+                <span className="text-[#a0a0a0] mr-2 text-[14px]">🔍</span>
+                <input
+                  type="text"
+                  value={countrySearch}
+                  onChange={(e) => setCountrySearch(e.target.value)}
+                  placeholder="Search country or code..."
+                  className="flex-1 bg-transparent outline-none [font-family:'Poppins',Helvetica] text-[#d3d3d3] text-[14px] placeholder:text-[#707070]"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="overflow-y-auto flex-1 px-2 pb-6">
+              {parsedCountries
+                .filter(c =>
+                  c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+                  `+${c.dialCode}`.includes(countrySearch)
+                )
+                .map(c => (
+                  <button
+                    key={c.iso2}
+                    type="button"
+                    onClick={() => {
+                      setCountryCode(`+${c.dialCode}`);
+                      setSelectedFlag(c.flag);
+                      setShowCountryPicker(false);
+                      setCountrySearch('');
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-[11px] rounded-[10px] text-left transition-colors ${countryCode === `+${c.dialCode}` ? 'bg-[#af7de6]/20 border border-[#af7de6]/30' : 'active:bg-white/10'
+                      }`}
+                  >
+                    <span className="text-[22px] w-8 text-center">{c.flag}</span>
+                    <span className="flex-1 [font-family:'Poppins',Helvetica] text-[#d3d3d3] text-[14px]">{c.name}</span>
+                    <span className="[font-family:'Poppins',Helvetica] text-[#af7de6] text-[13px] font-medium">+{c.dialCode}</span>
+                  </button>
+                ))
+              }
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 };

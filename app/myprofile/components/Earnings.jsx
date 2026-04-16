@@ -47,10 +47,10 @@ export default function Earnings({ xpCurrent = 0, xpLevel, coinBalance = 0 }) {
 
                         <div className="absolute top-[39px] mt-1 left-[103px] flex items-center ml-3 gap-2">
                             <div className="font-semibold text-white text-2xl">{xpCurrent}</div>
-                            <Image 
-                                width={26} 
-                                height={21} 
-                                alt="XP" 
+                            <Image
+                                width={26}
+                                height={21}
+                                alt="XP"
                                 src="/xp.svg"
                                 loading="eager"
                                 decoding="async"
@@ -113,7 +113,7 @@ export default function Earnings({ xpCurrent = 0, xpLevel, coinBalance = 0 }) {
                                 height={12}
                                 className="absolute top-[13px] left-[56px]"
                                 alt="Vector"
-                                src="https://c.animaapp.com/V1uc3arn/img/vector.svg"
+                                src="/assets/animaapp/V1uc3arn/img/vector.svg"
                                 loading="eager"
                                 decoding="async"
                                 priority

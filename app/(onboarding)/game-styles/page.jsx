@@ -4,11 +4,19 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { useSplash } from '@/components/SplashScreen';
 
 export default function GameStyleSelection() {
+  const { hideSplash } = useSplash()
   const router = useRouter()
   const { gameStyle, setGameStyle, setCurrentStep, currentStep } = useOnboardingStore()
   const { gameStyleOptions, status: onboardingStatus, error } = useSelector((state) => state.onboarding);
+
+  // Hold the native splash until Redux options are loaded — prevents a blank
+  // page flash during the 400ms splash fade while options are still fetching.
+  useEffect(() => {
+    if (onboardingStatus !== 'loading') hideSplash();
+  }, [hideSplash, onboardingStatus])
 
   useEffect(() => {
     setCurrentStep(4)

@@ -39,10 +39,7 @@ export const useFraudPrevention = () => {
         setAccountInfo(response.data);
         return { success: true, data: response.data };
       } else {
-        const errorMsg =
-          response?.error?.message ||
-          response?.message ||
-          "Failed to load account info";
+        const errorMsg = response?.error?.message || response?.message || "Failed to load account info";
         setError(errorMsg);
         return { success: false, error: errorMsg };
       }
@@ -75,10 +72,7 @@ export const useFraudPrevention = () => {
         setSessions(response.data?.sessions || []);
         return { success: true, sessions: response.data?.sessions || [] };
       } else {
-        const errorMsg =
-          response?.error?.message ||
-          response?.message ||
-          "Failed to load sessions";
+        const errorMsg = response?.error?.message || response?.message || "Failed to load sessions";
         setError(errorMsg);
         return { success: false, error: errorMsg };
       }
@@ -116,10 +110,7 @@ export const useFraudPrevention = () => {
         setSessionStatus(response.data);
         return { success: true, data: response.data };
       } else {
-        const errorMsg =
-          response?.error?.message ||
-          response?.message ||
-          "Failed to check session status";
+        const errorMsg = response?.error?.message || response?.message || "Failed to check session status";
         setError(errorMsg);
         return { success: false, error: errorMsg };
       }

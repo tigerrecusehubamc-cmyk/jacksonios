@@ -39,8 +39,12 @@ export default function StripePaymentSheet({
                     // According to official docs, use initialize() instead of setPublishableKey()
                     console.log("📱 [StripePaymentSheet] Initializing Stripe for mobile...");
                     try {
+                        const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+                        if (!stripePublishableKey) {
+                            throw new Error("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set. Please add it to your .env file.");
+                        }
                         await Stripe.initialize({
-                            publishableKey: 'pk_test_51SBUH3PJY1SybSwUCQEkb8qM1YDRgbKitMYFGpRDcryE1AFDPIHoI4ovL61hITqeaoFeNgDkFlZ5tBV7rFv7B3U0008lDMyvfe'
+                            publishableKey: stripePublishableKey
                         });
                         console.log("✅ [StripePaymentSheet] Stripe initialized successfully (Mobile)");
                     } catch (initError) {

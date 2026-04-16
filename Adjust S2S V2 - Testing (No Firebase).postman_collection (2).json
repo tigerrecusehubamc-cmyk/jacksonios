@@ -1,0 +1,580 @@
+{
+	"info": {
+		"_postman_id": "debacdeb-dc75-4307-a6d7-cce58755a5c0",
+		"name": "Adjust S2S V2 - Testing (No Firebase)",
+		"description": "Postman collection for testing Adjust S2S V2 implementation WITHOUT Firebase. Uses JWT authentication instead.\n\n⚠️ Note: Firebase middleware is temporarily disabled. This collection uses JWT tokens from existing login endpoint.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37913653",
+		"_collection_link": "https://dark-satellite-642821.postman.co/workspace/jackson-v2~44cfd090-4d4d-4f59-a9b4-23bec1ad8d0c/collection/37913653-debacdeb-dc75-4307-a6d7-cce58755a5c0?action=share&source=collection_link&creator=37913653"
+	},
+	"item": [
+		{
+			"name": "2. V2 User Endpoints (JWT Auth)",
+			"item": [
+				{
+					"name": "Get Configuration",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.test('Config returned', function () {",
+									"        const jsonData = pm.response.json();",
+									"        pm.expect(jsonData.data.version).to.eql('2.0');",
+									"        pm.expect(jsonData.data.requiresAppCheck).to.be.true;",
+									"        pm.expect(jsonData.data.requiresFirebaseAuth).to.be.true;",
+									"    });",
+									"    console.log('✅ Config endpoint works with JWT');",
+									"} else if (pm.response.code === 401) {",
+									"    console.log('⚠️ Need to login first to get JWT token');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v2/adjust/config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v2",
+								"adjust",
+								"config"
+							]
+						},
+						"description": "Get V2 configuration info. Requires JWT token (Firebase Auth disabled)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Available S2S Event Tokens",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.events && jsonData.data.events.length > 0) {",
+									"        // Save first event token for testing",
+									"        pm.collectionVariables.set('event_token', jsonData.data.events[0].token);",
+									"        console.log('✅ Event token saved:', jsonData.data.events[0].token);",
+									"        console.log('📊 Total S2S events:', jsonData.data.count);",
+									"    } else {",
+									"        console.log('⚠️ No events found. Run: node scripts/import-adjust-events.js');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v2/adjust/events",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v2",
+								"adjust",
+								"events"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "survey",
+									"description": "Optional: Filter by category",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "s2s_",
+									"description": "Optional: Search by name",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get list of available S2S event tokens. Requires JWT token.\n\n**Note:** Run import script first: `node scripts/import-adjust-events.js`"
+					},
+					"response": []
+				},
+				{
+					"name": "Report Event - Level Complete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.test('Event reported successfully', function () {",
+									"        const jsonData = pm.response.json();",
+									"        pm.expect(jsonData.success).to.be.true;",
+									"    });",
+									"    console.log('✅ Event reported successfully');",
+									"} else if (pm.response.code === 401) {",
+									"    console.log('⚠️ Need to login first to get JWT token');",
+									"} else if (pm.response.code === 400) {",
+									"    console.log('⚠️ Validation error:', pm.response.json().error);",
+									"} else if (pm.response.code === 403) {",
+									"    console.log('⚠️ Campaign filter failed - user not from offerwall');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"eventType\": \"level_complete\",\n    \"levelNumber\": 1,\n    \"eventToken\": \"{{event_token}}\",\n    \"deviceId\": \"test-device-id-12345\",\n    \"metadata\": {\n        \"gameId\": \"test-game-123\",\n        \"difficulty\": \"easy\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v2/adjust/report-event",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v2",
+								"adjust",
+								"report-event"
+							]
+						},
+						"description": "Report a level completion event. Uses JWT token (Firebase disabled).\n\n**Note:** No X-Firebase-AppCheck header needed (Firebase disabled)."
+					},
+					"response": []
+				},
+				{
+					"name": "Report Event - Survey Complete",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"eventType\": \"survey_complete\",\n    \"eventToken\": \"{{event_token}}\",\n    \"deviceId\": \"test-device-id-12345\",\n    \"metadata\": {\n        \"surveyId\": \"survey-123\",\n        \"reward\": 10\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v2/adjust/report-event",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v2",
+								"adjust",
+								"report-event"
+							]
+						},
+						"description": "Report a survey completion event"
+					},
+					"response": []
+				},
+				{
+					"name": "Report Event - Game Complete",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"eventType\": \"game_complete\",\n    \"eventToken\": \"{{event_token}}\",\n    \"deviceId\": \"test-device-id-12345\",\n    \"metadata\": {\n        \"gameId\": \"game-123\",\n        \"score\": 1000\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v2/adjust/report-event",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v2",
+								"adjust",
+								"report-event"
+							]
+						},
+						"description": "Report a game completion event"
+					},
+					"response": []
+				},
+				{
+					"name": "Report Event - With Revenue",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"eventType\": \"purchase\",\n    \"eventToken\": \"{{event_token}}\",\n    \"deviceId\": \"test-device-id-12345\",\n    \"revenue\": 0.99,\n    \"currency\": \"USD\",\n    \"metadata\": {\n        \"productId\": \"product-123\",\n        \"purchaseType\": \"in_app\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v2/adjust/report-event",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v2",
+								"adjust",
+								"report-event"
+							]
+						},
+						"description": "Report a purchase event with revenue"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Admin - Event Token Management",
+			"item": [
+				{
+					"name": "List All Event Tokens",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    console.log('Total events:', jsonData.count);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/adjust-events",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"adjust-events"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "survey",
+									"description": "Filter by category",
+									"disabled": true
+								},
+								{
+									"key": "isS2S",
+									"value": "true",
+									"description": "Filter S2S events",
+									"disabled": true
+								},
+								{
+									"key": "isActive",
+									"value": "true",
+									"description": "Filter active events",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "survey",
+									"description": "Search by name or token",
+									"disabled": true
+								}
+							]
+						},
+						"description": "List all Adjust event tokens with optional filters. Requires admin JWT token."
+					},
+					"response": []
+				},
+				{
+					"name": "List S2S Events Only",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    console.log('S2S events count:', jsonData.count);",
+									"    if (jsonData.data && jsonData.data.length > 0) {",
+									"        pm.collectionVariables.set('event_token', jsonData.data[0].token);",
+									"        console.log('✅ First S2S token:', jsonData.data[0].token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/adjust-events/s2s/list",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"adjust-events",
+								"s2s",
+								"list"
+							]
+						},
+						"description": "Get all S2S event tokens only. Requires admin JWT token."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Categories",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/adjust-events/categories/list",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"adjust-events",
+								"categories",
+								"list"
+							]
+						},
+						"description": "Get list of all categories with counts. Requires admin JWT token."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Event Token",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"test123\",\n    \"name\": \"Test Event\",\n    \"unique\": false,\n    \"category\": \"other\",\n    \"isS2S\": true,\n    \"description\": \"Test event for validation\",\n    \"metadata\": {}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/adjust-events",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"adjust-events"
+							]
+						},
+						"description": "Create a new event token. Requires admin JWT token."
+					},
+					"response": []
+				},
+				{
+					"name": "Bulk Import Event Tokens",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"events\": [\n        {\n            \"token\": \"z4hizw\",\n            \"name\": \"10 survey completed\",\n            \"unique\": false\n        },\n        {\n            \"token\": \"ytt4op\",\n            \"name\": \"s2s_10 survey completed\",\n            \"unique\": false\n        },\n        {\n            \"token\": \"tt5fze\",\n            \"name\": \"15 survey completed\",\n            \"unique\": false\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/adjust-events/bulk",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"adjust-events",
+								"bulk"
+							]
+						},
+						"description": "Bulk import event tokens. Requires admin JWT token.\n\n**Note:** Use the import script for full import: `node scripts/import-adjust-events.js`"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "event_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

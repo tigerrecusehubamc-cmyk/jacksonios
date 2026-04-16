@@ -61,8 +61,8 @@ const Homepage = () => {
       </div>
       <div className="flex flex-col w-full max-w-[375px] mx-auto items-center gap-6 pt-36 px-4">
         <HeaderSection />
-        {hasStats && <RewardProgress stats={stats} />}
-        {hasStats && <XPTierTracker stats={stats} token={token} />}
+        <RewardProgress stats={stats} />
+        <XPTierTracker stats={stats} token={token} />
         <MostPlayedGames />
         <WelcomeOfferSection />
         <GameCard />

@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { RulesModal } from "./RulesModal";
 import sessionManager from "@/lib/sessionManager";
+import { normalizeGameGoals, getSdkProvider } from "@/lib/gameDataNormalizer";
 
 export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdate, claimedBatches = [], isDownloadedGame = false }) => {
     const [processedGoals, setProcessedGoals] = useState([]);
@@ -111,7 +112,6 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
             }
 
             // Use normalizer to get goals/events for both besitos and bitlab
-            const { normalizeGameGoals, getSdkProvider } = require('@/lib/gameDataNormalizer');
             const goalsToUse = normalizeGameGoals(game) || game.goals || [];
             const provider = getSdkProvider(game);
             const isBitLab = provider === 'bitlab';
@@ -335,7 +335,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                         vectorLeft: getVectorLeft(index),
                         vectorRight: getVectorRight(index),
                         pic: getPicIcon(index),
-                        rewardImage: "/dollor.png",
+                        rewardImage: "/assets/animaapp/ABnBdu2U/img/image-3937-2x.png",
                         coinReward,
                         xpReward,
                         taskType: getTaskType(goal.section),
@@ -428,33 +428,33 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
 
     const getVectorLeft = (index) => {
         const vectors = [
-            "https://c.animaapp.com/ABnBdu2U/img/vector-4235.svg",
-            "https://c.animaapp.com/ABnBdu2U/img/vector-4235-1.svg",
-            "https://c.animaapp.com/ABnBdu2U/img/vector-4235-2.svg",
-            "https://c.animaapp.com/ABnBdu2U/img/vector-4235-3.svg",
-            "https://c.animaapp.com/ABnBdu2U/img/vector-4235-4.svg"
+            "/assets/animaapp/ABnBdu2U/img/vector-4235.svg",
+            "/assets/animaapp/ABnBdu2U/img/vector-4235-1.svg",
+            "/assets/animaapp/ABnBdu2U/img/vector-4235-2.svg",
+            "/assets/animaapp/ABnBdu2U/img/vector-4235-3.svg",
+            "/assets/animaapp/ABnBdu2U/img/vector-4235-4.svg"
         ];
         return vectors[index % vectors.length];
     };
 
     const getVectorRight = (index) => {
         const vectors = [
-            "https://c.animaapp.com/ABnBdu2U/img/vector-4234.svg",
-            "https://c.animaapp.com/ABnBdu2U/img/vector-4234-1.svg",
-            "https://c.animaapp.com/ABnBdu2U/img/vector-4234-2.svg",
-            "https://c.animaapp.com/ABnBdu2U/img/vector-4234-3.svg",
-            "https://c.animaapp.com/ABnBdu2U/img/vector-4234-4.svg"
+            "/assets/animaapp/ABnBdu2U/img/vector-4234.svg",
+            "/assets/animaapp/ABnBdu2U/img/vector-4234-1.svg",
+            "/assets/animaapp/ABnBdu2U/img/vector-4234-2.svg",
+            "/assets/animaapp/ABnBdu2U/img/vector-4234-3.svg",
+            "/assets/animaapp/ABnBdu2U/img/vector-4234-4.svg"
         ];
         return vectors[index % vectors.length];
     };
 
     const getPicIcon = (index) => {
         const pics = [
-            "https://c.animaapp.com/ABnBdu2U/img/pic.svg",
-            "https://c.animaapp.com/ABnBdu2U/img/pic-1.svg",
-            "https://c.animaapp.com/ABnBdu2U/img/pic-2.svg",
-            "https://c.animaapp.com/ABnBdu2U/img/pic-3.svg",
-            "https://c.animaapp.com/ABnBdu2U/img/pic-4.svg"
+            "/assets/animaapp/ABnBdu2U/img/pic.svg",
+            "/assets/animaapp/ABnBdu2U/img/pic-1.svg",
+            "/assets/animaapp/ABnBdu2U/img/pic-2.svg",
+            "/assets/animaapp/ABnBdu2U/img/pic-3.svg",
+            "/assets/animaapp/ABnBdu2U/img/pic-4.svg"
         ];
         return pics[index % pics.length];
     };
@@ -577,27 +577,17 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
     // Calculate dynamic line heights to connect from first card to last card
     const calculateLineHeight = (cardCount, isLocked = false) => {
         if (cardCount === 0) return 0;
-        if (cardCount === 1) return 75; // Single card height
+        if (cardCount === 1) return 120; // Single card height + buffer
 
-        // Each card is 75px height + 16px gap between cards (gap-4)
-        const cardHeight = 75;
+        // More generous calculation to account for variable card heights
+        // Assume average card height of ~100px + 16px gap = 116px between centers
+        const estimatedCardHeight = 100;
         const gapBetweenCards = 16;
+        const distanceBetweenCircles = (cardCount - 1) * (estimatedCardHeight + gapBetweenCards);
 
-        // Calculate height to connect ALL icons from first to last
-        // Line starts at top-6 (24px) and needs to reach the last circle
-        // Distance between circle centers: cardHeight (75px) + gapBetweenCards (16px) = 91px
-        // For cardCount circles, distance from first to last: (cardCount - 1) × 91px
-        const distanceBetweenCircles = (cardCount - 1) * (cardHeight + gapBetweenCards);
-
-        // For locked tasks: add extra buffer to ensure line extends well past the last circle
-        // For active/unlocked tasks: use smaller buffer for cleaner appearance
-        if (isLocked) {
-            const baseHeight = distanceBetweenCircles + cardHeight + 100; // Large buffer for locked tasks
-            return baseHeight;
-        } else {
-            const baseHeight = distanceBetweenCircles + (cardHeight); // Smaller buffer for active tasks
-            return baseHeight;
-        }
+        // Add generous buffer to ensure line extends well past the last circle
+        const buffer = isLocked ? 150 : 100; // Extra buffer for locked tasks
+        return distanceBetweenCircles + estimatedCardHeight + buffer;
     };
 
     const activeLineHeight = calculateLineHeight(activeLevels.length, false);
@@ -625,7 +615,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                         <img
                             className={`w-[12.19px] h-[12.19px] transition-transform ${showDropdown ? 'rotate-180' : ''}`}
                             alt="Arrow back ios new"
-                            src="https://c.animaapp.com/ABnBdu2U/img/arrow-back-ios-new@2x.png"
+                            src="/assets/animaapp/ABnBdu2U/img/arrow-back-ios-new-2x.png"
                         />
                     </button>
 
@@ -814,7 +804,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                                     <img
                                         className="w-[14px] h-[14px] flex-shrink-0"
                                         alt="Clock"
-                                        src="https://c.animaapp.com/ABnBdu2U/img/clock-10.svg"
+                                        src="/assets/animaapp/ABnBdu2U/img/clock-10.svg"
                                     />
                                     <span className={`font-normal text-[11px] ${level.isExpired ? 'text-red-300 font-semibold' :
                                         level.days_left && level.days_left <= 3 ? 'text-orange-300 font-medium' :
@@ -860,7 +850,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                                 <img
                                     className="w-[23px] h-[23px]"
                                     alt="Arrow back ios new"
-                                    src="https://c.animaapp.com/ABnBdu2U/img/arrow-back-ios-new-3@2x.png"
+                                    src="/assets/animaapp/ABnBdu2U/img/arrow-back-ios-new-3-2x.png"
                                 />
                             </div>
                         )}
@@ -960,7 +950,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                                 <img
                                     className="w-[28px] h-[28px]"
                                     alt="Lock Icon"
-                                    src="https://c.animaapp.com/ABnBdu2U/img/image-3943-3@2x.png"
+                                    src="/assets/animaapp/ABnBdu2U/img/image-3943-3-2x.png"
                                     loading="eager"
                                     decoding="async"
                                     width={28}
@@ -997,7 +987,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                                     <img
                                         className="w-[14px] h-[14px] flex-shrink-0"
                                         alt="Clock"
-                                        src="https://c.animaapp.com/ABnBdu2U/img/clock-10.svg"
+                                        src="/assets/animaapp/ABnBdu2U/img/clock-10.svg"
                                     />
                                     <span className="font-normal text-[11px] text-[#f4f3fc]">
                                         {level.timeLimit}
@@ -1032,7 +1022,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                                 <img
                                     className="w-[23px] h-[23px]"
                                     alt="Arrow back ios new"
-                                    src="https://c.animaapp.com/ABnBdu2U/img/arrow-back-ios-new-3@2x.png"
+                                    src="/assets/animaapp/ABnBdu2U/img/arrow-back-ios-new-3-2x.png"
                                 />
                             </div>
                         )}

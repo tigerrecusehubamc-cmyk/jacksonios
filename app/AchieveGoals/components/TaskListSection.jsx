@@ -221,11 +221,11 @@ export const TaskListSection = () => {
                     ))
                 ) : (
                     <div className="w-full flex flex-col items-center justify-center py-6 px-4">
-                        <h3 className="[font-family:'Poppins',Helvetica] font-semibold text-white text-lg mb-2 text-center">
+                        {/* <h3 className="[font-family:'Poppins',Helvetica] font-semibold text-white text-lg mb-2 text-center">
                             Gaming - Cash Coach Recommendation
-                        </h3>
+                        </h3> */}
                         <p className="[font-family:'Poppins',Helvetica] font-normal text-gray-400 text-sm text-center">
-                            No games available
+                            No games available at the moment
                         </p>
                     </div>
                 )}

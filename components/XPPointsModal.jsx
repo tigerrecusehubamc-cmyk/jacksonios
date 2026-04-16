@@ -16,19 +16,19 @@ export const XPPointsModal = ({ isOpen, onClose }) => {
     {
       name: "Junior",
       reward: "Reward:",
-      icon: "https://c.animaapp.com/rTwEmiCB/img/image-3937-3@2x.png",
+      icon: "/assets/animaapp/rTwEmiCB/img/image-3937-3-2x.png",
       width: "98px",
     },
     {
       name: "Mid-level",
       reward: "1.2x",
-      icon: "https://c.animaapp.com/rTwEmiCB/img/image-3937-4@2x.png",
+      icon: "/assets/animaapp/rTwEmiCB/img/image-3937-4-2x.png",
       width: "61px",
     },
     {
       name: "Senior",
       reward: "1.5x",
-      icon: "https://c.animaapp.com/rTwEmiCB/img/image-3937-5@2x.png",
+      icon: "/assets/animaapp/rTwEmiCB/img/image-3937-5-2x.png",
       width: "66px",
     },
   ];
@@ -37,19 +37,19 @@ export const XPPointsModal = ({ isOpen, onClose }) => {
     {
       name: "Junior",
       points: "5",
-      icon: "https://c.animaapp.com/rTwEmiCB/img/image-3937-3@2x.png",
+      icon: "/assets/animaapp/rTwEmiCB/img/image-3937-3-2x.png",
       width: "49px",
     },
     {
       name: "Mid-level",
       points: "8",
-      icon: "https://c.animaapp.com/rTwEmiCB/img/image-3937-5@2x.png",
+      icon: "/assets/animaapp/rTwEmiCB/img/image-3937-5-2x.png",
       width: "47px",
     },
     {
       name: "Senior",
       points: "10",
-      icon: "https://c.animaapp.com/rTwEmiCB/img/image-3937-5@2x.png",
+      icon: "/assets/animaapp/rTwEmiCB/img/image-3937-5-2x.png",
       width: "54px",
     },
   ];
@@ -78,12 +78,12 @@ export const XPPointsModal = ({ isOpen, onClose }) => {
               alt=""
               src={
                 star.id <= 3
-                  ? "https://c.animaapp.com/rTwEmiCB/img/vector-2.svg"
+                  ? "/assets/animaapp/rTwEmiCB/img/vector-2.svg"
                   : star.id === 4
-                    ? "https://c.animaapp.com/rTwEmiCB/img/vector-5.svg"
+                    ? "/assets/animaapp/rTwEmiCB/img/vector-5.svg"
                     : star.id === 5
-                      ? "https://c.animaapp.com/rTwEmiCB/img/vector-7.svg"
-                      : "https://c.animaapp.com/rTwEmiCB/img/vector-8.svg"
+                      ? "/assets/animaapp/rTwEmiCB/img/vector-7.svg"
+                      : "/assets/animaapp/rTwEmiCB/img/vector-8.svg"
               }
               aria-hidden="true"
             />
@@ -93,14 +93,14 @@ export const XPPointsModal = ({ isOpen, onClose }) => {
           <img
             className="absolute w-3 h-[13px] top-[214px] left-[271px] pointer-events-none"
             alt=""
-            src="https://c.animaapp.com/rTwEmiCB/img/vector-4.svg"
+            src="/assets/animaapp/rTwEmiCB/img/vector-4.svg"
             aria-hidden="true"
           />
 
           <img
             className="absolute w-3 h-[13px] top-[214px] left-[13px] pointer-events-none"
             alt=""
-            src="https://c.animaapp.com/rTwEmiCB/img/vector-5.svg"
+            src="/assets/animaapp/rTwEmiCB/img/vector-5.svg"
             aria-hidden="true"
           />
 
@@ -111,7 +111,7 @@ export const XPPointsModal = ({ isOpen, onClose }) => {
             type="button"
             onClick={onClose}
           >
-            <img alt="Close" src="https://c.animaapp.com/rTwEmiCB/img/close.svg" />
+            <img alt="Close" src="/assets/animaapp/rTwEmiCB/img/close.svg" />
           </button>
 
           {/* Main Logo */}
@@ -119,7 +119,7 @@ export const XPPointsModal = ({ isOpen, onClose }) => {
             <img
               className="w-[125px] h-[108px]"
               alt="XP Points Logo"
-              src="https://c.animaapp.com/rTwEmiCB/img/pic.svg"
+              src="/assets/animaapp/rTwEmiCB/img/pic.svg"
             />
           </div>
 
@@ -135,7 +135,7 @@ export const XPPointsModal = ({ isOpen, onClose }) => {
               <img
                 className="w-[19px] h-[19px]"
                 alt=""
-                src="https://c.animaapp.com/rTwEmiCB/img/vector-8.svg"
+                src="/assets/animaapp/rTwEmiCB/img/vector-8.svg"
                 aria-hidden="true"
               />
             </div>

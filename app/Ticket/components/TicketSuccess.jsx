@@ -90,12 +90,12 @@ export const TicketSuccess = () => {
                             <img
                                 className="absolute w-[100.00%] h-full top-[4.53%] left-[2%]"
                                 alt=""
-                                src="https://c.animaapp.com/SF846ApE/img/star-6.svg"
+                                src="/assets/animaapp/SF846ApE/img/star-6.svg"
                             />
                             <img
                                 className="absolute w-[100.00%] h-full top-[4.53%] left-[4.31%]"
                                 alt=""
-                                src="https://c.animaapp.com/SF846ApE/img/star-7.svg"
+                                src="/assets/animaapp/SF846ApE/img/star-7.svg"
                             />
                         </div>
 

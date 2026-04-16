@@ -31,7 +31,7 @@ export const RulesModal = ({ isVisible, onClose }) => {
                     >
                         <img
                             alt="Close"
-                            src="https://c.animaapp.com/2Z6cRMoo/img/close.svg"
+                            src="/assets/animaapp/2Z6cRMoo/img/close.svg"
                         />
                     </button>
                 </header>

@@ -1,38 +1,22 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export const NavigationGuard = ({ children }) => {
     const router = useRouter();
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+
+    // localStorage is synchronous — read token immediately, no loading state needed
+    const token = typeof window !== "undefined" ? localStorage.getItem('authToken') : null;
 
     useEffect(() => {
-        const checkAuth = () => {
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-                router.push('/login');
-                return;
-            }
-            setIsAuthenticated(true);
-            setIsLoading(false);
-        };
+        if (!token) {
+            router.push('/login');
+        }
+    }, [token, router]);
 
-        checkAuth();
-    }, [router]);
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-black">
-                <div className="text-white">Checking authentication...</div>
-            </div>
-        );
-    }
-
-    if (!isAuthenticated) {
-        return null;
-    }
+    if (!token) return null;
 
     return <>{children}</>;
 };

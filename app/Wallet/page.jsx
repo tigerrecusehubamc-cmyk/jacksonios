@@ -64,19 +64,14 @@ export default function WalletPage() {
     };
   }, []);
 
-  // Refresh wallet data on page visit — only if cache is stale (> 1 minute old)
-  // Uses background: true so the UI never flickers into a loading state
+  // Force-refresh wallet data on every page visit (background, after cached data renders)
+  // AuthContext already handles focus-triggered refresh — no separate focus handler needed here
   useEffect(() => {
     if (!token) return;
 
     const refreshTimer = setTimeout(() => {
-      const state = require("@/lib/redux/store").store.getState().walletTransactions;
-      const ts = state.walletScreenCacheTimestamp;
-      const STALE_MS = 60 * 1000; // 1 minute
-      if (!ts || Date.now() - ts > STALE_MS) {
-        dispatch(fetchWalletScreen({ token, force: true, background: true }));
-        dispatch(fetchProfileStats({ token, force: true, background: true }));
-      }
+      dispatch(fetchWalletScreen({ token, force: true }));
+      dispatch(fetchProfileStats({ token, force: true }));
     }, 100);
 
     return () => clearTimeout(refreshTimer);

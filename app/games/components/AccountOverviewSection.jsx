@@ -7,7 +7,7 @@ export const AccountOverviewSection = () => {
   const navigationItems = [
     {
       id: "home",
-      icon: "https://c.animaapp.com/3mn7waJw/img/home.svg",
+      icon: "/assets/animaapp/3mn7waJw/img/home.svg",
       label: "Home",
       isActive: false,
       textColor: "text-[#ffffffb2]",
@@ -15,7 +15,7 @@ export const AccountOverviewSection = () => {
     },
     {
       id: "games",
-      icon: "https://c.animaapp.com/3mn7waJw/img/games.svg",
+      icon: "/assets/animaapp/3mn7waJw/img/games.svg",
       label: "My Games",
       isActive: true,
       textColor: "text-white",
@@ -25,7 +25,7 @@ export const AccountOverviewSection = () => {
     },
     {
       id: "wallet",
-      icon: "https://c.animaapp.com/3mn7waJw/img/wallet@2x.png",
+      icon: "/assets/animaapp/3mn7waJw/img/wallet-2x.png",
       label: "My Wallet",
       isActive: false,
       textColor: "text-[#ffffffb2]",
@@ -34,7 +34,7 @@ export const AccountOverviewSection = () => {
     },
     {
       id: "cash-coach",
-      icon: "https://c.animaapp.com/3mn7waJw/img/money.svg",
+      icon: "/assets/animaapp/3mn7waJw/img/money.svg",
       label: "Cash Coach",
       isActive: false,
       textColor: "text-[#ffffffb2]",
@@ -58,7 +58,7 @@ export const AccountOverviewSection = () => {
           <Image
             className="absolute w-[375px] h-[103px] top-2.5 left-0"
             alt=""
-            src="https://c.animaapp.com/3mn7waJw/img/botton-nav@2x.png"
+            src="/assets/animaapp/3mn7waJw/img/botton-nav-2x.png"
             role="presentation"
             width={375}
             height={103}
@@ -113,7 +113,7 @@ export const AccountOverviewSection = () => {
             <Image
               className="relative w-[62px] h-[62px]"
               alt=""
-              src="https://c.animaapp.com/3mn7waJw/img/more.svg"
+              src="/assets/animaapp/3mn7waJw/img/more.svg"
               role="presentation"
               width={62}
               height={62}
