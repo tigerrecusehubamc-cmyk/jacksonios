@@ -5,6 +5,8 @@ workflows:
     environment:
       node: 20
       xcode: latest
+      groups:
+        - app_store   # ✅ your environment variable group
       vars:
         BUNDLE_ID: com.jackson.rewards.app
         TEAM_ID: HNLHZ72LJL
@@ -81,4 +83,7 @@ workflows:
 
     publishing:
       app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
