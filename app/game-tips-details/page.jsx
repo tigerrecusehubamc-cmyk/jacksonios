@@ -3,6 +3,27 @@ import React, { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { HomeIndicator } from "@/components/HomeIndicator";
 
+const DescriptionSection = ({ description }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const cleanDescription = description?.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() || "";
+
+    return (
+        <section className="flex flex-col w-full items-start gap-1 relative">
+            <p className={`[font-family:'Poppins',Helvetica] font-regular text-white/80 text-[14px] tracking-[0] leading-6 w-full ${isExpanded ? '' : 'line-clamp-3'}`}>
+                {cleanDescription}
+            </p>
+            {cleanDescription && (
+                <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="[font-family:'Poppins',Helvetica] font-semibold text-white text-sm tracking-[0] leading-6 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                    {isExpanded ? "Less" : "More"}
+                </button>
+            )}
+        </section>
+    );
+};
+
 function GameTipsDetailsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -157,9 +178,7 @@ function GameTipsDetailsContent() {
                     {gameTitle}
                 </h2>
                 {gameDescription && (
-                    <p className="[font-family:'Poppins',Helvetica] font-regular text-white/80 text-[14px] leading-6 w-full mt-2">
-                        {gameDescription}
-                    </p>
+                    <DescriptionSection description={gameDescription} />
                 )}
             </div>
 

@@ -3,7 +3,7 @@ import React, { useMemo, useEffect, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useRouter } from 'next/navigation'
 import { fetchGamesBySection } from '@/lib/redux/slice/gameSlice'
-import { normalizeGameImages, normalizeGameTitle, normalizeGameCategory } from '@/lib/gameDataNormalizer'
+import { normalizeGameImages, normalizeGameTitle, normalizeGameCategory, normalizeGameDescription } from '@/lib/gameDataNormalizer'
 
 const EMPTY_ARRAY = [];
 
@@ -68,11 +68,19 @@ export const Frame = () => {
 
             const getOptimizedImage = () => {
                 const candidates = [
+                    images.large_image,
+                    images.banner,
                     images.square_image,
                     images.icon,
+                    game.details?.large_image,
+                    game.details?.banner,
                     game.details?.square_image,
-                    game.images?.icon,
+                    game.images?.large_image,
+                    game.images?.banner,
                     game.images?.square_image,
+                    game.images?.icon,
+                    game.large_image,
+                    game.banner,
                     game.square_image,
                     game.image,
                 ];
@@ -112,11 +120,13 @@ export const Frame = () => {
                 .split(' - ')[0]
                 .trim();
         })();
-        const gameImage = game.images?.icon || game.icon || game.square_image || game.image || '';
+        
+        const normalizedImages = normalizeGameImages(game);
+        const gameImage = normalizedImages.large_image || normalizedImages.banner || normalizedImages.square_image || normalizedImages.icon || '';
         const gameCategory = game.details?.category || (game.categories && game.categories.length > 0
             ? (typeof game.categories[0] === 'object' ? game.categories[0].name || 'Casual' : game.categories[0])
             : 'Casual');
-        const gameDescription = game.description || game.details?.description || '';
+        const gameDescription = normalizeGameDescription(game);
         router.push(`/game-tips-details?title=${encodeURIComponent(gameTitle)}&image=${encodeURIComponent(gameImage)}&category=${encodeURIComponent(gameCategory)}&description=${encodeURIComponent(gameDescription)}`);
     }, [router]);
 
