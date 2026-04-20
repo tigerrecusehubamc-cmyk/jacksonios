@@ -6,7 +6,7 @@ workflows:
       node: 20
       xcode: latest
       groups:
-        - app_store   # ✅ your environment variable group
+        - app_store   # ✅ your env group (API key)
       vars:
         BUNDLE_ID: com.jackson.rewards.app
         TEAM_ID: HNLHZ72LJL
@@ -53,33 +53,56 @@ workflows:
           plutil -replace NSLocationAlwaysAndWhenInUseUsageDescription -string "We notify you near reward locations." "$PLIST"
           plutil -replace NSFaceIDUsageDescription -string "FaceID for secure login." "$PLIST"
 
-      - name: Patch Podfile
-        script: |
-          podfile="ios/App/Podfile"
-          ruby -e "
-          path = '$podfile'
-          content = File.read(path)
-          content = content.gsub(/post_install do \|installer\|.*?end/m, '')
-          content += %Q{
-          post_install do |installer|
-            installer.pods_project.targets.each do |target|
-              target.build_configurations.each do |config|
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
-                config.build_settings['ENABLE_BITCODE'] = 'NO'
-              end
-            end
-          end
-          }
-          File.write(path, content)
-          "
-
       - name: Install CocoaPods
         script: |
           cd ios/App
           pod install
 
+      # ✅ IMPORTANT: Archive build
+      - name: Build iOS archive
+        script: |
+          cd ios/App
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath build/App.xcarchive \
+            archive \
+            DEVELOPMENT_TEAM=$TEAM_ID \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME"
+
+      # ✅ IMPORTANT: Export IPA
+      - name: Export IPA
+        script: |
+          cd ios/App
+          cat > ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>$TEAM_ID</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>$BUNDLE_ID</key>
+              <string>$PROFILE_NAME</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
+
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath build/ios/ipa
+
     artifacts:
-      - build/ios/ipa/*.ipa
+      - ios/App/build/ios/ipa/*.ipa
 
     publishing:
       app_store_connect:
