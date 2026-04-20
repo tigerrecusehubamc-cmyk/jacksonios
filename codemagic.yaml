@@ -1,0 +1,88 @@
+workflows:
+  ios-capacitor-build:
+    name: iOS Capacitor Build & TestFlight
+    environment:
+      node: 20
+      xcode: latest
+      vars:
+        BUNDLE_ID: com.jackson.rewards.app
+        TEAM_ID: HNLHZ72LJL
+        PROFILE_NAME: Jackson
+
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+
+      - name: Build frontend
+        script: |
+          npm run build
+
+      - name: Capacitor sync
+        script: |
+          npx cap sync ios
+
+      - name: Fix Xcode project settings
+        script: |
+          cd ios/App
+          ruby -e "
+          require 'xcodeproj'
+          project = Xcodeproj::Project.open('App.xcodeproj')
+          project.targets.each do |target|
+            if target.name == 'App'
+              target.build_configurations.each do |config|
+                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+                config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.jackson.rewards.app'
+                config.build_settings['DEVELOPMENT_TEAM'] = 'HNLHZ72LJL'
+                config.build_settings['CODE_SIGN_STYLE'] = 'Manual'
+                config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = 'Jackson'
+                config.build_settings['CODE_SIGN_IDENTITY'] = 'Apple Distribution'
+                config.build_settings['CURRENT_PROJECT_VERSION'] = '108'
+              end
+            end
+          end
+          project.save
+          "
+
+      - name: Fix Info.plist permissions
+        script: |
+          PLIST="ios/App/App/Info.plist"
+
+          plutil -replace NSPhotoLibraryUsageDescription -string "We need access to your photos to upload profile pictures." "$PLIST"
+          plutil -replace NSCameraUsageDescription -string "We need camera for QR scanning." "$PLIST"
+          plutil -replace NSLocationWhenInUseUsageDescription -string "We need location to show nearby rewards." "$PLIST"
+          plutil -replace NSLocationAlwaysAndWhenInUseUsageDescription -string "We notify you near reward locations." "$PLIST"
+          plutil -replace NSFaceIDUsageDescription -string "FaceID for secure login." "$PLIST"
+
+      - name: Patch Podfile
+        script: |
+          podfile="ios/App/Podfile"
+          ruby -e "
+          path = '$podfile'
+          content = File.read(path)
+          content = content.gsub(/post_install do \|installer\|.*?end/m, '')
+          content += %Q{
+          post_install do |installer|
+            installer.pods_project.targets.each do |target|
+              target.build_configurations.each do |config|
+                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+                config.build_settings['ENABLE_BITCODE'] = 'NO'
+              end
+            end
+          end
+          }
+          File.write(path, content)
+          "
+
+      - name: Install CocoaPods
+        script: |
+          cd ios/App
+          pod install
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
