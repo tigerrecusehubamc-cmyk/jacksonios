@@ -2,9 +2,6 @@ workflows:
   ios-capacitor-build:
     name: iOS Capacitor Build & TestFlight
 
-    integrations:
-      app_store_connect: Jackson   # ✅ REQUIRED (your API key name)
-
     environment:
       node: 20
       xcode: latest
@@ -15,16 +12,13 @@ workflows:
 
     scripts:
       - name: Install dependencies
-        script: |
-          npm install
+        script: npm install
 
       - name: Build frontend
-        script: |
-          npm run build
+        script: npm run build
 
       - name: Capacitor sync
-        script: |
-          npx cap sync ios
+        script: npx cap sync ios
 
       - name: Fix Xcode project settings
         script: |
@@ -87,5 +81,4 @@ workflows:
 
     publishing:
       app_store_connect:
-        auth: integration
         submit_to_testflight: true
