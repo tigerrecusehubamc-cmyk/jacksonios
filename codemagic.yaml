@@ -1,9 +1,12 @@
 workflows:
   ios-capacitor-build:
     name: iOS Capacitor Build & TestFlight
+
     environment:
       node: 20
       xcode: latest
+      groups:
+        - app_store_connect   # ✅ REQUIRED FIX
       vars:
         BUNDLE_ID: com.jackson.rewards.app
         TEAM_ID: HNLHZ72LJL
