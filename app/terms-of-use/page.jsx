@@ -67,6 +67,8 @@ const contentSections = [
     },
 ];
 
+import BackToHomeButton from "./components/BackToHomeButton";
+
 export default function TermsOfUsePage() {
     const router = useRouter();
 
@@ -157,6 +159,8 @@ export default function TermsOfUsePage() {
                     </p>
                 </div>
             </footer>
+
+            <BackToHomeButton />
         </div>
     );
 }

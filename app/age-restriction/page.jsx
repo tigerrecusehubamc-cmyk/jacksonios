@@ -60,7 +60,7 @@ export default function AgeRestrictionPage() {
                         />
 
                         {/* Age Restriction Text */}
-                        <p className="relative w-full [font-family:'Poppins',Helvetica] font-normal text-gray-300 text-sm sm:text-base text-center tracking-[0] leading-5 sm:leading-6 max-w-[320px]">
+                        <p className="relative w-full [font-family:'Poppins',Helvetica] font-normal text-gray-300 text-[14px] text-center tracking-[0] leading-5 sm:leading-6 max-w-[320px]">
                             This app is intended for users aged 17 and above. By continuing, you
                             confirm that you meet the minimum age requirement.
                         </p>
@@ -84,12 +84,12 @@ export default function AgeRestrictionPage() {
                                 </div>
 
                                 {/* Important Notice Heading */}
-                                <h2 className="[font-family:'Poppins',Helvetica] font-semibold text-white text-md sm:text-lg ">
+                                <h2 className="[font-family:'Poppins',Helvetica] font-semibold text-gray-300 text-[14px] ">
                                     Important Notice
                                 </h2>
                             </div>
                             {/* Updated Text Size and Color to match the reference */}
-                            <p className="[font-family:'Poppins',Helvetica] font-normal text-white text-sm sm:text-base text-start leading-5 sm:leading-6">
+                            <p className="[font-family:'Poppins',Helvetica] font-light text-gray-300 text-[13px] text-start leading-5 sm:leading-6">
                                 Only users 17+ may participate in XP and Coin activities. If you are below this age, please exit the app.
                             </p>
                         </div>
