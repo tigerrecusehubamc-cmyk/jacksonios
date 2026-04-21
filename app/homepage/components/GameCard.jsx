@@ -978,6 +978,9 @@ const GameCard = ({ onClose: onCloseProp }) => {
                                     ? 'Unlimited swipes & undos'
                                     : `${currentTier || 'Free'} plan: ${maxUndoLimit} undo${maxUndoLimit !== 1 ? 's' : ''}`}
                             </div>
+                            <div className="text-center text-gray-400 text-xs mt-2 pt-2 border-t border-gray-600">
+                                Rewards are loyalty tokens and do not hold cash value. Availability may vary based on activity and eligibility.
+                            </div>
                         </div>
                         <div className="absolute top-[-8px] right-[25px] w-4 h-4 bg-black/95 border-t border-l border-gray-600/50 transform rotate-45"></div>
                     </div>

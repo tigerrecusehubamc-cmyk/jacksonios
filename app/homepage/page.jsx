@@ -69,11 +69,11 @@ const Homepage = () => {
         {/* <div className="mt-14">
           <SurveysSection />
         </div> */}
-        <NonGameOffersSection />
         <FeaturesSection />
         <GameTips />
-        <VipBanner />
         <WalkathonSection />
+        <VipBanner />
+        <NonGameOffersSection />
         <RaceSection />
         <StreakSection />
         <Daily />

@@ -5,10 +5,19 @@ export const Daily = () => {
     const [isPressed, setIsPressed] = useState(false);
     const router = useRouter();
 
-    const handleChallengeClick = () => {
+    const handleCardClick = () => {
         setIsPressed(true);
         setTimeout(() => setIsPressed(false), 150);
         router.push("/dailychallenge");
+    };
+
+    const getBorderStyle = () => {
+        if (isPressed) {
+            return {
+                border: '1px solid rgba(255, 255, 255, 0.6)',
+            };
+        }
+        return {};
     };
 
     return (
@@ -32,7 +41,11 @@ export const Daily = () => {
                 loading="eager"
                 fetchPriority="high"
             />
-            <div className="relative w-full max-w-[340px] h-[176px] p-[2px]">
+            <div
+                className="relative w-full mt-3 max-w-[340px] h-[150px] p-[2px] "
+                onClick={handleCardClick}
+                style={getBorderStyle()}
+            >
                 {/* Outer glow layer with 3D border effect */}
                 <div
                     className="relative w-full h-full rounded-[22px]"
@@ -85,6 +98,8 @@ export const Daily = () => {
                                     </span>
                                 </div>
 
+                                {/* Commented out Check Challenge button - now clicking anywhere on card navigates */}
+                                {/* 
                                 <div className="absolute bottom-0 left-0 w-full h-[46px] rounded-b-[18px] bg-[linear-gradient(180deg,rgba(158,173,247,1)_0%,rgba(113,106,231,1)_100%)] flex items-center justify-center">
                                     <button
                                         className={`[font-family:'Poppins',Helvetica] font-semibold text-white text-[14px] tracking-[-0.14px] leading-[normal] cursor-pointer transition-transform duration-150 hover:scale-105  focus:ring-opacity-50 ${isPressed ? "transform scale-95" : ""
@@ -96,6 +111,7 @@ export const Daily = () => {
                                         Check Challenge
                                     </button>
                                 </div>
+                                */}
                             </div>
                         </div>
                     </div>

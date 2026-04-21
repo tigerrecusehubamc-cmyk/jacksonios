@@ -120,7 +120,7 @@ export const Frame = () => {
                 .split(' - ')[0]
                 .trim();
         })();
-        
+
         const normalizedImages = normalizeGameImages(game);
         const gameImage = normalizedImages.large_image || normalizedImages.banner || normalizedImages.square_image || normalizedImages.icon || '';
         const gameCategory = game.details?.category || (game.categories && game.categories.length > 0
@@ -225,7 +225,7 @@ export const Frame = () => {
                         </div>
 
                         {/* Content Section */}
-                        <div className="flex flex-col h-[111px] p-2.5 bg-[linear-gradient(180deg,rgba(81,98,182,0.9)_0%,rgba(63,56,184,0.9)_100%)] flex-shrink-0">
+                        <div className="flex flex-col h-[111px] p-2.5 bg-[linear-gradient(180deg,rgba(81,98,182,0.4)_0%,rgba(63,56,184,0.4)_100%)] flex-shrink-0">
                             <div className="flex flex-col gap-1 flex-1">
                                 <h2 className="[font-family:'Poppins',Helvetica] font-semibold text-white text-sm leading-tight line-clamp-1 mb-0.5">
                                     {tip.title}

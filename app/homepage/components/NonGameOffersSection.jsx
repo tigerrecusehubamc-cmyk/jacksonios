@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchNonGameOffers } from "@/lib/redux/slice/surveysSlice";
@@ -14,6 +14,8 @@ const NonGameOffersSection = ({ skipFetch = false }) => {
     const [touchEnd, setTouchEnd] = useState(null);
     const [isAnimating, setIsAnimating] = useState(false);
     const [isSwiping, setIsSwiping] = useState(false);
+    const [showTooltip, setShowTooltip] = useState(false);
+    const tooltipRef = useRef(null);
     const MIN_SWIPE_DISTANCE = 50;
     const HORIZONTAL_SPREAD = 120;
 
@@ -197,15 +199,50 @@ const NonGameOffersSection = ({ skipFetch = false }) => {
 
     const getTimeDisplay = (offer) => offer?.estimatedTime ? `${offer.estimatedTime}m` : "1m";
 
+    // Handle clicks outside tooltip
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (tooltipRef.current && !tooltipRef.current.contains(event.target)) {
+                setShowTooltip(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     // REMOVED: Loading state - always show content immediately (stale-while-revalidate pattern)
     // Background fetching happens automatically without blocking UI
 
     return (
         <div className={`w-[335px] mx-auto flex flex-col items-center ${nonGameOffers?.length ? 'h-[275px]' : 'min-h-20'}`}>
-            <div className="w-full h-[24px] px-4 mb-2.5 mr-4">
+            <div className="w-full h-[24px] px-4 mb-2.5 mr-4 relative">
                 <h2 className="font-['Poppins',Helvetica] text-[16px] font-semibold leading-normal tracking-[0] text-[#FFFFFF]">
                     Non Gaming Offers
                 </h2>
+                <div ref={tooltipRef}>
+                    <button
+                        onClick={() => setShowTooltip(!showTooltip)}
+                        className="absolute w-8 h-8 top-[-4px] right-[-3px] z-20 cursor-pointer hover:opacity-80 transition-opacity duration-200 rounded-tr-lg rounded-bl-lg overflow-hidden flex items-center justify-center"
+                        aria-label="More information"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path fillRule="evenodd" clipRule="evenodd" d="M18 9C18 11.3869 17.0518 13.6761 15.364 15.364C13.6761 17.0518 11.3869 18 9 18C6.61305 18 4.32387 17.0518 2.63604 15.364C0.948212 13.6761 0 11.3869 0 9C0 6.61305 0.948212 4.32387 2.63604 2.63604C4.32387 0.948212 6.61305 0 9 0C11.3869 0 13.6761 0.948212 15.364 2.63604C17.0518 4.32387 18 6.61305 18 9ZM10.125 4.5C10.125 4.79837 10.0065 5.08452 9.7955 5.2955C9.58452 5.50647 9.29837 5.625 9 5.625C8.70163 5.625 8.41548 5.50647 8.20451 5.2955C7.99353 5.08452 7.875 4.79837 7.875 4.5C7.875 4.20163 7.99353 3.91548 8.20451 3.70451C8.41548 3.49353 8.70163 3.375 9 3.375C9.29837 3.375 9.58452 3.49353 9.7955 3.70451C10.0065 3.91548 10.125 4.20163 10.125 4.5ZM7.875 7.875C7.57663 7.875 7.29048 7.99353 7.0795 8.20451C6.86853 8.41548 6.75 8.70163 6.75 9C6.75 9.29837 6.86853 9.58452 7.0795 9.7955C7.29048 10.0065 7.57663 10.125 7.875 10.125V13.5C7.875 13.7984 7.99353 14.0845 8.20451 14.2955C8.41548 14.5065 8.70163 14.625 9 14.625H10.125C10.4234 14.625 10.7095 14.5065 10.9205 14.2955C11.1315 14.0845 11.25 13.7984 11.25 13.5C11.25 13.2016 11.1315 12.9155 10.9205 12.7045C10.7095 12.4935 10.4234 12.375 10.125 12.375V9C10.125 8.70163 10.0065 8.41548 9.7955 8.20451C9.58452 7.99353 9.29837 7.875 9 7.875H7.875Z" fill="#8B92DF" />
+                        </svg>
+                    </button>
+
+                    {showTooltip && (
+                        <div className="absolute top-[34px] -right-[7px] z-50 w-[340px] bg-black/95 backdrop-blur-sm rounded-[12px] px-4 pt-3 pb-2 shadow-2xl border border-gray-600/50 animate-fade-in">
+                            <div className="text-white font-medium text-sm [font-family:'Poppins',Helvetica] leading-normal">
+                                <div className="text-center text-gray-200">
+                                    These offers reward you with loyalty points. Coins collected are not real money.
+                                </div>
+                            </div>
+                            <div className="absolute top-[-8px] right-[25px] w-4 h-4 bg-black/95 border-t border-l border-gray-600/50 transform rotate-45"></div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Card viewport - 240px when offers exist, compact height when empty */}

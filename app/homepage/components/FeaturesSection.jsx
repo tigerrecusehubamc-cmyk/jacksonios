@@ -57,17 +57,17 @@ const FeaturesSection = () => {
         {
             id: 4,
             title: "Deal",
-            // bgColor: "#8963f5",
+            bgColor: "#ecb305",
             route: "/deals",
             rectangleImage1:
-                "https://c.animaapp.com/En0DOTZF/img/rectangle-41006.svg",
+                "https://c.animaapp.com/En0DOTZF/img/rectangle-41004.svg",
             rectangleImage2:
-                "https://c.animaapp.com/En0DOTZF/img/rectangle-41001.svg",
+                "https://c.animaapp.com/En0DOTZF/img/rectangle-41005.svg",
             mainImage: "https://c.animaapp.com/En0DOTZF/img/image-4043-1@2x.png",
             imageClasses: "absolute top-px left-[81px] w-[70px] h-[70px] aspect-[1]",
             titleClasses:
                 "absolute top-[41px] left-[17px] [font-family:'Poppins',Helvetica] font-semibold text-white text-xs tracking-[-0.12px] leading-[normal]",
-            hasComplexIcon: false,
+            hasComplexIcon: true,
         },
     ];
 
@@ -147,13 +147,15 @@ const FeaturesSection = () => {
                             decoding="async"
                         />
 
-                        <img
-                            className="absolute top-[9px] left-[53px] w-5 h-[13px]"
-                            alt="Vector"
-                            src="https://c.animaapp.com/En0DOTZF/img/vector-1.svg"
-                            loading="lazy"
-                            decoding="async"
-                        />
+                        {feature.id !== 4 && (
+                            <img
+                                className="absolute top-[9px] left-[53px] w-5 h-[13px]"
+                                alt="Vector"
+                                src="https://c.animaapp.com/En0DOTZF/img/vector-1.svg"
+                                loading="lazy"
+                                decoding="async"
+                            />
+                        )}
 
                         <img
                             className="absolute top-[9px] -left-0.5 w-5 h-[13px]"

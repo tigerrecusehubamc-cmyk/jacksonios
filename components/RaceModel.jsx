@@ -130,6 +130,12 @@ export const RaceModal = ({ isOpen, isAnimating, onClose, token }) => {
                                 <img className="w-4 h-[14px]" alt="XP icon" src="/assets/animaapp/b76V1iGo/img/pic-1.svg" />
                                 <span className="text-[#888] text-[11px]">out of {progressData.maxPoints.toLocaleString()}</span>
                             </div>
+
+                            <div className="mt-3 pt-3 border-t border-[#383838] w-full">
+                                <p className="text-white text-[10px] text-center [font-family:'Poppins',Helvetica]">
+                                    Rewards are loyalty tokens and do not hold cash value. Availability may vary based on activity and eligibility.
+                                </p>
+                            </div>
                         </section>
                     </div>
                 </div>
