@@ -45,7 +45,7 @@ const ProgressSection = ({
                         <div className="w-[18px] h-[19px] flex items-center justify-center">
                             <Image
                                 alt="Coin"
-                                src="/assets/animaapp/3mn7waJw/img/image-3937-12-2x.png"
+                                src="/dollor.png"
                                 width={18}
                                 height={19}
                             />

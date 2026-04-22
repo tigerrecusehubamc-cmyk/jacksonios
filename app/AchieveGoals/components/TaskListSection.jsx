@@ -188,7 +188,7 @@ export const TaskListSection = () => {
             <section className="flex flex-col justify-center items-center gap-2 w-full min-w-0 max-w-full">
                 <header>
                     <h2 className="[font-family:'Poppins',Helvetica] font-semibold text-white text-[20px]">
-                        💸💸Recommendations💸💸
+                        Recommendations 🎲
                     </h2>
                 </header>
                 <div className="flex items-start justify-center gap-3 self-stretch flex-wrap min-w-0 max-w-full">
@@ -207,7 +207,7 @@ export const TaskListSection = () => {
         <section className="flex flex-col justify-center items-center gap-2 w-full min-w-0 max-w-full">
             <header>
                 <h2 className="[font-family:'Poppins',Helvetica] font-semibold text-white text-[20px]">
-                    💸💸Recommendations💸💸
+                    Recommendations 🎲
                 </h2>
             </header>
             <div className="flex items-start justify-center gap-3 self-stretch flex-wrap min-w-0 max-w-full">

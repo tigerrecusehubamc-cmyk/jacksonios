@@ -10,6 +10,7 @@ import { ActionButtonSection } from "./components/ActionButtonSection";
 import { InstructionsTextSection } from "./components/InstructionsTextSection";
 import { LevelsSection } from "./components/LevelsSection";
 import { Coin } from "./components/coin";
+import NonGameOffersSection from "@/app/homepage/components/NonGameOffersSection";
 import { Breakdown } from "./components/Breakdown";
 import { HomeIndicator } from "@/components/HomeIndicator";
 import { SessionStatus } from "./components/SessionStatus";
@@ -1068,7 +1069,11 @@ function GameDetailsContent() {
                     />
                 </div>
 
-                <div className="animate-fade-in">
+                <div className="animate-fade-in mt-6">
+                    <NonGameOffersSection />
+                </div>
+
+                <div className="animate-fade-in ">
                     <Breakdown
                         game={displayGame}
                         sessionCoins={sessionData.sessionCoins}
@@ -1082,6 +1087,21 @@ function GameDetailsContent() {
                         onChallengeClick={handleDailyChallenge}
                     />
                 </div>
+
+                <section className="mb-12">
+                    <div className="w-full max-w-[335px] sm:max-w-[375px] mx-auto">
+                        <div className="w-full p-4 sm:p-6 rounded-lg bg-[linear-gradient(to_right,rgba(255,255,255,0.25)_0%,rgba(255,255,255,0.1)_50%,rgba(0,0,0,0.9)_100%)] shadow-lg border border-white/20">
+                            <div className="flex flex-col justify-start gap-2">
+                                <h2 className="[font-family:'Poppins',Helvetica] font-semibold text-[#f4f3fc] text-[14px] sm:text-[14px]">
+                                    Disclaimer
+                                </h2>
+                                <p className="[font-family:'Poppins',Helvetica] font-light text-[#FFFFFF] text-[13px] sm:text-base text-start leading-5 sm:leading-6">
+                                    Rewards are loyalty tokens only. Points have no cash value. Redemption eligibility may vary. Must be 17+ to participate.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
                 {/* Session Status Component */}
                 {/* <SessionStatus

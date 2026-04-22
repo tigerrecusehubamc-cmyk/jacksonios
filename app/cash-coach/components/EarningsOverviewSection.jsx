@@ -15,7 +15,7 @@ export const EarningsOverviewSection = () => {
     const earningsData = [
         {
             id: 1,
-            emoji: "🤑",
+            emoji: "🚖",
             title: "Salary",
             amount: summary.salary ?? 0,
             period: "month",
@@ -24,7 +24,7 @@ export const EarningsOverviewSection = () => {
         },
         {
             id: 2,
-            emoji: "💸",
+            emoji: "🕰️",
             title: "Expense",
             amount: summary.expense ?? 0,
             period: "month",

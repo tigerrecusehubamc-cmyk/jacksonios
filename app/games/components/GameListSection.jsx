@@ -341,13 +341,17 @@ export const GameListSection = ({ searchQuery = "", showSearch = false }) => {
 
   return (
     <div className={`flex flex-col w-full items-start gap-8 relative px-5 ${showSearch ? 'top-[180px]' : 'top-[96px]'}`}>
+      <div className="relative w-fit [font-family:'Poppins',Helvetica] font-normal text-[#FFFFFF] text-base tracking-[0] leading-[normal]">
+        Track your progress and complete game challenges
+      </div>
       {/* ==================== DOWNLOADED GAMES SECTION ==================== */}
       <div className="flex flex-col items-start gap-2.5 relative self-stretch w-full flex-[0_0_auto] max-w-sm mx-auto">
         <div className="flex flex-col w-full items-start gap-4 relative flex-[0_0_auto]">
-          <div className="relative flex-[0_0_auto]">
+          <div className="relative flex-[0_0_auto] flex flex-col gap-1">
             <div className="relative w-fit [font-family:'Poppins',Helvetica] font-medium text-[#4bba56] text-base tracking-[0] leading-[normal]">
               {downloadedGames.length > 0 ? "Downloaded" : "Downloaded Games"}
             </div>
+
           </div>
         </div>
 

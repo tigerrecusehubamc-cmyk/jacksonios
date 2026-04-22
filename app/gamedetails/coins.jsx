@@ -42,7 +42,7 @@ export const Coins = ({ game, viewCount, onBack, onChat }) => {
     const pointBreakdownData = generatePointBreakdown();
 
     return (
-        <div className="flex flex-col  pt-5 w-[375px] items-center justify-center gap-1 px-6 py-0 relative bg-[#1a1a1a]">
+        <div className="flex flex-col  pt-5 w-[375px] items-center justify-center gap-1 px-6 py-0 relative bg-[linear-gradient(180deg,rgba(65,153,151,0.5)_0%,rgba(22,51,31,0.5)_100%)]">
             <div className="relative w-[342px] h-[365px] bg-[#272727] rounded-2xl overflow-hidden border border-solid border-[#80e76a]">
                 <header>
                     <h1 className="absolute top-5 left-[17px] [font-family:'Poppins',Helvetica] font-bold text-white text-xl tracking-[0] leading-[normal]">
@@ -62,7 +62,7 @@ export const Coins = ({ game, viewCount, onBack, onChat }) => {
                     <img
                         className="relative w-3.5 h-3.5 aspect-[0.97]"
                         alt="Coin icon"
-                        src="/assets/animaapp/ltgoa7L3/img/image-3937-7-2x.png"
+                        src="/dollor.png"
                     />
 
                     <div className="relative w-fit mt-[-1.00px] font-normal text-xs flex items-start justify-center [font-family:'Poppins',Helvetica] text-white tracking-[0] leading-[normal]">
@@ -95,7 +95,7 @@ export const Coins = ({ game, viewCount, onBack, onChat }) => {
                             <img
                                 className="absolute top-2 left-[272px] w-[23px] h-6 aspect-[0.97]"
                                 alt="Coin icon"
-                                src="/assets/animaapp/ltgoa7L3/img/image-3937-6-2x.png"
+                                src="/dollor.png"
                             />
 
                             <div className="absolute top-[20px] left-[calc(50.00%_-_38px)] w-[89px] h-[22px]">

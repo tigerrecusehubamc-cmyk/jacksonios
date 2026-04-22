@@ -335,7 +335,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                         vectorLeft: getVectorLeft(index),
                         vectorRight: getVectorRight(index),
                         pic: getPicIcon(index),
-                        rewardImage: "/assets/animaapp/ABnBdu2U/img/image-3937-2x.png",
+                        rewardImage: "/dollor.png",
                         coinReward,
                         xpReward,
                         taskType: getTaskType(goal.section),
@@ -598,7 +598,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
 
 
     return (
-        <div className="w-[375px] h-auto  mt-3 mb-3  px-2 flex flex-col">
+        <div className="w-[375px] h-auto   mt-3 mb-3  px-2 flex flex-col">
             {/* Header Section */}
             <div className="flex w-[375px] h-11 items-center justify-between pt-2 pb-5 px-6">
                 <div className="font-semibold text-[#f4f3fc] text-[20px]">

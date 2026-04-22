@@ -13,7 +13,7 @@ export const BannerSection = () => {
 
     return (
         <section
-            className="flex flex-col h-full w-full justify-center items-center  mt-2  mb-10 relative"
+            className="flex flex-col h-full w-full justify-center items-center  mt-2  mb-2 relative"
             role="banner"
             aria-label="Daily Challenge Banner"
         >

@@ -386,7 +386,7 @@ export const Coin = ({
 
     return (
         <section
-            className={`flex flex-col w-[341px] h-[227px] items-start gap-2.5 mt-4 relative bg-[#1a1a1a] rounded-2xl overflow-hidden ${isClaimed ? 'opacity-50' : ''}`}
+            className={`flex flex-col w-[341px] h-[227px] items-start gap-2.5 mt-4 relative bg-[linear-gradient(180deg,rgba(65,153,151,0.5)_0%,rgba(22,51,31,0.5)_100%)] rounded-2xl overflow-hidden ${isClaimed ? 'opacity-50' : ''}`}
             data-model-id="3212:8259"
             role="region"
             aria-label="My Coins Progress Card"
@@ -520,7 +520,7 @@ export const Coin = ({
                             <img
                                 className="w-[22px] h-[23px] object-contain"
                                 alt="Coin icon"
-                                src="/assets/animaapp/WucpRujl/img/image-3938-2x.png"
+                                src="/dollor.png"
                             />
                         </div>
                     </div>

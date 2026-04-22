@@ -88,7 +88,7 @@ export const Breakdown = ({ game, sessionCoins = 0, sessionXP = 0 }) => {
 
     return (
         <div
-            className="relative w-[342px] h-[220px] mt-6 bg-black rounded-2xl overflow-hidden border border-solid border-[#80e76a]"
+            className="relative w-[342px] h-[220px] mt-6 bg-[linear-gradient(180deg,rgba(106,156,231,1)_0%,rgba(32,28,114,1)_61%)] shadow-[1px_2px_16px_4px_#c813a366] rounded-2xl overflow-hidden border border-solid border-[#80e76a]"
             data-model-id="3212:8288"
         >
             <h1 className="absolute top-5 left-[17px] [font-family:'Poppins',Helvetica] font-bold text-white text-xl tracking-[0] leading-[normal]">

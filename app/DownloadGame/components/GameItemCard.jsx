@@ -138,7 +138,7 @@ const GameItemCard = ({
     const stats = [
         {
             value: formatNumber(displayCoins),
-            icon: "/assets/animaapp/3btkjiTJ/img/image-3937-2x.png",
+            icon: "/dollor.png",
             iconAlt: "Coin",
         },
         {

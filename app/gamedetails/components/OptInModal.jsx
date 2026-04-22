@@ -195,7 +195,7 @@ export const OptInModal = ({
                                             <img
                                                 className="w-[19px] h-[20px]"
                                                 alt="Reward Icon"
-                                                src="/assets/animaapp/hVj7UvM7/img/image-3938-2x.png"
+                                                src="/dollor.png"
                                             />
                                         </div>
                                     </div>
@@ -250,7 +250,7 @@ export const OptInModal = ({
                                             <img
                                                 className="w-[19px] h-[20px]"
                                                 alt="Reward Icon"
-                                                src="/assets/animaapp/hVj7UvM7/img/image-3938-2x.png"
+                                                src="/dollor.png"
                                             />
                                         </div>
                                     </div>
