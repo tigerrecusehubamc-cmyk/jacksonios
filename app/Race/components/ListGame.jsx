@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -91,9 +91,24 @@ export const ListGame = () => {
     const dispatch = useDispatch();
     const [currentScaleClass, setCurrentScaleClass] = useState("scale-100");
     const [loadingTimeout, setLoadingTimeout] = useState(false);
+    const [showTooltip, setShowTooltip] = useState(false);
 
     // Check if user came from race banner
     const fromRace = searchParams.get('fromRace') === 'true';
+
+    // Handle clicks outside tooltip
+    const tooltipRef = useRef(null);
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (tooltipRef.current && !tooltipRef.current.contains(event.target)) {
+                setShowTooltip(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     // Use both API games and downloaded games
     const { gamesBySection, gamesBySectionStatus, inProgressGames, availableUiSections } = useSelector((state) => state.games);
@@ -181,7 +196,7 @@ export const ListGame = () => {
                     const { getTotalPromisedPoints } = require('@/lib/gameDataNormalizer');
                     const { totalXP } = getTotalPromisedPoints(game);
                     xpPoints = Number.isFinite(totalXP) ? Math.floor(totalXP).toString() : '0';
-                } catch (_) {}
+                } catch (_) { }
 
                 return {
                     id: game.id || game._id || `downloaded-game-${index}`,
@@ -417,11 +432,24 @@ export const ListGame = () => {
                     <h1 className="flex-1 [font-family:'Poppins',Helvetica] font-semibold text-white text-xl tracking-[0] leading-5">
                         Select Game
                     </h1>
+                    <div className="relative" ref={tooltipRef}>
+                        <button
+                            onClick={() => setShowTooltip(!showTooltip)}
+                            className="cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                            aria-label="More information"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path fillRule="evenodd" clipRule="evenodd" d="M19.2 9.6C19.2 12.1461 18.1886 14.5879 16.3882 16.3882C14.5879 18.1886 12.1461 19.2 9.6 19.2C7.05392 19.2 4.61212 18.1886 2.81178 16.3882C1.01143 14.5879 0 12.1461 0 9.6C0 7.05392 1.01143 4.61212 2.81178 2.81178C4.61212 1.01143 7.05392 0 9.6 0C12.1461 0 14.5879 1.01143 16.3882 2.81178C18.1886 4.61212 19.2 7.05392 19.2 9.6ZM10.8 4.8C10.8 5.11826 10.6736 5.42348 10.4485 5.64853C10.2235 5.87357 9.91826 6 9.6 6C9.28174 6 8.97652 5.87357 8.75147 5.64853C8.52643 5.42348 8.4 5.11826 8.4 4.8C8.4 4.48174 8.52643 4.17652 8.75147 3.95147C8.97652 3.72643 9.28174 3.6 9.6 3.6C9.91826 3.6 10.2235 3.72643 10.4485 3.95147C10.6736 4.17652 10.8 4.48174 10.8 4.8ZM8.4 8.4C8.08174 8.4 7.77652 8.52643 7.55147 8.75147C7.32643 8.97652 7.2 9.28174 7.2 9.6C7.2 9.91826 7.32643 10.2235 7.55147 10.4485C7.77652 10.6736 8.08174 10.8 8.4 10.8V14.4C8.4 14.7183 8.52643 15.0235 8.75147 15.2485C8.97652 15.4736 9.28174 15.6 9.6 15.6H10.8C11.1183 15.6 11.4235 15.4736 11.6485 15.2485C11.8736 15.0235 12 14.7183 12 14.4C12 14.0817 11.8736 13.7765 11.6485 13.5515C11.4235 13.3264 11.1183 13.2 10.8 13.2V9.6C10.8 9.28174 10.6736 8.97652 10.4485 8.75147C10.2235 8.52643 9.91826 8.4 9.6 8.4H8.4Z" fill="#8B92DF" />
+                            </svg>
+                        </button>
+
+
+                    </div>
                 </div>
             </div>
 
             {/* Game Grid - Centered with proper spacing, scrollable to show all games */}
-            <div className="w-full max-w-[335px] mx-auto px-4 mt-4 mb-12 pb-4">
+            <div className="w-full max-w-[335px] mx-auto px-4 mt-2 mb-12 pb-4">
                 {recommendationCards.length > 0 ? (
                     <div className="grid grid-cols-2 gap-4">
                         {recommendationCards.map((card) => (
@@ -443,6 +471,16 @@ export const ListGame = () => {
                     </div>
                 )}
             </div>
+            {showTooltip && (
+                <div className="absolute top-[80px] right-2 z-50 w-[300px] bg-black/95 backdrop-blur-sm rounded-[12px] px-4 pt-3 pb-2 shadow-2xl border border-gray-600/50 animate-fade-in">
+                    <div className="text-white font-medium text-sm [font-family:'Poppins',Helvetica] leading-normal">
+                        <div className="text-center text-gray-200">
+                            These rewards are for engagement. Points are redeemable for in-app loyalty benefits and follow the same
+                        </div>
+                    </div>
+                    <div className="absolute top-[-8px] right-4 w-4 h-4 bg-black/95 border-t border-l border-gray-600/50 transform rotate-45"></div>
+                </div>
+            )}
         </section>
     );
 };

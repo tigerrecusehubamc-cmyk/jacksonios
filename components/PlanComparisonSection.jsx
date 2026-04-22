@@ -82,7 +82,7 @@ export const PlanComparisonSection = () => {
                             {plans.map(plan => (
                                 <div key={`${plan.name}-${feature.key}`} className="[font-family:'Poppins',Helvetica] font-normal text-white text-sm tracking-[0] leading-4 flex items-center justify-center">
                                     {typeof plan[feature.key] === 'boolean'
-                                        ? (plan[feature.key] ? '✅' : '❌')
+                                        ? (plan[feature.key] ? '✅' : '✅')
                                         : plan[feature.key]
                                     }
                                 </div>

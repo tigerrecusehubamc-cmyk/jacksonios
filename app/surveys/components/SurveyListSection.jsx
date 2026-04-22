@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchSurveys } from "@/lib/redux/slice/surveysSlice";
-import SurveyCard from "./SurveyCard";
+import SurveyGameCard from "./SurveyGameCard";
 
 export const SurveyListSection = ({ onSurveyClick }) => {
     const { token } = useAuth();
@@ -134,19 +134,17 @@ export const SurveyListSection = ({ onSurveyClick }) => {
                     </div>
                 </div>
 
-                <div className="flex flex-col w-full items-start gap-2.5 px-0 py-2.5 relative flex-[0_0_auto] overflow-y-scroll">
+                <div className="flex flex-col w-full items-start gap-4 px-0 py-2.5 relative flex-[0_0_auto] overflow-y-scroll">
                     {surveys.length > 0 ? surveys.map((survey, index) => {
                         return (
-                            <SurveyCard
+                            <SurveyGameCard
                                 key={survey.id || survey.surveyId || index}
                                 survey={survey}
-                                isEmpty={false}
-                                isCompleted={false} // Bitlabs surveys don't have completion status
-                                onClick={() => handleSurveyClick(survey)}
+                                onStart={() => handleSurveyClick(survey)}
                             />
                         );
                     }) : (
-                        <SurveyCard isEmpty={true} />
+                        <SurveyGameCard />
                     )}
                 </div>
             </div>
