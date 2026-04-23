@@ -19,7 +19,6 @@ def capacitor_pods
   pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorCommunityPlayIntegrity', :path => '../../node_modules/@capacitor-community/play-integrity'
   pod 'CapacitorCommunityStripe', :path => '../../node_modules/@capacitor-community/stripe'
-  # pod 'CapacitorFirebaseAuthentication', :path => '../../node_modules/@capacitor-firebase/authentication' # OTP commented out — Firebase not in use
   pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
   pod 'CapacitorBrowser', :path => '../../node_modules/@capacitor/browser'
   pod 'CapacitorCamera', :path => '../../node_modules/@capacitor/camera'
