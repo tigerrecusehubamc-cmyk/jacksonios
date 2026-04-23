@@ -31,7 +31,6 @@ public class HealthKitBridge: CAPPlugin {
     /// For READ permissions, we can only detect:
     /// - if user needs to see the dialog (.shouldRequest)
     /// - if user already decided (.unnecessary)
-    /// - if user previously denied (.shouldRequestAfterDeclinedRequest)
     @objc func requestAuthorization(_ call: CAPPluginCall) {
         guard let readTypes = call.getArray("read", String.self) else {
             call.reject("Invalid read types parameter")
@@ -47,7 +46,8 @@ public class HealthKitBridge: CAPPlugin {
         }
 
         // First, check if we need to show the permission dialog
-        healthStore.getRequestStatusForAuthorization(toShare: nil, read: readSet) { status, error in
+        let shareSet: Set<HKSampleType> = []
+        healthStore.getRequestStatusForAuthorization(toShare: shareSet, read: readSet) { status, error in
             DispatchQueue.main.async {
                 if let error = error {
                     call.reject(error.localizedDescription)
@@ -57,7 +57,7 @@ public class HealthKitBridge: CAPPlugin {
                 switch status {
                 case .shouldRequest:
                     // User hasn't decided yet - show permission dialog
-                    self.healthStore.requestAuthorization(toShare: nil, read: readSet) { success, authError in
+                    self.healthStore.requestAuthorization(toShare: shareSet, read: readSet) { success, authError in
                         DispatchQueue.main.async {
                             if let authError = authError {
                                 call.reject(authError.localizedDescription)
@@ -83,15 +83,6 @@ public class HealthKitBridge: CAPPlugin {
                         "status": "previouslyRequested",
                         "requiresSettingsRedirect": false,
                         "note": "User previously decided. Test access by querying steps."
-                    ])
-
-                case .shouldRequestAfterDeclinedRequest:
-                    // User previously denied - they need to go to Settings
-                    call.resolve([
-                        "granted": false,
-                        "status": "denied",
-                        "requiresSettingsRedirect": true,
-                        "message": "Please enable HealthKit access in Settings → Privacy & Security → Health → [App] → Enable Steps"
                     ])
 
                 @unknown default:
