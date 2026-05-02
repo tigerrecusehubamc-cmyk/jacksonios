@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@capacitor-community/advertising-id": "^7.1.0",
     "@capacitor-community/play-integrity": "^7.1.0",
     "@capacitor-community/stripe": "^7.2.1",
     "@capacitor/app": "^7.0.2",
@@ -33,6 +34,7 @@
     "capacitor-native-biometric": "^4.2.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cordova-plugin-applovin-max": "^2.1.0",
     "firebase": "^11.10.0",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.525.0",

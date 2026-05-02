@@ -23,6 +23,15 @@ import {
 export const useAppLovinAds = () => {
   const { token, user } = useAuth();
 
+  console.log("[useAppLovinAds] 🔄 Hook initialized", {
+    hasToken: !!token,
+    platform: Capacitor.getPlatform(),
+    isNative: Capacitor.isNativePlatform(),
+    iosAdUnit: APPLOVIN_CONFIG.AD_UNIT_ID.IOS_REWARDED,
+    androidAdUnit: APPLOVIN_CONFIG.AD_UNIT_ID.ANDROID_REWARDED,
+    hasSdkKey: !!APPLOVIN_CONFIG.SDK_KEY,
+  });
+
   // State
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -198,11 +207,11 @@ export const useAppLovinAds = () => {
       //   // Continue anyway - backend might be down but we can still use mock
       // }
 
-      // Fetch SDK configuration from backend
+      // Use SDK configuration from environment variables
       // Note: Backend returns "rewarded" as adUnitId (placement name),
       // but the actual AppLovin Ad Unit ID is different
       let config = {
-        sdkKey: "",
+        sdkKey: APPLOVIN_CONFIG.SDK_KEY || "",
         adUnitId: getPlatformAdUnitId(), // Use platform-specific ad unit ID
         placement: "rewarded",
       };
@@ -213,81 +222,32 @@ export const useAppLovinAds = () => {
           "ca-app-pub-2800391972465887~5310386906",
       );
       console.log(
-        "[useAppLovinAds] 🔍 Step 2: Fetching SDK configuration from backend...",
+        "[useAppLovinAds] 🔍 Step 2: Using SDK configuration from environment...",
       );
-      if (token) {
-        console.log(
-          "[useAppLovinAds] 🔑 Auth token available, fetching config...",
-        );
-        try {
-          const configResponse = await getAppLovinConfig(token);
-          console.log(
-            "[useAppLovinAds] 📥 Backend config response received:",
-            configResponse,
-          );
-          console.log("[useAppLovinAds] 📊 Config data:", {
-            success: configResponse?.success,
-            hasData: !!configResponse?.data,
-            sdkKey: configResponse?.data?.sdkKey
-              ? "***" + configResponse.data.sdkKey.slice(-10)
-              : "missing",
-            adUnitId: configResponse?.data?.adUnitId,
-            placement: configResponse?.data?.placement,
-          });
+      console.log("[useAppLovinAds] 📊 Config data:", {
+        hasSdkKey: !!config.sdkKey,
+        sdkKey: config.sdkKey ? "***" + config.sdkKey.slice(-10) : "missing",
+        adUnitId: config.adUnitId,
+        placement: config.placement,
+      });
 
-          if (configResponse?.success && configResponse?.data) {
-            // Use SDK key from backend, but keep the actual ad unit ID from config
-            // Backend's adUnitId is the placement name ("rewarded"), not the actual ad unit ID
-            const platformAdUnitId = getPlatformAdUnitId();
-            config = {
-              sdkKey: configResponse.data.sdkKey || "",
-              // IMPORTANT: Use platform-specific ad unit ID
-              adUnitId: platformAdUnitId,
-              placement: configResponse.data.adUnitId || "rewarded", // This is actually the placement
-            };
-            setSdkConfig({
-              ...configResponse.data,
-              actualAdUnitId: platformAdUnitId,
-            });
-            console.log(
-              "[useAppLovinAds] ✅ Using backend SDK key with actual ad unit ID",
-            );
-            console.log("[useAppLovinAds] 📋 Final config:", {
-              sdkKey: config.sdkKey
-                ? "***" + config.sdkKey.slice(-10)
-                : "missing",
-              adUnitId: config.adUnitId,
-              placement: config.placement,
-            });
-          } else {
-            console.warn(
-              "[useAppLovinAds] ⚠️ Backend config response invalid:",
-              {
-                success: configResponse?.success,
-                hasData: !!configResponse?.data,
-              },
-            );
-            console.warn("[useAppLovinAds] 📝 Using default config");
-          }
-        } catch (configError) {
-          console.error(
-            "[useAppLovinAds] ❌ Failed to fetch backend config:",
-            configError,
-          );
-          console.error("[useAppLovinAds] 🐛 Config error details:", {
-            message: configError?.message,
-            response: configError?.response,
-            status: configError?.response?.status,
-            data: configError?.response?.data,
-          });
-          // Continue with default config
-        }
-      } else {
-        console.warn("[useAppLovinAds] ⚠️ No auth token available");
-        console.warn(
-          "[useAppLovinAds] 📝 Using default config (SDK may not work without token)",
-        );
-      }
+      // Set SDK config for display
+      setSdkConfig({
+        sdkKey: config.sdkKey,
+        adUnitId: config.adUnitId,
+        placement: config.placement,
+        actualAdUnitId: config.adUnitId,
+      });
+      console.log(
+        "[useAppLovinAds] ✅ Using environment config with actual ad unit ID",
+      );
+      console.log("[useAppLovinAds] 📋 Final config:", {
+        sdkKey: config.sdkKey
+          ? "***" + config.sdkKey.slice(-10)
+          : "missing",
+        adUnitId: config.adUnitId,
+        placement: config.placement,
+      });
 
       // Initialize the plugin
       console.log(
@@ -517,13 +477,30 @@ export const useAppLovinAds = () => {
    * Preload next ad (debounced, single source of truth)
    */
   const preloadNextAd = useCallback(async () => {
+    console.log("[useAppLovinAds] 🔄 Preload next ad called");
+    console.log("[useAppLovinAds] 📋 Preload state:", {
+      preloadInFlight: preloadInFlightRef.current,
+      isAdReady,
+      isLoading,
+    });
+
     // Avoid duplicate preloads from multiple places (component + plugin + hook)
-    if (preloadInFlightRef.current) return;
+    if (preloadInFlightRef.current) {
+      console.log("[useAppLovinAds] ⏭️ Preload already in flight, skipping");
+      return;
+    }
     preloadInFlightRef.current = true;
+    console.log("[useAppLovinAds] 📈 Preload state: inFlight=true");
+
     try {
+      console.log("[useAppLovinAds] 🔄 Calling loadAd() from preload...");
       await loadAd();
+      console.log("[useAppLovinAds] ✅ Preload complete");
+    } catch (err) {
+      console.error("[useAppLovinAds] ❌ Preload failed:", err);
     } finally {
       preloadInFlightRef.current = false;
+      console.log("[useAppLovinAds] 📈 Preload state: inFlight=false");
     }
   }, [loadAd]);
 
@@ -848,24 +825,57 @@ export const useAppLovinAds = () => {
   // recreated (e.g. when sdkConfig or token changes), bypassing the ref guard.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
+    console.log("[useAppLovinAds] 🔄 useEffect: Initialize SDK check");
+    console.log("[useAppLovinAds] 📋 Effect conditions:", {
+      hasToken: !!token,
+      isInitialized,
+      initializationAttempted: initializationAttemptedRef.current,
+    });
+
     if (token && !isInitialized && !initializationAttemptedRef.current) {
+      console.log("[useAppLovinAds] 🚀 Triggering SDK initialization...");
       initializeSDK();
+    } else {
+      console.log("[useAppLovinAds] ⏭️ Skipping SDK initialization");
     }
   }, [token, isInitialized]);
 
   // Fetch stats when initialized
   useEffect(() => {
+    console.log("[useAppLovinAds] 🔄 useEffect: Fetch stats check");
+    console.log("[useAppLovinAds] 📋 Stats conditions:", {
+      isInitialized,
+      hasToken: !!token,
+    });
+
     if (isInitialized && token) {
+      console.log("[useAppLovinAds] 📊 Fetching ad stats...");
       fetchAdStats();
+    } else {
+      console.log("[useAppLovinAds] ⏭️ Skipping stats fetch");
     }
   }, [isInitialized, token, fetchAdStats]);
 
   // Cleanup on unmount
   useEffect(() => {
+    console.log("[useAppLovinAds] 🔄 useEffect: Cleanup on unmount");
     return () => {
+      console.log("[useAppLovinAds] 🧹 Cleanup: Component unmounting");
       // Don't destroy singleton on unmount, just remove listeners
     };
   }, []);
+
+  console.log("[useAppLovinAds] 📤 Returning hook values:", {
+    isInitialized,
+    isLoading,
+    isAdReady,
+    isShowingAd,
+    hasError: !!error,
+    hasSdkConfig: !!sdkConfig,
+    hasAdStats: !!adStats,
+    hasLastReward: !!lastReward,
+    platformInfo: appLovinPlugin.getPlatformInfo(),
+  });
 
   return {
     // State

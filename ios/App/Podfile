@@ -17,6 +17,7 @@ install! 'cocoapods', :disable_input_output_paths => true
 def capacitor_pods
   pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
+  pod 'CapacitorCommunityAdvertisingId', :path => '../../node_modules/@capacitor-community/advertising-id'
   pod 'CapacitorCommunityPlayIntegrity', :path => '../../node_modules/@capacitor-community/play-integrity'
   pod 'CapacitorCommunityStripe', :path => '../../node_modules/@capacitor-community/stripe'
   pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
@@ -30,6 +31,7 @@ def capacitor_pods
   pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
   pod 'CapgoCapacitorNavigationBar', :path => '../../node_modules/@capgo/capacitor-navigation-bar'
   pod 'CapacitorNativeBiometric', :path => '../../node_modules/capacitor-native-biometric'
+  pod 'CordovaPluginsStatic', :path => '../capacitor-cordova-ios-plugins'
 end
 
 target 'App' do
