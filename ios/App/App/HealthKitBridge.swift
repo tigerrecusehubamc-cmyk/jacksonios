@@ -18,6 +18,19 @@ public class HealthKitBridge: CAPPlugin {
     /// Shared HealthKit store instance
     private let healthStore = HKHealthStore()
 
+    private static func parseISODate(_ value: String) -> Date? {
+        let fractionalFormatter = ISO8601DateFormatter()
+        fractionalFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        if let date = fractionalFormatter.date(from: value) {
+            return date
+        }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: value)
+    }
+
     /// Check if HealthKit is available on this device
     @objc func isAvailable(_ call: CAPPluginCall) {
         let available = HKHealthStore.isHealthDataAvailable()
@@ -97,8 +110,8 @@ public class HealthKitBridge: CAPPlugin {
     @objc func testReadAccess(_ call: CAPPluginCall) {
         guard let startDateString = call.getString("startDate"),
               let endDateString = call.getString("endDate"),
-              let startDate = ISO8601DateFormatter().date(from: startDateString),
-              var endDate = ISO8601DateFormatter().date(from: endDateString),
+              let startDate = Self.parseISODate(startDateString),
+              var endDate = Self.parseISODate(endDateString),
               let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
             call.reject("Invalid parameters")
             return
@@ -127,6 +140,12 @@ public class HealthKitBridge: CAPPlugin {
                             "steps": 0,
                             "reason": "authorizationDenied"
                         ])
+                    case .errorNoData:
+                        call.resolve([
+                            "hasAccess": false,
+                            "steps": 0,
+                            "reason": "noData"
+                        ])
                     default:
                         call.reject(error.localizedDescription)
                     }
@@ -150,8 +169,8 @@ public class HealthKitBridge: CAPPlugin {
     @objc func querySteps(_ call: CAPPluginCall) {
         guard let startDateString = call.getString("startDate"),
               let endDateString = call.getString("endDate"),
-              let startDate = ISO8601DateFormatter().date(from: startDateString),
-              var endDate = ISO8601DateFormatter().date(from: endDateString),
+              let startDate = Self.parseISODate(startDateString),
+              var endDate = Self.parseISODate(endDateString),
               let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
             call.reject("Invalid parameters: startDate and endDate required in ISO 8601 format")
             return
@@ -172,7 +191,18 @@ public class HealthKitBridge: CAPPlugin {
             options: .cumulativeSum
         ) { _, result, error in
             DispatchQueue.main.async {
-                if let error = error {
+                if let error = error as? HKError {
+                    switch error.code {
+                    case .errorAuthorizationDenied:
+                        call.reject("HealthKit authorization denied")
+                    case .errorNoData:
+                        call.resolve([
+                            "steps": 0
+                        ])
+                    default:
+                        call.reject("Failed to query steps: \(error.localizedDescription)")
+                    }
+                } else if let error = error {
                     call.reject("Failed to query steps: \(error.localizedDescription)")
                 } else {
                     let steps = Int(
@@ -188,5 +218,3 @@ public class HealthKitBridge: CAPPlugin {
         self.healthStore.execute(query)
     }
 }
-
-

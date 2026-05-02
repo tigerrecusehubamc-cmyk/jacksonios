@@ -314,6 +314,17 @@ export default function WalkathonPage() {
             const response = await joinWalkathon(token);
             logWalkathon("Join API Response", { response });
 
+            if (response.success === false) {
+                const errorMessage = response.error || response.message || response.body?.error || "Failed to join walkathon";
+                logWalkathon("Join Failed", {
+                    message: errorMessage,
+                    status: response.status,
+                    body: response.body
+                });
+                setError(errorMessage);
+                return;
+            }
+
             if (response.success && response.data) {
                 const { data } = response;
 

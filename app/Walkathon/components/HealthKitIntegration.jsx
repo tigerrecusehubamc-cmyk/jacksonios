@@ -272,6 +272,7 @@ export const HealthKitIntegration = ({
                             error: err.message,
                             stack: err.stack
                         });
+                        throw err;
                     }
                 } else {
                     logHealthKit("❌ Method Not Found (Method 1)", {
@@ -323,6 +324,7 @@ export const HealthKitIntegration = ({
                             error: err.message,
                             stack: err.stack
                         });
+                        throw err;
                     }
                 } else {
                     logHealthKit("❌ Method Not Found (Method 2)", {
@@ -378,6 +380,7 @@ export const HealthKitIntegration = ({
                             error: err.message,
                             stack: err.stack
                         });
+                        throw err;
                     }
                 } else {
                     logHealthKit("❌ Method Not Found (Method 3)", {
@@ -426,6 +429,7 @@ export const HealthKitIntegration = ({
                         error: err.message,
                         stack: err.stack
                     });
+                    throw err;
                 }
             } else {
                 logHealthKit("❌ Not Native Platform (Method 4)", {
