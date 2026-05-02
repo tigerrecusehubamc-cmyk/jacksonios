@@ -379,6 +379,17 @@ export default function WalkathonPage() {
             const response = await syncWalkathonSteps(stepData, token);
             logWalkathon("Sync API Response", { response });
 
+            if (response.success === false) {
+                const errorMessage = response.error || response.message || response.body?.error || "Failed to sync steps";
+                logWalkathon("Sync Failed", {
+                    message: errorMessage,
+                    status: response.status,
+                    body: response.body
+                });
+                setError(errorMessage);
+                return response;
+            }
+
             if (response.success && response.data) {
                 const { data } = response;
 
@@ -403,14 +414,19 @@ export default function WalkathonPage() {
                     localStorage.removeItem("walkathon_cache");
                     await loadProgress();
                     await loadLeaderboard();
+                    return response;
                 } else {
                     logWalkathon("Sync Failed", { message: data.message });
                     setError(data.message || "Failed to sync steps");
+                    return response;
                 }
             }
+
+            return response;
         } catch (err) {
             logWalkathon("Sync Error", { error: err.message });
             setError(err.message || "Failed to sync steps");
+            throw err;
         } finally {
             setIsSyncing(false);
         }

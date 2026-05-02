@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Capacitor } from "@capacitor/core";
 import { Device } from "@capacitor/device";
@@ -24,6 +24,8 @@ export const HealthKitIntegration = ({
     const [error, setError] = useState(null);
     const [isIOS, setIsIOS] = useState(false);
     const [isAvailable, setIsAvailable] = useState(false);
+    const syncInProgressRef = useRef(false);
+    const initialSyncCompletedRef = useRef(false);
 
     // Debug logging helper
     const logHealthKit = (label, data) => {
@@ -614,12 +616,13 @@ export const HealthKitIntegration = ({
         }
 
         // Prevent race condition - skip if sync is already in progress
-        if (isSyncingInProgress) {
-            logHealthKit("Sync Skipped", { reason: "Sync already in progress", isSyncingInProgress });
+        if (syncInProgressRef.current) {
+            logHealthKit("Sync Skipped", { reason: "Sync already in progress", isSyncingInProgress: true });
             return;
         }
 
         logHealthKit("Starting Step Sync", { timestamp: new Date().toISOString(), isAuthorized, isJoined });
+        syncInProgressRef.current = true;
         setIsSyncing(true);
         setIsSyncingInProgress(true);
         setError(null);
@@ -829,7 +832,11 @@ export const HealthKitIntegration = ({
                 timestamp: new Date().toISOString()
             });
 
-            await onStepsSynced?.(syncData);
+            const syncResponse = await onStepsSynced?.(syncData);
+
+            if (syncResponse?.success === false) {
+                throw new Error(syncResponse.error || syncResponse.message || "Backend rejected step sync");
+            }
 
             logHealthKit("✅ Steps Synced to Backend Successfully", {
                 steps: syncData.steps,
@@ -848,10 +855,11 @@ export const HealthKitIntegration = ({
             setError(errorMsg);
             onError?.(errorMsg);
         } finally {
+            syncInProgressRef.current = false;
             setIsSyncing(false);
             setIsSyncingInProgress(false);
         }
-    }, [isAuthorized, isJoined, onStepsSynced, onError, callNativeMethod, isSyncingInProgress]);
+    }, [isAuthorized, isJoined, onStepsSynced, onError, callNativeMethod]);
 
     // Auto-sync when joined and authorized
     useEffect(() => {
@@ -869,11 +877,18 @@ export const HealthKitIntegration = ({
                 timestamp: new Date().toISOString()
             });
 
-            // Initial sync
-            logHealthKit("🚀 Performing Initial Sync", {
-                timestamp: new Date().toISOString()
-            });
-            syncSteps();
+            if (!initialSyncCompletedRef.current) {
+                initialSyncCompletedRef.current = true;
+                logHealthKit("🚀 Performing Initial Sync", {
+                    timestamp: new Date().toISOString()
+                });
+                syncSteps();
+            } else {
+                logHealthKit("⏭️ Initial Sync Skipped", {
+                    reason: "Already performed for this authorization session",
+                    timestamp: new Date().toISOString()
+                });
+            }
 
             // Set up periodic sync (every 30 seconds for real-time updates)
             logHealthKit("⏰ Setting Up Periodic Sync Interval", {
@@ -898,6 +913,7 @@ export const HealthKitIntegration = ({
                 clearInterval(interval);
             };
         } else {
+            initialSyncCompletedRef.current = false;
             logHealthKit("⏸️ Auto-Sync Not Setup", {
                 reason: !isJoined ? "User not joined" : "HealthKit not authorized",
                 isJoined,
