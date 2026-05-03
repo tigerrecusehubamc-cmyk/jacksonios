@@ -24,7 +24,15 @@ import {
   getBitlabsSurveys,
   getWalkathonStatus,
   getWalkathonLeaderboard,
+  biometricLogin,
+  checkBiometricStatus,
 } from "@/lib/api";
+import {
+  checkBiometricAvailability,
+  verifyBiometricIdentity,
+  getCredentials,
+  hasBiometricCredentials,
+} from "@/lib/biometricAuth";
 import { setDealsCache, clearDealsCache } from "@/lib/dealsCache";
 import { getDeviceMetadata, clearVerisoulSessionId } from "@/lib/deviceUtils";
 import {
@@ -525,6 +533,121 @@ export function AuthProvider({ children }) {
     };
 
     loadSession();
+  }, []);
+
+  // INDUSTRIAL: Auto Face ID on app launch (like Chase, Uber, big iOS apps)
+  // Trigger Face ID automatically when app opens if biometric credentials exist
+  useEffect(() => {
+    const autoBiometricLogin = async () => {
+      // Only run on native iOS/Android
+      if (!Capacitor.isNativePlatform()) return;
+      
+      // Skip if already have a valid session
+      const storedToken = localStorage.getItem("authToken");
+      if (storedToken) {
+        console.log("🔐 [AuthContext] Session exists, skipping auto Face ID");
+        return;
+      }
+
+      // Check if biometric credentials exist and list all accounts
+      const accountsResult = await listBiometricAccounts();
+      
+      if (!accountsResult.success || accountsResult.accounts?.length === 0) {
+        console.log("🔐 [AuthContext] No biometric credentials, skipping auto Face ID");
+        return;
+      }
+
+      console.log(
+        "🔐 [AuthContext] Found",
+        accountsResult.accounts.length,
+        "biometric account(s) on device",
+      );
+
+      // Determine which account to use
+      let selectedUserId = null;
+      let selectedUsername = null;
+      
+      if (accountsResult.accounts.length === 1) {
+        // Single account - use it directly
+        selectedUserId = accountsResult.accounts[0].userId;
+        selectedUsername = accountsResult.accounts[0].username;
+        console.log("🔐 [AuthContext] Single account found:", selectedUsername);
+      } else {
+        // Multiple accounts - show account picker (Chase/Uber pattern)
+        console.log("🔐 [AuthContext] Multiple accounts - showing picker");
+        
+        // For multiple accounts, we should NOT auto-login
+        // Show the login page with account selection
+        // The BiometricLoginButton will handle account selection
+        console.log(
+          "🔐 [AuthContext] Multiple accounts found:",
+          accountsResult.accounts.map(a => a.username).join(", "),
+        );
+        console.log("🔐 [AuthContext] Skipping auto-login - user must choose account manually");
+        console.log("🔐 [AuthContext] (Account picker UI needed for auto-login with multiple accounts)");
+        
+        // Don't auto-login when multiple accounts exist
+        return;
+      }
+
+      console.log("🔐 [AuthContext] Auto-triggering Face ID for account:", selectedUsername);
+
+      try {
+        // Get device ID
+        const { Device } = await import("@capacitor/device");
+        const { identifier: deviceId } = await Device.getId();
+
+        // Authenticate with biometric (includes replay protection for iOS)
+        // Pass userId for multi-account support
+        const authResult = await authenticateWithBiometric({
+          reason: "Login to your Jackson account",
+          title: "Biometric Login",
+          subtitle: "Authenticate to continue",
+          userId: selectedUserId,
+          useReplayProtection: true,
+        });
+
+        if (!authResult.success) {
+          console.log("🔐 [AuthContext] Auto Face ID cancelled or failed");
+          return;
+        }
+
+        console.log("✅ [AuthContext] Auto Face ID successful, logging in...");
+
+        // Call backend biometric login with replay protection
+        const loginData = {
+          deviceId,
+          biometricType: authResult.biometryTypeName,
+          nonce: authResult.nonce,
+          signature: authResult.signature,
+          publicKey: authResult.publicKey,
+        };
+
+        if (authResult.username.includes("@")) {
+          loginData.email = authResult.username;
+        } else {
+          loginData.mobile = authResult.username;
+        }
+
+        const loginResult = await biometricLogin(loginData);
+
+        if (loginResult?.success) {
+          console.log("✅ [AuthContext] Auto login successful");
+          localStorage.setItem("authToken", loginResult.token);
+          localStorage.setItem("user", JSON.stringify(loginResult.user));
+          setToken(loginResult.token);
+          setUser(loginResult.user);
+        } else {
+          console.error("❌ [AuthContext] Auto login failed:", loginResult?.error);
+        }
+      } catch (error) {
+        console.error("❌ [AuthContext] Auto biometric login error:", error);
+      }
+    };
+
+    // Small delay to let the app initialize first
+    const timer = setTimeout(autoBiometricLogin, 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   // REMOVED: This useEffect has been consolidated into the "Smart data fetching" effect below
@@ -1732,36 +1855,9 @@ export function AuthProvider({ children }) {
                 key: "biometric_username",
               });
 
-              // If there's a stored username and it's different from current login, delete old credentials
-              if (
-                storedUsername?.value &&
-                storedUsername.value !== emailOrMobile
-              ) {
-                console.log(
-                  "🔄 [AuthContext] Different user detected, deleting old biometric credentials...",
-                );
-                console.log(
-                  "🔄 [AuthContext] Old username:",
-                  storedUsername.value,
-                );
-                console.log("🔄 [AuthContext] New username:", emailOrMobile);
-
-                const { deleteCredentials } =
-                  await import("@/lib/biometricAuth");
-                const deleteResult = await deleteCredentials();
-
-                if (deleteResult.success) {
-                  console.log(
-                    "✅ [AuthContext] Old credentials deleted successfully",
-                  );
-                } else {
-                  console.warn(
-                    "⚠️ [AuthContext] Failed to delete old credentials:",
-                    deleteResult.error,
-                  );
-                  // Continue anyway - setCredentials will overwrite if possible
-                }
-              }
+              // Note: We no longer delete old credentials when a different user logs in
+              // This allows credentials to persist and be overwritten by setCredentials()
+              // Multi-account support is handled by per-user server strings in biometricAuth.js
             } catch (prefError) {
               console.warn(
                 "⚠️ [AuthContext] Could not check stored username:",
@@ -2365,20 +2461,13 @@ export function AuthProvider({ children }) {
       console.error("❌ Failed to purge persistor:", err);
     }
 
-    // Clear biometric backup keys from Capacitor Preferences (not covered by persistor.purge)
-    // These are stored directly via Preferences.set() in biometricAuth.js, not as Redux persist keys
-    try {
-      await Preferences.remove({ key: "biometric_username_backup" });
-      await Preferences.remove({ key: "biometric_password_backup" });
-      console.log(
-        "✅ [AuthContext] Cleared biometric backup keys from Capacitor Preferences",
-      );
-    } catch (err) {
-      console.error(
-        "❌ Failed to clear Capacitor Preferences biometric backup:",
-        err,
-      );
-    }
+    // DON'T clear biometric backup keys from Capacitor Preferences
+    // These are needed for fallback when Preferences.get() fails
+    // Biometric credentials should persist across logout to allow Face ID login
+    // The backup keys (biometric_username_backup, biometric_password_backup) are used as fallback
+    console.log(
+      "ℹ️ [AuthContext] Keeping biometric backup keys in Capacitor Preferences for Face ID after logout",
+    );
 
     setUser(null);
     setToken(null);

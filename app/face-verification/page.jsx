@@ -564,29 +564,7 @@ export default function FaceVerificationPage() {
                 }
             }
 
-            // CRITICAL: Store username in Capacitor Preferences FIRST (survives logout)
-            // This MUST happen before credential storage because hasBiometricCredentials() 
-            // checks for this key to determine if biometric login is available
-            // This allows biometric login even if Keystore credential save fails
-            if (Capacitor.isNativePlatform() && username) {
-                try {
-                    const { Preferences } = await import("@capacitor/preferences");
-                    await Preferences.set({
-                        key: "biometric_username",
-                        value: username
-                    });
-                    console.log("✅ [CONTINUE] Stored username in Preferences for biometric login:", username);
-
-                    // Also store as backup (used by getCredentials fallback)
-                    await Preferences.set({
-                        key: "biometric_username_backup",
-                        value: username
-                    });
-                    console.log("✅ [CONTINUE] Stored username backup in Preferences");
-                } catch (prefError) {
-                    console.warn("⚠️ [CONTINUE] Failed to store username in Preferences:", prefError);
-                }
-            }
+            // Note: Username is stored in Keychain via setCredentials() below
 
             // Save biometric credentials using capacitor-native-biometric
             // Following official pattern: Store credentials securely after successful backend registration
@@ -628,23 +606,12 @@ export default function FaceVerificationPage() {
                     console.log("💾 [CONTINUE] Biometric type:", biometricTypeString);
                     console.log("💾 [CONTINUE] Password string length:", passwordString.length);
 
-                    // CRITICAL: Save password backup to Preferences FIRST
-                    // This ensures credentials are available even if Keystore save fails
-                    try {
-                        const { Preferences } = await import("@capacitor/preferences");
-                        await Preferences.set({
-                            key: "biometric_password_backup",
-                            value: passwordString
-                        });
-                        console.log("✅ [CONTINUE] Saved password backup to Preferences");
-                    } catch (prefError) {
-                        console.warn("⚠️ [CONTINUE] Failed to save password backup to Preferences:", prefError);
-                    }
 
-                    // Now try to save to Keystore
+                    // Now try to save to Keychain (multi-account support)
                     const credentialResult = await setCredentials({
                         username: username,
                         password: passwordString,
+                        userId: user?._id, // Per-user Keychain entry
                     });
 
                     if (credentialResult.success) {
@@ -655,15 +622,14 @@ export default function FaceVerificationPage() {
                         console.log("✅ [CONTINUE] Users can now use biometric login");
                     } else {
                         console.warn("⚠️ [CONTINUE] Failed to save biometric credentials to Keystore:", credentialResult.error);
-                        console.warn("⚠️ [CONTINUE] Credentials are stored in Preferences backup - biometric login will still work");
+                        
 
-                        // Still enable biometric locally since credentials are in Preferences backup
-                        enableBiometricLocally(biometricTypeString);
+                        // Credentials stored in Keychain only
 
                         // If device authentication is required, store a flag to retry later
                         if (credentialResult.requiresDeviceAuth) {
                             console.warn("⚠️ [CONTINUE] Device authentication required - credentials will be saved on next login");
-                            localStorage.setItem("biometricCredentialsPending", "true");
+                            
                             localStorage.setItem("biometricCredentialsData", JSON.stringify({
                                 username: username,
                                 password: passwordString,
@@ -673,16 +639,11 @@ export default function FaceVerificationPage() {
                 } catch (biometricError) {
                     console.error("❌ [CONTINUE] Error saving biometric credentials:", biometricError);
                     // Don't fail face verification if biometric save fails
-                    // Credentials might still be in Preferences backup
                     console.warn("⚠️ [CONTINUE] Face verification completed, but credential storage had an error.");
-                    console.warn("⚠️ [CONTINUE] Checking if credentials exist in Preferences backup...");
 
                     // Check if password backup was saved before the error
                     try {
-                        const { Preferences } = await import("@capacitor/preferences");
-                        const passwordBackup = await Preferences.get({ key: "biometric_password_backup" });
                         if (passwordBackup?.value) {
-                            console.log("✅ [CONTINUE] Password backup exists in Preferences - biometric login should still work");
                             // Enable biometric locally since credentials exist
                             const { enableBiometricLocally } = await import("@/lib/biometricAuth");
                             enableBiometricLocally(biometricTypeString);
@@ -781,14 +742,8 @@ export default function FaceVerificationPage() {
                         return;
                     }
 
-                    // CRITICAL: Save to Preferences FIRST (always works, survives logout)
                     try {
-                        await Preferences.set({ key: "biometric_username", value: username });
-                        await Preferences.set({ key: "biometric_username_backup", value: username });
-                        await Preferences.set({ key: "biometric_password_backup", value: passwordString });
-                        console.log("✅ [SKIP] Saved credentials to Preferences backup");
                     } catch (prefError) {
-                        console.warn("⚠️ [SKIP] Failed to save to Preferences:", prefError);
                     }
 
                     // Try to save to Keystore
@@ -801,12 +756,10 @@ export default function FaceVerificationPage() {
                         enableBiometricLocally(availability.biometryTypeName);
                         console.log("✅ [SKIP] Biometric credentials saved successfully!");
                     } else {
-                        console.warn("⚠️ [SKIP] Keystore save failed, but Preferences backup exists");
-                        // Still enable biometric since credentials are in Preferences
                         enableBiometricLocally(availability.biometryTypeName);
 
                         if (credentialResult.requiresDeviceAuth) {
-                            localStorage.setItem("biometricCredentialsPending", "true");
+                            
                             localStorage.setItem("biometricCredentialsData", JSON.stringify({
                                 username: username,
                                 password: passwordString,

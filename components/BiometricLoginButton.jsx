@@ -7,6 +7,8 @@ import {
     authenticateWithBiometric,
     hasBiometricCredentials,
     getBiometricType,
+    getCredentials,
+    listBiometricAccounts,
 } from "@/lib/biometricAuth";
 import { Capacitor } from "@capacitor/core";
 import { Preferences } from "@capacitor/preferences";
@@ -73,34 +75,30 @@ export default function BiometricLoginButton({ onSuccess, onError }) {
                 return;
             }
 
-            // Get user identifier from Capacitor Preferences (survives logout)
-            // This is stored during face verification registration
+            // Get user identifier from Preferences (fast lookup)
             let userIdentifier = null;
-
-            if (Capacitor.isNativePlatform()) {
-                try {
-                    const prefResult = await Preferences.get({ key: "biometric_username" });
-                    if (prefResult && prefResult.value) {
-                        userIdentifier = prefResult.value;
-                        console.log("✅ [LOGIN-BTN] Got user identifier from Preferences:", userIdentifier);
-                    }
-                } catch (e) {
-                    console.warn("⚠️ [LOGIN-BTN] Failed to get username from Preferences:", e);
+            
+            try {
+                const { value: storedUsername } = await Preferences.get({ key: "biometric_username" });
+                if (storedUsername) {
+                    userIdentifier = storedUsername;
+                    console.log("✅ [LOGIN-BTN] Got user identifier from Preferences:", userIdentifier);
                 }
+            } catch (e) {
+                console.warn("⚠️ [LOGIN-BTN] Failed to get username from Preferences:", e);
             }
-
-            // Fallback to localStorage if Preferences not available
-            if (!userIdentifier) {
+            
+            // Fallback: Get from Keychain
+            if (!userIdentifier && Capacitor.isNativePlatform()) {
                 try {
-                    const storedUser = localStorage.getItem("user") || localStorage.getItem("biometricUser");
-                    if (storedUser) {
-                        const user = JSON.parse(storedUser);
-                        userIdentifier = user.mobile || user.email;
-                        console.log("✅ [LOGIN-BTN] Got user identifier from localStorage:", userIdentifier);
+                        const creds = await getCredentials(userIdentifier);
+                        if (creds?.success && creds.username) {
+                            userIdentifier = creds.username;
+                            console.log("✅ [LOGIN-BTN] Got user identifier from Keychain:", userIdentifier);
+                        }
+                    } catch (e) {
+                        console.warn("⚠️ [LOGIN-BTN] Failed to get credentials from Keychain:", e);
                     }
-                } catch (e) {
-                    console.error("❌ [LOGIN-BTN] Failed to get user from localStorage:", e);
-                }
             }
 
             // Get device ID as backup for status check
@@ -228,6 +226,7 @@ export default function BiometricLoginButton({ onSuccess, onError }) {
                 title: "Biometric Login",
                 subtitle: "Verify your identity to log in",
                 description: "Use your biometric to access your account",
+                userId: userIdentifier, // Pass the user identifier for multi-account support
             });
 
             console.log("🔐 [LOGIN-BTN] Authentication result:", {
