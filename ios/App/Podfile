@@ -20,6 +20,7 @@ def capacitor_pods
   pod 'CapacitorCommunityAdvertisingId', :path => '../../node_modules/@capacitor-community/advertising-id'
   pod 'CapacitorCommunityPlayIntegrity', :path => '../../node_modules/@capacitor-community/play-integrity'
   pod 'CapacitorCommunityStripe', :path => '../../node_modules/@capacitor-community/stripe'
+  pod 'CapacitorFirebaseAuthentication', :path => '../../node_modules/@capacitor-firebase/authentication'
   pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
   pod 'CapacitorBrowser', :path => '../../node_modules/@capacitor/browser'
   pod 'CapacitorCamera', :path => '../../node_modules/@capacitor/camera'

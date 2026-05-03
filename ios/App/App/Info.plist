@@ -62,6 +62,14 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>com.googleusercontent.apps.278411577622-akgntsl7riq3di71trv37j2131tgrp0t</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>com.googleusercontent.apps.278411577622-akgntsl7riq3di71trv37j2131tgrp0t</string>
+		</dict>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
 				<string>jacksonrewards</string>
 			</array>
 			<key>CFBundleURLName</key>

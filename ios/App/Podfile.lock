@@ -22,6 +22,13 @@ PODS:
   - CapacitorFilesystem (7.1.4):
     - Capacitor
     - IONFilesystemLib (~> 1.0.1)
+  - CapacitorFirebaseAuthentication (8.2.0):
+    - Capacitor
+    - CapacitorFirebaseAuthentication/Lite (= 8.2.0)
+    - FirebaseAuth (~> 12.7.0)
+  - CapacitorFirebaseAuthentication/Lite (8.2.0):
+    - Capacitor
+    - FirebaseAuth (~> 12.7.0)
   - CapacitorGeolocation (7.1.5):
     - Capacitor
     - IONGeolocationLib (= 1.0.1)
@@ -38,8 +45,50 @@ PODS:
   - CordovaPluginsStatic (7.4.3):
     - AppLovinSDK (= 13.2.0)
     - CapacitorCordova
+  - FirebaseAppCheckInterop (12.7.0)
+  - FirebaseAuth (12.7.0):
+    - FirebaseAppCheckInterop (~> 12.7.0)
+    - FirebaseAuthInterop (~> 12.7.0)
+    - FirebaseCore (~> 12.7.0)
+    - FirebaseCoreExtension (~> 12.7.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GTMSessionFetcher/Core (< 6.0, >= 3.4)
+    - RecaptchaInterop (~> 101.0)
+  - FirebaseAuthInterop (12.7.0)
+  - FirebaseCore (12.7.0):
+    - FirebaseCoreInternal (~> 12.7.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/Logger (~> 8.1)
+  - FirebaseCoreExtension (12.7.0):
+    - FirebaseCore (~> 12.7.0)
+  - FirebaseCoreInternal (12.7.0):
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+  - GoogleUtilities/AppDelegateSwizzler (8.1.0):
+    - GoogleUtilities/Environment
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Network
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Environment (8.1.0):
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Logger (8.1.0):
+    - GoogleUtilities/Environment
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Network (8.1.0):
+    - GoogleUtilities/Logger
+    - "GoogleUtilities/NSData+zlib"
+    - GoogleUtilities/Privacy
+    - GoogleUtilities/Reachability
+  - "GoogleUtilities/NSData+zlib (8.1.0)":
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Privacy (8.1.0)
+  - GoogleUtilities/Reachability (8.1.0):
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Privacy
+  - GTMSessionFetcher/Core (5.2.0)
   - IONFilesystemLib (1.0.1)
   - IONGeolocationLib (1.0.1)
+  - RecaptchaInterop (101.0.0)
   - StripeApplePay (24.16.2):
     - StripeCore (= 24.16.2)
   - StripeCore (24.16.2)
@@ -71,6 +120,7 @@ DEPENDENCIES:
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
+  - "CapacitorFirebaseAuthentication (from `../../node_modules/@capacitor-firebase/authentication`)"
   - "CapacitorGeolocation (from `../../node_modules/@capacitor/geolocation`)"
   - CapacitorNativeBiometric (from `../../node_modules/capacitor-native-biometric`)
   - "CapacitorPreferences (from `../../node_modules/@capacitor/preferences`)"
@@ -82,8 +132,17 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - AppLovinSDK
+    - FirebaseAppCheckInterop
+    - FirebaseAuth
+    - FirebaseAuthInterop
+    - FirebaseCore
+    - FirebaseCoreExtension
+    - FirebaseCoreInternal
+    - GoogleUtilities
+    - GTMSessionFetcher
     - IONFilesystemLib
     - IONGeolocationLib
+    - RecaptchaInterop
     - StripeApplePay
     - StripeCore
     - StripePayments
@@ -112,6 +171,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/device"
   CapacitorFilesystem:
     :path: "../../node_modules/@capacitor/filesystem"
+  CapacitorFirebaseAuthentication:
+    :path: "../../node_modules/@capacitor-firebase/authentication"
   CapacitorGeolocation:
     :path: "../../node_modules/@capacitor/geolocation"
   CapacitorNativeBiometric:
@@ -139,6 +200,7 @@ SPEC CHECKSUMS:
   CapacitorCordova: bf648a636f3c153f652d312ae145fb508b6ffced
   CapacitorDevice: 81ae78d5d1942707caad79276badd458bf6ec603
   CapacitorFilesystem: f9bd850c41e048180e5dc0cbb90f2033ede9d2cc
+  CapacitorFirebaseAuthentication: 86cbfa7b8d839acb36c774cc88b4b9f62df4db9e
   CapacitorGeolocation: 84f868bea4c2499aebc3bb3a88fd0a508f87ab87
   CapacitorNativeBiometric: 78cf21304251a512e4597437325b5e9b0cd9f7b3
   CapacitorPreferences: 65107ed7437d96ee72583df5763985e3c0ff2bc2
@@ -146,8 +208,17 @@ SPEC CHECKSUMS:
   CapacitorStatusBar: e04d05e121d5a5979c29eb4249186a4e4a84cacb
   CapgoCapacitorNavigationBar: dfa5f03c60a92e5cfdd67768e4a4f0c86a0b1c04
   CordovaPluginsStatic: 2982b52c32d7f901aabb4b538fd2c199947c36cc
+  FirebaseAppCheckInterop: d58366471f1dadf2ed998b15f85c658458a10142
+  FirebaseAuth: 88beaef7c688a2950541552b6dd195d22137c41a
+  FirebaseAuthInterop: deb2638881b5d98c88c4371dd0de65b6110f217b
+  FirebaseCore: c7b57863ce0859281a66d16ca36d665c45d332b5
+  FirebaseCoreExtension: 731a5744970bcd73ad95ab2a2b8a1f46353e86dd
+  FirebaseCoreInternal: 571a2dd8c975410966199623351db3a3265c874d
+  GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
+  GTMSessionFetcher: 904bdd2a82c635bcd6f44edf94cc8775c5d1d6e6
   IONFilesystemLib: 89258b8e3e85465da93127d25d7ce37f977e8a6f
   IONGeolocationLib: 20f9d0248a0b5264511fb57a37e25dd2badf797a
+  RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   StripeApplePay: 66dc43ec1284904a2cf4c5a0906f86296d23afbd
   StripeCore: f3a62397cecaf4da1827bcf07de7312ec1f3b96e
   StripePayments: b3e7817d821ceedd469008d17d94a1494ff1b624
@@ -155,6 +226,6 @@ SPEC CHECKSUMS:
   StripePaymentsUI: d489e73bf790da1c74e642021475b1a09a4a4500
   StripeUICore: 723e5024c83acb5ba5e71335e110a471b182a74d
 
-PODFILE CHECKSUM: 7ee4a5881d43b62b1676d8e16e11be4a31eb7395
+PODFILE CHECKSUM: 9b3ae0bfff2161b9c3fddc37ce5912877e5e992c
 
 COCOAPODS: 1.16.2

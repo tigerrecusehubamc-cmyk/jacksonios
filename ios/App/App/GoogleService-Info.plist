@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>278411577622-akgntsl7riq3di71trv37j2131tgrp0t.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.278411577622-akgntsl7riq3di71trv37j2131tgrp0t</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>278411577622-a6jqc1030286t72m5un07ah6jlksthn4.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCzrP0XF4DJ4Ebu4O2SAs6mg9NYubgIJ7s</string>
+	<key>GCM_SENDER_ID</key>
+	<string>278411577622</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.jackson.rewards.app</string>
+	<key>PROJECT_ID</key>
+	<string>jackson-3c4bc</string>
+	<key>STORAGE_BUCKET</key>
+	<string>jackson-3c4bc.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:278411577622:ios:cb165122588ba6f04c2837</string>
+</dict>
+</plist>
