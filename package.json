@@ -14,7 +14,7 @@
     "@capacitor-community/advertising-id": "^7.1.0",
     "@capacitor-community/play-integrity": "^7.1.0",
     "@capacitor-community/stripe": "^7.2.1",
-    "@capacitor-firebase/authentication": "^8.2.0",
+    "@capacitor-firebase/authentication": "^7.2.0",
     "@capacitor/app": "^7.0.2",
     "@capacitor/browser": "^7.0.2",
     "@capacitor/camera": "^7.0.2",
