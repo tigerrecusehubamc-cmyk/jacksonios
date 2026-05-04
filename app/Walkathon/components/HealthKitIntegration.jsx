@@ -29,6 +29,14 @@ export const HealthKitIntegration = ({
     const syncInProgressRef = useRef(false);
     const initialSyncCompletedRef = useRef(false);
 
+    // Auto-close pre-permission modal when authorization completes
+    useEffect(() => {
+        if (isAuthorized && showPrePermission) {
+            logHealthKit("✅ Auth Complete - Closing Pre-Permission Modal", {});
+            setShowPrePermission(false);
+        }
+    }, [isAuthorized]);
+
     // Debug logging helper
     const logHealthKit = (label, data) => {
         console.log(`[🏃 HEALTHKIT] ${label}`, data);
@@ -1058,7 +1066,7 @@ export const HealthKitIntegration = ({
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="bg-[#1a1a2e] border border-white/10 rounded-3xl p-6 w-full max-w-sm"
+                        className="bg-black/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 w-full max-w-sm shadow-2xl shadow-orange-500/10"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Apple Health Icon */}
@@ -1102,18 +1110,20 @@ export const HealthKitIntegration = ({
                         <div className="flex gap-3">
                             <motion.button
                                 whileTap={{ scale: 0.98 }}
-                                onClick={() => setShowPrePermission(false)}
-                                className="flex-1 py-3 bg-white/10 text-white font-medium rounded-xl"
+                                onClick={() => {
+                                    setShowPrePermission(false);
+                                }}
+                                className="flex-1 py-3 bg-white/5 border border-white/10 text-gray-300 font-medium rounded-xl hover:bg-white/10 transition-all"
                             >
                                 Not Now
                             </motion.button>
                             <motion.button
                                 whileTap={{ scale: 0.98 }}
-                                onClick={() => {
+                                onClick={async () => {
+                                    await requestHealthKitAuth();
                                     setShowPrePermission(false);
-                                    requestHealthKitAuth();
                                 }}
-                                className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl"
+                                className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all"
                             >
                                 Continue
                             </motion.button>

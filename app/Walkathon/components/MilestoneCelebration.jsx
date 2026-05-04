@@ -46,7 +46,7 @@ export const MilestoneCelebration = ({ milestones = [], onClose }) => {
                         }
                     }}
                 >
-                    {/* Confetti Particles */}
+                        {/* Confetti Particles */}
                     {[...Array(30)].map((_, i) => (
                         <motion.div
                             key={i}
@@ -54,7 +54,7 @@ export const MilestoneCelebration = ({ milestones = [], onClose }) => {
                             style={{
                                 left: `${Math.random() * 100}%`,
                                 top: `${Math.random() * 100}%`,
-                                backgroundColor: ['#f97316', '#fbbf24', '#34d399', '#f472b6', '#818cf8'][Math.floor(Math.random() * 5)],
+                                backgroundColor: ['#f97316', '#fbbf24', '#fb923c', '#fdba74', '#7c3aed'][Math.floor(Math.random() * 5)],
                             }}
                             animate={{
                                 y: [0, -100, 200],
@@ -77,7 +77,7 @@ export const MilestoneCelebration = ({ milestones = [], onClose }) => {
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.5, opacity: 0, y: 50 }}
                         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                        className="relative w-full max-w-sm bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 rounded-3xl p-8 shadow-2xl shadow-orange-500/50 overflow-hidden"
+                        className="relative w-full max-w-sm bg-black/90 backdrop-blur-xl border border-orange-500/30 rounded-3xl p-8 shadow-2xl shadow-orange-500/20 overflow-hidden"
                     >
                         {/* Glow Effect */}
                         <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 to-transparent rounded-3xl" />
@@ -150,12 +150,12 @@ export const MilestoneCelebration = ({ milestones = [], onClose }) => {
                             </motion.p>
 
                             {/* XP Reward Card */}
-                            <motion.div
-                                initial={{ scale: 0, rotateX: 90 }}
-                                animate={{ scale: 1, rotateX: 0 }}
-                                transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-                                className="bg-white/20 backdrop-blur-sm rounded-2xl p-5 mb-6 border border-white/30"
-                            >
+                             <motion.div
+                                 initial={{ scale: 0, rotateX: 90 }}
+                                 animate={{ scale: 1, rotateX: 0 }}
+                                 transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+                                 className="bg-black/60 backdrop-blur-xl rounded-2xl p-5 mb-6 border border-orange-500/30 shadow-lg shadow-orange-500/10"
+                             >
                                 <p className="text-white/80 text-sm font-medium mb-1">Reward Earned</p>
                                 <motion.div
                                     animate={{ 
