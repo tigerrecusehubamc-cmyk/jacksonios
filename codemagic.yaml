@@ -61,10 +61,14 @@ workflows:
           plutil -replace NSLocationAlwaysAndWhenInUseUsageDescription -string "We notify you near reward locations." "$PLIST"
           plutil -replace NSFaceIDUsageDescription -string "FaceID for secure login." "$PLIST"
 
+      - name: Clean old pods
+        script: |
+          rm -rf ios/App/Pods ios/App/Podfile.lock
+
       - name: Install CocoaPods
         script: |
           cd ios/App
-          pod install
+          pod install --repo-update
 
       - name: Build iOS archive
         script: |
