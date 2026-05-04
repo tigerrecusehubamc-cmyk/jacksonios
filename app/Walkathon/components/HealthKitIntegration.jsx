@@ -24,6 +24,8 @@ export const HealthKitIntegration = ({
     const [error, setError] = useState(null);
     const [isIOS, setIsIOS] = useState(false);
     const [isAvailable, setIsAvailable] = useState(false);
+    const [showPrePermission, setShowPrePermission] = useState(false);
+    const [authCheckComplete, setAuthCheckComplete] = useState(false);
     const syncInProgressRef = useRef(false);
     const initialSyncCompletedRef = useRef(false);
 
@@ -179,37 +181,72 @@ export const HealthKitIntegration = ({
         checkPlatform();
     }, []);
 
-    // Check HealthKit availability when iOS platform is detected
+    // Check HealthKit availability and existing authorization when iOS platform is detected
     useEffect(() => {
         if (!isIOS) {
+            logHealthKit("❌ Not iOS Platform - Skipping Auth Check", {});
             setIsAvailable(false);
+            setAuthCheckComplete(true);
             return;
         }
         
-        const checkAvailability = async () => {
+        let isMounted = true;
+        
+        const checkAuth = async () => {
             try {
-                // Direct check without callNativeMethod to avoid circular dependency
-                if (Capacitor.Plugins?.HealthKit?.isAvailable) {
-                    const result = await Capacitor.Plugins.HealthKit.isAvailable();
-                    const available = result?.available ?? false;
-                    setIsAvailable(available);
-                    logHealthKit("✅ HealthKit Availability Checked on Mount", { available });
-                } else if (window.Capacitor?.Plugins?.HealthKit?.isAvailable) {
-                    const result = await window.Capacitor.Plugins.HealthKit.isAvailable();
-                    const available = result?.available ?? false;
-                    setIsAvailable(available);
-                    logHealthKit("✅ HealthKit Availability Checked on Mount", { available });
+                logHealthKit("🔍 START Auth Check", { ts: Date.now() });
+                
+                // Simple availability check
+                const result = await callNativeMethod('isAvailable');
+                const available = result?.available === true;
+                
+                logHealthKit("✅ Availability Result", { available, result });
+                if (!isMounted) return;
+                setIsAvailable(available);
+                
+                if (!available) {
+                    logHealthKit("❌ Not Available - Skipping Auth Test", {});
+                    return;
+                }
+                
+                // Check existing authorization by testing read access
+                logHealthKit("🔍 Testing Existing Auth...", {});
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                
+                const testResult = await callNativeMethod('testReadAccess', {
+                    startDate: today.toISOString(),
+                    endDate: tomorrow.toISOString()
+                });
+                
+                logHealthKit("📊 Auth Test Result", { testResult });
+                if (!isMounted) return;
+                
+                if (testResult?.hasAccess === true) {
+                    logHealthKit("✅ AUTHORIZED - Setting isAuthorized=true", {});
+                    setIsAuthorized(true);
+                } else if (testResult?.reason === "authorizationDenied") {
+                    logHealthKit("❌ DENIED - Setting isAuthorized=false", {});
+                    setIsAuthorized(false);
+                    setError("HealthKit access was denied. Please enable in Settings → Privacy & Security → Health.");
                 } else {
-                    logHealthKit("⚠️ HealthKit plugin not found", {});
-                    setIsAvailable(false);
+                    // No steps or unknown - assume authorized if we can query
+                    logHealthKit("⚠️ Assuming Authorized (no steps today)", {});
+                    setIsAuthorized(true);
                 }
             } catch (err) {
-                logHealthKit("⚠️ Could not check HealthKit availability on mount", { error: err.message });
-                setIsAvailable(false);
+                logHealthKit("⚠️ Auth Check Error", { error: err.message });
+            } finally {
+                logHealthKit("✅ Auth Check DONE", { isAuthorized });
+                if (isMounted) setAuthCheckComplete(true);
             }
         };
         
-        checkAvailability();
+        checkAuth();
+        
+        return () => { isMounted = false; };
     }, [isIOS]);
 
     /**
@@ -1008,8 +1045,112 @@ export const HealthKitIntegration = ({
                 </motion.div>
             )}
 
-            {/* iOS - Not Authorized but Available */}
-            {isIOS && !isAuthorized && isAvailable && (
+            {/* Pre-Permission Explainer Modal */}
+            {showPrePermission && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setShowPrePermission(false)}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        className="bg-[#1a1a2e] border border-white/10 rounded-3xl p-6 w-full max-w-sm"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Apple Health Icon */}
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/20">
+                            <span className="text-3xl">❤️</span>
+                        </div>
+
+                        <h3 className="text-white font-bold text-lg text-center mb-2">
+                            Connect Apple Health
+                        </h3>
+                        <p className="text-gray-400 text-sm text-center mb-6">
+                            Earn rewards for every step you take by syncing with Apple Health
+                        </p>
+
+                        {/* Benefits */}
+                        <div className="space-y-3 mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                                    <span className="text-green-400 text-sm">✓</span>
+                                </div>
+                                <p className="text-gray-300 text-sm">Automatically track your daily steps</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                    <span className="text-blue-400 text-sm">📊</span>
+                                </div>
+                                <p className="text-gray-300 text-sm">Sync across all your Apple devices</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                    <span className="text-purple-400 text-sm">🏆</span>
+                                </div>
+                                <p className="text-gray-300 text-sm">Unlock rewards based on your activity</p>
+                            </div>
+                        </div>
+
+                        <p className="text-gray-500 text-xs text-center mb-6">
+                            Your health data stays private and is only used to calculate your rewards
+                        </p>
+
+                        <div className="flex gap-3">
+                            <motion.button
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => setShowPrePermission(false)}
+                                className="flex-1 py-3 bg-white/10 text-white font-medium rounded-xl"
+                            >
+                                Not Now
+                            </motion.button>
+                            <motion.button
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => {
+                                    setShowPrePermission(false);
+                                    requestHealthKitAuth();
+                                }}
+                                className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl"
+                            >
+                                Continue
+                            </motion.button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+
+            {/* iOS - Checking Auth State */}
+            {isIOS && !authCheckComplete && isAvailable && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-gradient-to-br from-gray-500/10 to-gray-600/5 backdrop-blur-sm border border-gray-500/30 rounded-2xl p-4"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center">
+                            <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full"
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="text-white font-bold mb-1">
+                                Checking HealthKit...
+                            </h4>
+                            <p className="text-gray-400 text-xs leading-relaxed">
+                                Verifying your HealthKit authorization status
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* iOS - Not Authorized but Available - Only show after auth check complete */}
+            {isIOS && !isAuthorized && isAvailable && authCheckComplete && (
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -1039,6 +1180,12 @@ export const HealthKitIntegration = ({
                             <p className="text-gray-400 text-xs leading-relaxed">
                                 Sync your steps automatically and track your progress in real-time
                             </p>
+                            <p className="text-gray-500 text-xs mt-1">
+                                If you previously denied access, enable in Settings → Privacy & Security → Health → Jackson
+                            </p>
+                            <p className="text-gray-500 text-xs mt-1">
+                                If you previously denied access, enable in Settings → Privacy & Security → Health → Jackson
+                            </p>
                         </div>
                     </div>
 
@@ -1046,7 +1193,7 @@ export const HealthKitIntegration = ({
                     <motion.button
                         whileHover={{ scale: 1.02, y: -2 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={requestHealthKitAuth}
+                        onClick={() => setShowPrePermission(true)}
                         disabled={isAuthorizing}
                         className="w-full mt-4 py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl shadow-lg shadow-orange-500/30 disabled:opacity-50 transition-all"
                     >

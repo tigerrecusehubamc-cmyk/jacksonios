@@ -6,7 +6,7 @@ import { useWalletUpdates } from "@/hooks/useWalletUpdates";
 import { getXPTierProgressBar } from "@/lib/api";
 import { onXPLevelReached } from "@/lib/adjustService";
 
-// XP from walletScreen (https://rewardsapi.hireagent.co/api/wallet-screen) -> xp.current
+// XP from walletScreen (https://rewardsuatapi.hireagent.co/api/wallet-screen) -> xp.current
 const XPTierTracker = ({ stats, token }) => {
     const [isXPModalOpen, setIsXPModalOpen] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);

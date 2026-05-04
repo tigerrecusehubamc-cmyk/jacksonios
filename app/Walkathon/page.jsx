@@ -216,7 +216,7 @@ export default function WalkathonPage() {
                     setProgress(data.progress);
                     setUserRank(data.userRank);
                     setTimeRemaining(data.timeRemaining);
-                    setIsJoined(true);
+                    // Don't set isJoined here - let handleJoin control it
 
                     // Save progress to cache
                     try {
@@ -310,6 +310,7 @@ export default function WalkathonPage() {
             logWalkathon("Joining Walkathon", { timestamp: new Date().toISOString() });
             setIsJoining(true);
             setError(null);
+            setLoading(true); // Show loading state while all data loads
 
             const response = await joinWalkathon(token);
             logWalkathon("Join API Response", { response });
@@ -322,6 +323,7 @@ export default function WalkathonPage() {
                     body: response.body
                 });
                 setError(errorMessage);
+                setLoading(false);
                 return;
             }
 
@@ -329,27 +331,32 @@ export default function WalkathonPage() {
                 const { data } = response;
 
                 if (data.success) {
-                    logWalkathon("Join Success", {
+                    logWalkathon("Join Success, Loading All Data", {
                         totalSteps: data.progress?.totalSteps || 0,
                         message: data.message
                     });
 
-                    setIsJoined(true);
-                    setProgress(data.progress);
-                    
                     // Clear cache to force fresh fetch
                     localStorage.removeItem("walkathon_cache");
                     
+                    // Load all data first before showing joined state
                     await loadProgress();
                     await loadLeaderboard();
+                    
+                    // Now set joined = true after all data is loaded
+                    setIsJoined(true);
+                    setLoading(false);
+                    logWalkathon("Join Complete - All Data Loaded, Showing Main Screen", {});
                 } else {
                     logWalkathon("Join Failed", { message: data.message });
                     setError(data.message || "Failed to join walkathon");
+                    setLoading(false);
                 }
             }
         } catch (err) {
             logWalkathon("Join Error", { error: err.message });
             setError(err.message || "Failed to join walkathon");
+            setLoading(false);
         } finally {
             setIsJoining(false);
         }
@@ -570,22 +577,100 @@ export default function WalkathonPage() {
         });
     }, [loading, isEligible, isJoined, isJoining, isClaiming, isSyncing, walkathon, progress, leaderboard.length, userRank, logWalkathon]);
 
-    // Loading state - show skeleton only if no cached data and still loading
-    if (loading && !walkathon) {
+    // Loading state - show skeleton on initial load or while joining
+    if ((loading && !walkathon) || isJoining) {
         return (
             <div className="relative w-full min-h-screen bg-black pb-[150px]">
                 <WalkathonHeader title="Walkathon" />
-                <div className="flex flex-col w-full max-w-[375px] mx-auto items-center gap-6 pt-4 px-0">
-                    <div className="w-full px-4">
-                        <div className="h-4 w-48 bg-gray-800 rounded animate-pulse mx-auto mb-2" />
-                        <div className="h-3 w-32 bg-gray-800 rounded animate-pulse mx-auto" />
+                <div className="flex flex-col w-full max-w-[375px] mx-auto items-center gap-6 pt-20 px-0">
+                    {/* Walking Animation */}
+                    <div className="relative w-40 h-40 flex items-center justify-center">
+                        {/* Footsteps animation */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            {[0, 1, 2, 3, 4].map((i) => (
+                                <motion.div
+                                    key={i}
+                                    className="absolute"
+                                    style={{
+                                        left: `${50 + Math.cos((i * 72) * Math.PI / 180) * 40}%`,
+                                        top: `${50 + Math.sin((i * 72) * Math.PI / 180) * 40}%`,
+                                    }}
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ 
+                                        scale: [0, 1.2, 1],
+                                        opacity: [0, 1, 0.7]
+                                    }}
+                                    transition={{
+                                        duration: 1.5,
+                                        repeat: Infinity,
+                                        delay: i * 0.3,
+                                        ease: "easeOut"
+                                    }}
+                                >
+                                    <span className="text-2xl">👣</span>
+                                </motion.div>
+                            ))}
+                        </div>
+                        
+                        {/* Center walking person */}
+                        <motion.div
+                            animate={{ 
+                                y: [0, -8, 0],
+                                scale: [1, 1.05, 1]
+                            }}
+                            transition={{
+                                duration: 1.2,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
+                            className="text-6xl z-10"
+                        >
+                            🚶
+                        </motion.div>
                     </div>
-                    <div className="w-40 h-40 rounded-full bg-gray-800 animate-pulse" />
-                    <div className="w-full px-4 space-y-3">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-20 bg-gray-800/50 rounded-2xl animate-pulse" />
+
+                    {/* Loading text with step counter animation */}
+                    <motion.div
+                        className="text-center"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                    >
+                        <p className="text-white font-semibold text-lg mb-2">
+                            {isJoining ? "Joining Walkathon..." : "Loading..."}
+                        </p>
+                        <motion.p
+                            className="text-orange-400 text-sm"
+                            animate={{ opacity: [0.5, 1, 0.5] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                            👟 Getting your steps ready
+                        </motion.p>
+                    </motion.div>
+
+                    {/* Animated step counter */}
+                    <motion.div
+                        className="flex items-center gap-2 text-gray-400 text-xs"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                    >
+                        {[1, 2, 3].map((_, i) => (
+                            <motion.div
+                                key={i}
+                                className="w-2 h-2 bg-orange-500 rounded-full"
+                                animate={{ 
+                                    scale: [1, 1.5, 1],
+                                    opacity: [0.3, 1, 0.3]
+                                }}
+                                transition={{
+                                    duration: 1,
+                                    repeat: Infinity,
+                                    delay: i * 0.3
+                                }}
+                            />
                         ))}
-                    </div>
+                    </motion.div>
                 </div>
                 <HomeIndicator activeTab="home" />
             </div>
