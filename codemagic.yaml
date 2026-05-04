@@ -19,7 +19,26 @@ workflows:
         BUNDLE_ID: com.jackson.rewards.app
         TEAM_ID: HNLHZ72LJL
         PROFILE_NAME: Jackson
-        NEXT_PUBLIC_APPLOVIN_SDK_KEY: lh6M1G2AwbIq5_eZhJe3oflwyCkw_BbRghc3KgcdrArB_pQ0SDFuPEpJmL6cNATcIDu6ZNkbz7niRHBt7T0lV_
+        CURRENT_PROJECT_VERSION: "114"
+        NEXT_PUBLIC_API_URL: "https://rewardsuatapi.hireagent.co"
+        NEXT_PUBLIC_VERISOUL_API_KEY: "9sxeYwvVRwwI2fKL1ubo4euZ2zXNstA6cqnqDvN0"
+        NEXT_PUBLIC_VERISOUL_BASE_URL: "https://api.prod.verisoul.ai"
+        NEXT_PUBLIC_VERISOUL_PROJECT_ID: "579b117f-385b-44b0-95e0-e66a261cdf83"
+        NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyATHdTHrDds-jPOjKeZF3hbBjtz3q_BiOU"
+        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "jackson-3c4bc.firebaseapp.com"
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID: "jackson-3c4bc"
+        NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "jackson-3c4bc.firebasestorage.app"
+        NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "278411577622"
+        NEXT_PUBLIC_FIREBASE_APP_ID: "1:278411577622:web:8a8d3513f02e8fcc4c2837"
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: "0x4AAAAAACpIw95M6r8lJWnI"
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_51SBUH3PJY1SybSwUCQEkb8qM1YDRgbKitMYFGpRDcryE1AFDPIHoI4ovL61hITqeaoFeNgDkFlZ5tBV7rFv7B3U0008lDMyvfe"
+        NEXT_PUBLIC_GOOGLE_CLOUD_PROJECT_NUMBER: "278411577622"
+        NEXT_PUBLIC_APP_VERSION: "V0.1.0"
+        NEXT_PUBLIC_APPLOVIN_SDK_KEY: "lh6M1G2AwbIq5_eZhJe3oflwyCkw_BbRghc3KgcdrArB_pQ0SDFuPEpJmL6cNATcIDu6ZNkbz7niRHBt7T0lV_"
+        NEXT_PUBLIC_APPLOVIN_AD_UNIT_IOS_REWARDED: "b3bf29fc650db20d"
+        NEXT_PUBLIC_APPLOVIN_AD_UNIT_ANDROID_REWARDED: "6e87990ef5f63cce"
+        NEXT_PUBLIC_ADMOB_APP_ID_IOS: "ca-app-pub-2800391972465887~6894931313"
+        NEXT_PUBLIC_ADMOB_APP_ID_ANDROID: "ca-app-pub-2800391972465887~5310386906"
 
     scripts:
       - name: Install dependencies
@@ -50,7 +69,7 @@ workflows:
                 config.build_settings['CODE_SIGN_STYLE'] = 'Manual'
                 config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = 'Jackson'
                 config.build_settings['CODE_SIGN_IDENTITY'] = 'Apple Distribution'
-                config.build_settings['CURRENT_PROJECT_VERSION'] = '113'
+                config.build_settings['CURRENT_PROJECT_VERSION'] = ENV['CURRENT_PROJECT_VERSION'] || '114'
               end
             end
           end
