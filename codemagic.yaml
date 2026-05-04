@@ -7,7 +7,7 @@ workflows:
       xcode: latest
 
       groups:
-        - app_store   # API key group
+        - app_store # API key group
 
       ios_signing:
         certificates:
@@ -19,6 +19,7 @@ workflows:
         BUNDLE_ID: com.jackson.rewards.app
         TEAM_ID: HNLHZ72LJL
         PROFILE_NAME: Jackson
+        NEXT_PUBLIC_APPLOVIN_SDK_KEY: lh6M1G2AwbIq5_eZhJe3oflwyCkw_BbRghc3KgcdrArB_pQ0SDFuPEpJmL6cNATcIDu6ZNkbz7niRHBt7T0lV_
 
     scripts:
       - name: Install dependencies
@@ -49,7 +50,7 @@ workflows:
                 config.build_settings['CODE_SIGN_STYLE'] = 'Manual'
                 config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = 'Jackson'
                 config.build_settings['CODE_SIGN_IDENTITY'] = 'Apple Distribution'
-                config.build_settings['CURRENT_PROJECT_VERSION'] = '112'
+                config.build_settings['CURRENT_PROJECT_VERSION'] = '113'
               end
             end
           end
@@ -64,6 +65,9 @@ workflows:
           plutil -replace NSLocationWhenInUseUsageDescription -string "We need location to show nearby rewards." "$PLIST"
           plutil -replace NSLocationAlwaysAndWhenInUseUsageDescription -string "We notify you near reward locations." "$PLIST"
           plutil -replace NSHealthUpdateUsageDescription -string "Used for health and fitness features integration." "$PLIST"
+          plutil -replace NSUserTrackingUsageDescription -string "Your data is used to show relevant ads and improve your experience." "$PLIST"
+          plutil -replace GADApplicationIdentifier -string "ca-app-pub-2800391972465887~6894931313" "$PLIST"
+          plutil -replace AppLovinSdkKey -string "lh6M1G2AwbIq5_eZhJe3oflwyCkw_BbRghc3KgcdrArB_pQ0SDFuPEpJmL6cNATcIDu6ZNkbz7niRHBt7T0lV_" "$PLIST"
           plutil -replace NSFaceIDUsageDescription -string "FaceID for secure login." "$PLIST"
 
       - name: Install CocoaPods
