@@ -19,7 +19,7 @@ workflows:
         BUNDLE_ID: com.jackson.rewards.app
         TEAM_ID: HNLHZ72LJL
         PROFILE_NAME: Jackson
-        CURRENT_PROJECT_VERSION: "114"
+        CURRENT_PROJECT_VERSION: "115"
         NEXT_PUBLIC_API_URL: "https://rewardsuatapi.hireagent.co"
         NEXT_PUBLIC_VERISOUL_API_KEY: "9sxeYwvVRwwI2fKL1ubo4euZ2zXNstA6cqnqDvN0"
         NEXT_PUBLIC_VERISOUL_BASE_URL: "https://api.prod.verisoul.ai"
