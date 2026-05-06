@@ -79,5 +79,70 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Your data is used to show relevant ads and improve your experience.</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-2800391972465887~6894931313</string>
+	<key>GADIsAdManagerApp</key>
+	<true/>
+	<key>AppLovinSdkKey</key>
+	<string>lh6M1G2AwbIq5_eZhJe3oflwyCkw_BbRghc3KgcdrArB_pQ0SDFuPEpJmL6cNATcIDu6ZNkbz7niRHBt7T0lV_</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Jackson uses health data to calculate your step count for activity-based rewards.</string>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>4fzdc2evr5.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>2fnua5tdw4.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>ydx93a7ass.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>7953jjrlmk.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>5a6flrn28p.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>ludvb6z3bs.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cp8zw746q7.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>3rd42ekr43.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>2u9pt9hc89.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>ppxm28t8ap.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>8s468mfl3y.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>9t9m3585q7.skadnetwork</string>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -16,9 +16,9 @@ const FeaturesSection = () => {
             rectangleImage2:
                 "https://c.animaapp.com/En0DOTZF/img/rectangle-41001.svg",
             mainImage: "https://c.animaapp.com/En0DOTZF/img/image-4043-1@2x.png",
-            imageClasses: "absolute top-px left-[81px] w-[70px] h-[70px] aspect-[1]",
+            imageClasses: "absolute top-[0%] left-[52%] w-[45%] h-[83%] aspect-[1]",
             titleClasses:
-                "absolute top-[41px] left-[17px] [font-family:'Poppins',Helvetica] font-semibold text-white text-xs tracking-[-0.12px] leading-[normal]",
+                "absolute top-[48%] left-[10%] [font-family:'Poppins',Helvetica] font-semibold text-white text-xs tracking-[-0.12px] leading-[normal]",
             hasComplexIcon: false,
         },
 
@@ -33,9 +33,9 @@ const FeaturesSection = () => {
                 "https://c.animaapp.com/En0DOTZF/img/rectangle-41001-1.svg",
             mainImage: "https://c.animaapp.com/En0DOTZF/img/image-3938.png",
             imageClasses:
-                "absolute top-[-3px] left-[97px] w-[50px] h-[61px] aspect-[0.82]",
+                "absolute top-[-10%] left-[58%] w-[38%] h-[95%] aspect-[0.82]",
             titleClasses:
-                "absolute top-[33px] left-[17px] [font-family:'Poppins',Helvetica] font-semibold text-white text-xs tracking-[-0.12px] leading-4",
+                "absolute top-[38%] left-[10%] [font-family:'Poppins',Helvetica] font-semibold text-white text-xs tracking-[-0.12px] leading-4",
             hasComplexIcon: false,
         },
         {
@@ -49,9 +49,9 @@ const FeaturesSection = () => {
                 "https://c.animaapp.com/En0DOTZF/img/rectangle-41005-1.svg",
             mainImage: "https://c.animaapp.com/En0DOTZF/img/image-4086@2x.png",
             imageClasses:
-                "absolute top-1 left-[86px] w-[70px] h-[70px] aspect-[1] object-cover",
+                "absolute top-[1%] left-[55%] w-[45%] h-[83%] aspect-[1] object-cover",
             titleClasses:
-                "absolute top-[41px] left-[17px] [font-family:'Poppins',Helvetica] font-semibold text-white text-xs tracking-[-0.12px] leading-[normal]",
+                "absolute top-[48%] left-[10%] [font-family:'Poppins',Helvetica] font-semibold text-white text-xs tracking-[-0.12px] leading-[normal]",
             hasComplexIcon: false,
         },
         {
@@ -64,9 +64,9 @@ const FeaturesSection = () => {
             rectangleImage2:
                 "https://c.animaapp.com/En0DOTZF/img/rectangle-41005.svg",
             mainImage: "https://c.animaapp.com/En0DOTZF/img/image-4043-1@2x.png",
-            imageClasses: "absolute top-px left-[81px] w-[70px] h-[70px] aspect-[1]",
+            imageClasses: "absolute top-[0%] left-[52%] w-[45%] h-[83%] aspect-[1]",
             titleClasses:
-                "absolute top-[41px] left-[17px] [font-family:'Poppins',Helvetica] font-semibold text-white text-xs tracking-[-0.12px] leading-[normal]",
+                "absolute top-[48%] left-[10%] [font-family:'Poppins',Helvetica] font-semibold text-white text-xs tracking-[-0.12px] leading-[normal]",
             hasComplexIcon: true,
         },
     ];
@@ -79,9 +79,9 @@ const FeaturesSection = () => {
 
     const renderFeatureCard = (feature) => {
         return (
-            <div
+            <div className="relative cursor-pointer transition-transform duration-200 hover:scale-105 active:scale-95 w-full overflow-hidden rounded-md"
                 key={feature.id}
-                className="relative w-[156px] h-[84px] cursor-pointer transition-transform duration-200 hover:scale-105 active:scale-95"
+                style={{ aspectRatio: "156 / 84" }}
                 onClick={() => handleFeatureClick(feature.route)}
                 role="button"
                 tabIndex={0}
@@ -94,12 +94,16 @@ const FeaturesSection = () => {
                 aria-label={`Navigate to ${feature.title}`}
             >
                 <div
-                    className="absolute top-[15px] left-[97px] w-[52px] h-[39px] rounded-[26px/19.5px]"
+                    className={feature.id === 4
+                        ? "absolute top-[8%] left-[58%] w-[38%] h-[55%] rounded-full"
+                        : "absolute top-[17%] left-[62%] w-[33%] h-[46%] rounded-full"}
                     style={{ backgroundColor: feature.bgColor }}
                 />
 
                 <img
-                    className="absolute top-[13px] left-px w-[156px] h-[71px]"
+                    className={feature.id === 4
+                        ? "absolute top-[3%] left-0 w-full h-[97%]"
+                        : "absolute top-[15%] left-0 w-full h-[84%]"}
                     alt="Rectangle"
                     src={feature.rectangleImage1}
                     loading="lazy"
@@ -107,7 +111,9 @@ const FeaturesSection = () => {
                 />
 
                 <img
-                    className="absolute top-4 left-px w-[156px] h-[68px]"
+                    className={feature.id === 4
+                        ? "absolute top-[7%] left-0 w-full h-[93%]"
+                        : "absolute top-[20%] left-0 w-full h-[80%]"}
                     alt="Rectangle"
                     src={feature.rectangleImage2}
                     loading="lazy"
@@ -124,23 +130,23 @@ const FeaturesSection = () => {
                 </div>
 
                 {feature.hasComplexIcon ? (
-                    <div className="absolute top-px left-[78px] w-[71px] h-[58px]">
-                        <div className="absolute top-6 left-[11px] w-12 h-[34px] rounded-[0px_0px_9.63px_9.63px] border-[0.69px] border-solid border-[#c41f24] bg-[linear-gradient(270deg,rgba(250,97,87,1)_0%,rgba(197,32,36,1)_10%,rgba(205,50,54,1)_92%,rgba(250,97,87,1)_100%)]" />
+                    <div className="absolute top-[-2%] left-[46%] w-[52%] h-[92%]">
+                        <div className="absolute top-[62%] left-[15%] w-[80%] h-[59%] rounded-b-lg border border-solid border-[#c41f24] bg-[linear-gradient(270deg,rgba(250,97,87,1)_0%,rgba(197,32,36,1)_10%,rgba(205,50,54,1)_92%,rgba(250,97,87,1)_100%)]" />
 
                         <img
-                            className="absolute top-2.5 left-2.5 w-[51px] h-[17px]"
+                            className="absolute top-[25%] left-[5%] w-[90%] h-[29%]"
                             alt="Union"
                             src="https://c.animaapp.com/En0DOTZF/img/union.svg"
                             loading="lazy"
                             decoding="async"
                         />
 
-                        <div className="absolute top-[25px] left-3 w-[46px] h-[5px] bg-black opacity-10" />
+                        <div className="absolute top-[55%] left-[10%] w-[80%] h-[8%] bg-black opacity-10" />
 
-                        <div className="absolute top-[18px] left-2.5 w-[49px] h-[9px] rounded-[0px_0px_3.44px_3.44px] bg-[linear-gradient(90deg,rgba(250,97,87,1)_0%,rgba(205,50,54,1)_9%,rgba(205,50,54,1)_88%,rgba(250,97,87,1)_100%)]" />
+                        <div className="absolute top-[38%] left-[5%] w-[85%] h-[16%] rounded-b-md bg-[linear-gradient(90deg,rgba(250,97,87,1)_0%,rgba(205,50,54,1)_9%,rgba(205,50,54,1)_88%,rgba(250,97,87,1)_100%)]" />
 
                         <img
-                            className="absolute top-[11px] left-[11px] w-12 h-2"
+                            className="absolute top-[20%] left-[15%] w-[80%] h-[15%]"
                             alt="Rectangle"
                             src="https://c.animaapp.com/En0DOTZF/img/rectangle-2318.svg"
                             loading="lazy"
@@ -149,7 +155,7 @@ const FeaturesSection = () => {
 
                         {feature.id !== 4 && (
                             <img
-                                className="absolute top-[9px] left-[53px] w-5 h-[13px]"
+                                className="absolute top-[15%] left-[75%] w-[20%] h-[22%]"
                                 alt="Vector"
                                 src="https://c.animaapp.com/En0DOTZF/img/vector-1.svg"
                                 loading="lazy"
@@ -158,7 +164,7 @@ const FeaturesSection = () => {
                         )}
 
                         <img
-                            className="absolute top-[9px] -left-0.5 w-5 h-[13px]"
+                            className="absolute top-[15%] left-0 w-[20%] h-[22%]"
                             alt="Vector"
                             src="https://c.animaapp.com/En0DOTZF/img/vector-9.svg"
                             loading="lazy"
@@ -166,7 +172,7 @@ const FeaturesSection = () => {
                         />
 
                         <img
-                            className="absolute -top-px left-[37px] w-[23px] h-[17px]"
+                            className="absolute top-0 left-[48%] w-[32%] h-[29%]"
                             alt="Vector"
                             src="https://c.animaapp.com/En0DOTZF/img/vector-6.png"
                             loading="lazy"
@@ -174,7 +180,7 @@ const FeaturesSection = () => {
                         />
 
                         <img
-                            className="absolute -top-px left-[11px] w-[23px] h-[17px]"
+                            className="absolute top-0 left-[15%] w-[32%] h-[29%]"
                             alt="Vector"
                             src="https://c.animaapp.com/En0DOTZF/img/vector-8.svg"
                             loading="lazy"
@@ -182,7 +188,7 @@ const FeaturesSection = () => {
                         />
 
                         <img
-                            className="absolute top-[9px] left-[39px] w-[18px] h-2"
+                            className="absolute top-[15%] left-[50%] w-[25%] h-[14%]"
                             alt="Vector"
                             src="https://c.animaapp.com/En0DOTZF/img/vector-4.svg"
                             loading="lazy"
@@ -190,7 +196,7 @@ const FeaturesSection = () => {
                         />
 
                         <img
-                            className="absolute top-[9px] left-[13px] w-[18px] h-2"
+                            className="absolute top-[15%] left-[17%] w-[25%] h-[14%]"
                             alt="Vector"
                             src="https://c.animaapp.com/En0DOTZF/img/vector-5.svg"
                             loading="lazy"
@@ -198,14 +204,14 @@ const FeaturesSection = () => {
                         />
 
                         <img
-                            className="absolute top-1.5 left-[29px] w-3 h-[9px]"
+                            className="absolute top-[20%] left-[38%] w-[18%] h-[16%]"
                             alt="Vector"
                             src="https://c.animaapp.com/En0DOTZF/img/vector-3.svg"
                             loading="lazy"
                             decoding="async"
                         />
 
-                        <div className="absolute top-[13px] left-[29px] w-[13px] h-[46px] rounded-[5.5px] border-[0.69px] border-solid border-[#c52024] bg-[linear-gradient(180deg,rgba(255,107,57,1)_0%,rgba(251,195,62,1)_13%,rgba(251,195,62,1)_68%,rgba(255,107,57,1)_100%)]" />
+                        <div className="absolute top-[25%] left-[38%] w-[18%] h-[60%] rounded-md border border-solid border-[#c52024] bg-[linear-gradient(180deg,rgba(255,107,57,1)_0%,rgba(251,195,62,1)_13%,rgba(251,195,62,1)_68%,rgba(255,107,57,1)_100%)]" />
                     </div>
                 ) : (
                     <img
@@ -219,7 +225,7 @@ const FeaturesSection = () => {
 
                 {feature.id === 3 && (
                     <img
-                        className="absolute top-[-65591px] left-[16570px] w-[49px] h-[35px]"
+                        className="hidden"
                         alt="Vector"
                         src="/img/vector-4236.png"
                     />
@@ -241,14 +247,8 @@ const FeaturesSection = () => {
                 Features
             </h2>
 
-            <div className="flex flex-col w-full sm:w-[331px] items-start  relative flex-[0_0_auto]">
-                <div className="flex items-center gap-[19px] relative self-stretch w-full flex-[0_0_auto]">
-                    {features.slice(0, 2).map((feature) => renderFeatureCard(feature))}
-                </div>
-
-                <div className="flex items-center  relative self-stretch w-full flex-[0_0_auto]">
-                    {features.slice(2, 4).map((feature) => renderFeatureCard(feature))}
-                </div>
+            <div className="grid grid-cols-2 gap-3 w-full">
+                {features.map((feature) => renderFeatureCard(feature))}
             </div>
         </section>
     );

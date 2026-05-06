@@ -80,7 +80,7 @@ export const GoalsAndTargetsSection = () => {
                                             id={`goal-${goal.key}`}
                                             type="number"
                                             value={currentValue}
-                                            onChange={(e) => handleValueChange(goal.key, e.target.value)}
+                                            readOnly
                                             className="w-10 min-w-0 [font-family:'Poppins',Helvetica] font-bold text-[#d9d9d9] text-sm text-center bg-transparent border-none outline-none p-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                             min="0"
                                             max={goal.max}

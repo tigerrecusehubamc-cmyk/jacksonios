@@ -93,11 +93,14 @@ export const Frame = () => {
             };
 
             const rawData = game.besitosRawData || {};
-            const description =
+            const rawDescription =
                 rawData.description ||
                 game.details?.description ||
                 game.description ||
                 "Discover an amazing gaming experience";
+
+            // Strip HTML tags to prevent them from displaying in the UI
+            const description = rawDescription.replace(/<[^>]*>/g, '').trim();
 
             return {
                 id: game._id || game.id || `game-tip-${index}`,
