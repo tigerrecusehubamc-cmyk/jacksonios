@@ -405,24 +405,12 @@ const SignUp = () => {
           errorMessage.toLowerCase().includes("email already exists") ||
           errorMessage.toLowerCase().includes("user already exists") ||
           errorMessage.toLowerCase().includes("email is already registered") ||
-          errorMessage.toLowerCase().includes("email already registered");
+          errorMessage.toLowerCase().includes("email already registered") ||
+          errorMessage.toLowerCase().includes("mobile number already registered");
 
-        // If user already exists, attempt to log them in instead
+        // If user already exists, prevent auto-login and display message
         if (isEmailExistsError) {
-          try {
-            const loginResult = await signIn(formData.email, formData.password, turnstileToken);
-
-            if (loginResult.ok) {
-              // Login successful - AuthProvider will handle redirect
-              return;
-            } else {
-              // Login failed - show error
-              setError({ form: "Account exists but password is incorrect. Please try logging in." });
-            }
-          } catch (loginErr) {
-            // Login attempt failed - show original error
-            setError({ form: "Account already exists. Please try logging in instead." });
-          }
+          setError({ form: "This account already exists. Please sign in instead." });
         } else {
           // Handle other errors normally
           if (backendError && backendError.errors) {
