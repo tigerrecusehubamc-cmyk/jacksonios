@@ -7,6 +7,7 @@ import { incrementAndGet } from "@/lib/adjustCounters";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchWalletScreen, fetchWalletTransactions, fetchFullWalletTransactions } from "@/lib/redux/slice/walletTransactionsSlice";
 import { fetchProfileStats, fetchUserProfile } from "@/lib/redux/slice/profileSlice";
+import { fetchAccountOverview } from "@/lib/redux/slice/accountOverviewSlice";
 import { useAppLovinAds } from "@/hooks/useAppLovinAds";
 import { Capacitor } from "@capacitor/core";
 import MockAdOverlay from "@/app/games/components/MockAdOverlay";
@@ -425,6 +426,7 @@ export default function SpinWheel() {
                                 dispatch(fetchProfileStats({ token, force: true }));
                                 dispatch(fetchWalletTransactions({ token, force: true }));
                                 dispatch(fetchFullWalletTransactions({ token, page: 1, force: true }));
+                                dispatch(fetchAccountOverview({ force: true }));
                             }
                         } else {
                             // No reward or unknown status
@@ -564,6 +566,7 @@ export default function SpinWheel() {
                         dispatch(fetchProfileStats({ token, force: true }));
                         dispatch(fetchWalletTransactions({ token, force: true }));
                         dispatch(fetchFullWalletTransactions({ token, page: 1, force: true }));
+                        dispatch(fetchAccountOverview({ force: true }));
                     }
 
                     setIsAdWatched(true);
@@ -705,6 +708,7 @@ export default function SpinWheel() {
                             dispatch(fetchProfileStats({ token, force: true }));
                             dispatch(fetchWalletTransactions({ token, force: true }));
                             dispatch(fetchFullWalletTransactions({ token, page: 1, force: true }));
+                            dispatch(fetchAccountOverview({ force: true }));
 
                             setPendingReward(0);
                             setPendingSpinId(null);
@@ -783,6 +787,7 @@ export default function SpinWheel() {
                                 dispatch(fetchProfileStats({ token, force: true }));
                                 dispatch(fetchWalletTransactions({ token, force: true }));
                                 dispatch(fetchFullWalletTransactions({ token, page: 1, force: true }));
+                                dispatch(fetchAccountOverview({ force: true }));
 
                                 setPendingReward(0);
                                 setPendingSpinId(null);
@@ -858,6 +863,7 @@ export default function SpinWheel() {
                     dispatch(fetchProfileStats({ token, force: true }));
                     dispatch(fetchWalletTransactions({ token, force: true }));
                     dispatch(fetchFullWalletTransactions({ token, page: 1, force: true }));
+                    dispatch(fetchAccountOverview({ force: true }));
                 }
                 loadSpinData(true);
 

@@ -7,6 +7,7 @@ import {
   fetchFullWalletTransactions,
 } from "@/lib/redux/slice/walletTransactionsSlice";
 import { fetchProfileStats } from "@/lib/redux/slice/profileSlice";
+import { fetchAccountOverview } from "@/lib/redux/slice/accountOverviewSlice";
 import {
   getDailyRewardsWeek,
   claimDailyReward,
@@ -247,19 +248,19 @@ export const useDailyRewards = () => {
             // Don't throw error - reward was still claimed successfully
           }
 
-          // Refresh transaction history in background (non-blocking)
-          // Uses stale-while-revalidate pattern - shows cached data immediately, updates in background
+          // Refresh transaction history + account overview (non-blocking)
           Promise.all([
-            dispatch(fetchWalletTransactions({ token, limit: 5, background: true })).catch(() => {}),
+            dispatch(fetchWalletTransactions({ token, limit: 5, force: true })).catch(() => {}),
             dispatch(
               fetchFullWalletTransactions({
                 token,
                 page: 1,
                 limit: 20,
                 type: "all",
-                background: true,
+                force: true,
               })
             ).catch(() => {}),
+            dispatch(fetchAccountOverview({ force: true })).catch(() => {}),
           ]).catch(() => {
             // Silently fail - reward was already claimed successfully, transactions will refresh later
           });

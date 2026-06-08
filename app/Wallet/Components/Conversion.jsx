@@ -92,6 +92,7 @@ export const Conversion = () => {
 
     // Independent flow states
     const [timerFlowState, setTimerFlowState] = useState("idle"); // 'idle', 'running'
+    const [showTimerModal, setShowTimerModal] = useState(false);
     const [adFlowState, setAdFlowState] = useState("idle"); // 'idle', 'loading', 'watching', 'completed'
 
     const [timeLeft, setTimeLeft] = useState(5 * 60); // 5 minutes in seconds
@@ -131,6 +132,7 @@ export const Conversion = () => {
             resetConversionResult();
             // Reset all flow states to idle after conversion display
             setTimerFlowState("idle");
+            setShowTimerModal(false);
             setAdFlowState("idle");
             setError(null);
             clearAdError();
@@ -141,6 +143,12 @@ export const Conversion = () => {
 
     // Handle Convert in 5:00 - Show timer modal (Independent flow)
     const handleScheduledConvert = async () => {
+        // If timer is already running, just show the modal again
+        if (timerFlowState === "running") {
+            setShowTimerModal(true);
+            return;
+        }
+
         // Allow interrupting other flows
         if (timerRef.current) clearInterval(timerRef.current);
         if (resetResultRef.current) clearTimeout(resetResultRef.current);
@@ -150,6 +158,7 @@ export const Conversion = () => {
         setAdFlowState("idle"); // Reset ad flow if it was active
 
         setTimerFlowState("running");
+        setShowTimerModal(true);
         setTimeLeft(5 * 60); // 5 minutes (300 seconds)
 
         // Fetch conversion settings in the background
@@ -179,6 +188,7 @@ export const Conversion = () => {
                     // Timer completed - settings are already loaded (fetched before timer started)
                     calculateConversion();
                     setTimerFlowState("idle");
+                    setShowTimerModal(false);
                     return 0;
                 }
                 return prevTime - 1;
@@ -361,12 +371,10 @@ export const Conversion = () => {
                 )}
 
                 {/* Conditional rendering of overlays based on flowState */}
-                {timerFlowState === 'running' && (
+                {showTimerModal && (
                     <SimpleTimerModal
                         onClose={() => {
-                            clearInterval(timerRef.current);
-                            // Don't show conversion if user closes early
-                            setTimerFlowState("idle");
+                            setShowTimerModal(false);
                         }}
                         timeLeft={timeLeft}
                     />

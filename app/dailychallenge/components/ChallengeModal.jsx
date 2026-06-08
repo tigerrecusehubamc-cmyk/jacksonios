@@ -23,6 +23,7 @@ import {
     fetchFullWalletTransactions,
 } from "../../../lib/redux/slice/walletTransactionsSlice";
 import { fetchProfileStats } from "../../../lib/redux/slice/profileSlice";
+import { fetchAccountOverview } from "../../../lib/redux/slice/accountOverviewSlice";
 
 export const ChallengeModal = ({
     isOpen,
@@ -169,12 +170,13 @@ export const ChallengeModal = ({
                 dispatch(fetchBonusDays({ token: effectiveToken, force: true })),
             ]);
 
-            // Fire wallet + transaction refresh in background — non-blocking, UI shows success immediately
+            // Fire wallet + transaction + overview refresh — non-blocking, UI shows success immediately
             Promise.all([
                 dispatch(fetchWalletScreen({ token: effectiveToken, force: true })),
                 dispatch(fetchProfileStats({ token: effectiveToken, force: true })),
-                dispatch(fetchWalletTransactions({ token: effectiveToken, limit: 5, background: true })),
-                dispatch(fetchFullWalletTransactions({ token: effectiveToken, page: 1, limit: 20, type: "all", background: true })),
+                dispatch(fetchWalletTransactions({ token: effectiveToken, limit: 5, force: true })),
+                dispatch(fetchFullWalletTransactions({ token: effectiveToken, page: 1, limit: 20, type: "all", force: true })),
+                dispatch(fetchAccountOverview({ force: true })),
             ]).catch(() => {});
 
             setShowCompletionSuccess(true);
@@ -568,12 +570,13 @@ export const ChallengeModal = ({
                     dispatch(fetchBonusDays({ token, force: true })),
                 ]);
 
-                // Fire wallet + transaction refresh in background — non-blocking
+                // Fire wallet + transaction + overview refresh — non-blocking
                 Promise.all([
                     dispatch(fetchWalletScreen({ token, force: true })),
                     dispatch(fetchProfileStats({ token, force: true })),
-                    dispatch(fetchWalletTransactions({ token, limit: 5, background: true })),
-                    dispatch(fetchFullWalletTransactions({ token, page: 1, limit: 20, type: "all", background: true })),
+                    dispatch(fetchWalletTransactions({ token, limit: 5, force: true })),
+                    dispatch(fetchFullWalletTransactions({ token, page: 1, limit: 20, type: "all", force: true })),
+                    dispatch(fetchAccountOverview({ force: true })),
                 ]).catch(() => {});
             }
 

@@ -4,6 +4,8 @@ import Image from 'next/image';
 import { useAppLovinAds } from '@/hooks/useAppLovinAds';
 import { Capacitor } from '@capacitor/core';
 import MockAdOverlay from '../../games/components/MockAdOverlay';
+import { useDispatch } from 'react-redux';
+import { fetchWalletTransactions, fetchFullWalletTransactions } from '@/lib/redux/slice/walletTransactionsSlice';
 
 const WatchAdCard = ({
     className = "",
@@ -36,6 +38,8 @@ const WatchAdCard = ({
         clearError: clearAdError,
         lastReward
     } = useAppLovinAds();
+
+    const dispatch = useDispatch();
 
     // Track whether the user is currently trying to load/show an ad (prevents showing
     // "Loading..." UI during background preloads after an ad completes)
@@ -162,6 +166,18 @@ const WatchAdCard = ({
                     cooldownRemaining: cooldownHours * 60,
                     showSuccessMessage: true,
                 });
+
+                // Refresh transaction history immediately after reward claim
+                try {
+                    if (token) {
+                        await Promise.all([
+                            dispatch(fetchWalletTransactions({ token, limit: 5, force: true })),
+                            dispatch(fetchFullWalletTransactions({ token, page: 1, limit: 20, type: "all", force: true }))
+                        ]);
+                    }
+                } catch (transactionError) {
+                    // Don't throw error - reward was still claimed successfully
+                }
 
                 // Call completion callback with actual reward
                 if (onAdComplete) {
@@ -404,6 +420,19 @@ const WatchAdCard = ({
                     cooldownRemaining: cooldownHours * 60,
                     showSuccessMessage: true,
                 });
+
+                // Refresh transaction history immediately after reward claim
+                try {
+                    const tokenForRefresh = localStorage.getItem('authToken') || localStorage.getItem('x-auth-token');
+                    if (tokenForRefresh) {
+                        await Promise.all([
+                            dispatch(fetchWalletTransactions({ token: tokenForRefresh, limit: 5, force: true })),
+                            dispatch(fetchFullWalletTransactions({ token: tokenForRefresh, page: 1, limit: 20, type: "all", force: true }))
+                        ]);
+                    }
+                } catch (transactionError) {
+                    // Don't throw error - reward was still claimed successfully
+                }
 
                 // Call completion callback
                 if (onAdComplete) {

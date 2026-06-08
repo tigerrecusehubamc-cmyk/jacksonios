@@ -178,7 +178,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                     const isNonLinear = goal.goal_type === 'non-linear' || goal.type === 'non-linear' || goal.type === 'turbo' || goal.type === 'flat';
 
                     // Check if expired based on days_left
-                    const isExpired = goal.days_left !== null && goal.days_left <= 0 && !isCompleted;
+                    const isExpired = goal.days_left != null && goal.days_left <= 0 && !isCompleted;
                     const isPending = !isCompleted && !isFailed && !isExpired;
 
                     // Progressive unlocking based on taskProgression rules
@@ -291,14 +291,21 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
 
                     // Format time limit
                     let timeLimit = 'No limit';
-                    if (goal.days_left !== null) {
-                        if (goal.days_left <= 0) {
-                            timeLimit = 'Expired';
-                        } else if (goal.days_left === 1) {
-                            timeLimit = '1 day left';
-                        } else {
-                            timeLimit = `${goal.days_left} days left`;
+                    // Failed goals are always expired
+                    if (isFailed && !isCompleted) {
+                        timeLimit = 'Expired';
+                    } else {
+                        const effectiveDaysLeft = goal.days_left ?? game?.days_left ?? (game?.hoursLeft != null ? Math.ceil(game.hoursLeft / 24) : null);
+                        if (effectiveDaysLeft != null) {
+                            if (effectiveDaysLeft <= 0) {
+                                timeLimit = isCompleted ? 'Completed' : 'Expired';
+                            } else if (effectiveDaysLeft === 1) {
+                                timeLimit = isCompleted ? 'Completed' : '1 day left';
+                            } else {
+                                timeLimit = isCompleted ? 'Completed' : `${effectiveDaysLeft} days left`;
+                            }
                         }
+                    }
                     }
 
                     // Determine gradient based on status and type
@@ -781,7 +788,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                             {/* Top Row: Title and Reward */}
                             <div className="flex justify-between items-start gap-2 mb-1.5">
                                 <div className="flex-1 min-w-0">
-                                    <div className="font-normal text-[#f4f3fc] text-[13px] leading-tight line-clamp-2 pr-1">
+                                    <div className="font-normal text-[#f4f3fc] text-[13px] leading-tight pr-1 break-words">
                                         {level.title}
                                     </div>
                                 </div>
@@ -964,7 +971,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                             {/* Top Row: Title and Reward */}
                             <div className="flex justify-between items-start gap-2 mb-1.5">
                                 <div className="flex-1 min-w-0">
-                                    <div className="font-normal text-[#f4f3fc] text-[13px] leading-tight line-clamp-2 pr-1">
+                                    <div className="font-normal text-[#f4f3fc] text-[13px] leading-tight pr-1 break-words">
                                         {level.title}
                                     </div>
                                 </div>

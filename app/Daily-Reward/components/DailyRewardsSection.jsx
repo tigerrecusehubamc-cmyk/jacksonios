@@ -522,8 +522,7 @@ export const DailyRewardsSection = ({ weekData, isCurrentWeek, isFutureWeek, onC
                         handleBigRewardAnimation();
                     }
                 } catch (claimError) {
-                    // Only set error if claim actually failed
-                    setError(claimError.message || "Failed to claim reward");
+                    // Error is already handled by the hook's error modal
                     setClaimingDay(null);
                     // Remove from locally claimed if claim failed
                     setLocallyClaimedDays(prev => {
