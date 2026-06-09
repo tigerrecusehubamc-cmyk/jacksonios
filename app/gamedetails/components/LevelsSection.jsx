@@ -306,7 +306,6 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                             }
                         }
                     }
-                    }
 
                     // Determine gradient based on status and type
                     let gradient;
