@@ -5,7 +5,7 @@ import { MoneyTransfer } from './MoneyTransfer';
 import { Charity } from './Charity';
 import { DebitTransfer } from './DebitTransfer';
 import { Card } from './Card';
-import { getTremendousMethods, getTremendousFundingSources } from '../../../lib/api';
+import { getTremendousMethods, getTremendousFundingSources, getConversionSettings } from '../../../lib/api';
 
 const SCALE_CONFIG = [
     { minWidth: 0, scaleClass: "scale-90" },
@@ -68,6 +68,7 @@ export const WithdrawalOption = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [token, setToken] = useState(null);
+    const [minRedemption, setMinRedemption] = useState(20);
 
     // Scroll container ref
     const scrollContainerRef = useRef(null);
@@ -80,7 +81,6 @@ export const WithdrawalOption = () => {
     const walletScreen = useSelector((state) => state?.walletTransactions?.walletScreen || {});
 
     const coinBalance = walletScreen?.wallet?.balance || 0;
-    const MINIMUM_WITHDRAWAL_COINS = 20;
 
     const getScaleClass = useCallback((width) => {
         for (let i = SCALE_CONFIG.length - 1; i >= 0; i--) {
@@ -150,6 +150,24 @@ export const WithdrawalOption = () => {
         }
     }, []);
 
+    // Load min redemption from backend
+    useEffect(() => {
+        const loadMinRedemption = async () => {
+            try {
+                const settings = await getConversionSettings();
+                if (settings?.data?.defaultRule?.minRedemption) {
+                    setMinRedemption(settings.data.defaultRule.minRedemption);
+                }
+            } catch {
+                setMinRedemption(20);
+            }
+        };
+
+        if (token) {
+            loadMinRedemption();
+        }
+    }, [token]);
+
     // Load payout methods and funding sources with instant UI
     useEffect(() => {
         const loadPayoutData = async () => {
@@ -185,7 +203,7 @@ export const WithdrawalOption = () => {
     }, [token]);
 
     const handleWithdrawOption = (option) => {
-        if (coinBalance < MINIMUM_WITHDRAWAL_COINS) {
+        if (coinBalance < minRedemption) {
             setIsInsufficientBalanceModalOpen(true);
             return;
         }
@@ -255,7 +273,7 @@ export const WithdrawalOption = () => {
                             <div className="relative w-full h-full rounded-[8px] opacity-[100%] bg-[#1F1F1F] border border-[#3C3C3C] flex items-center px-4">
                                 <div className="flex items-center gap-1 flex-1">
                                     <span className="[font-family:'Poppins',Helvetica] font-normal text-[#A4A4A4] text-[13px] tracking-[0] leading-[normal]">
-                                        Withdrawal can be done 20
+                                        Withdrawal can be done {minRedemption}
                                     </span>
                                     <img
                                         className="w-[23px] h-6 aspect-[0.97]"
@@ -405,7 +423,7 @@ export const WithdrawalOption = () => {
                                     decoding="async"
                                 />
                                 <p className="text-[#A4A4A4] text-sm mt-0 mb-4 text-center">
-                                    Withdrawal can be done $20 above only
+                                    Withdrawal can be done {minRedemption} coins above only
                                 </p>
                                 <div className="flex w-full">
                                     <button
