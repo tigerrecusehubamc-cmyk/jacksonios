@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import Image from "next/image";
+import { useDispatch } from "react-redux";
+import { fetchStreakStatus } from "@/lib/redux/slice/streakSlice";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import LoadingOverlay from "@/components/LoadingOverlay";
@@ -16,6 +18,7 @@ function LoginPageContent() {
   const [error, setError] = useState({});
   const [accountStatusError, setAccountStatusError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const dispatch = useDispatch();
   const { signIn } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -275,6 +278,7 @@ function LoginPageContent() {
       const result = await signIn(emailOrMobile, password, turnstileToken);
 
       if (result?.ok) {
+        dispatch(fetchStreakStatus());
         // Wait 16 s so all prefetch API calls in handleAuthSuccess finish loading
         // before navigating — homepage arrives with data ready, no loading states.
         // Safety check: only redirect if the user hasn't navigated to another screen.
