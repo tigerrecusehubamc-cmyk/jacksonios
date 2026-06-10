@@ -27,6 +27,7 @@
     "@capacitor/splash-screen": "^7.0.3",
     "@capacitor/status-bar": "^7.0.2",
     "@capgo/capacitor-navigation-bar": "^7.1.27",
+    "@capgo/native-purchases": "^7.18.0",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-slot": "^1.2.3",

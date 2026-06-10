@@ -1,14 +1,15 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchVipTiers, initiatePurchase, resetPurchaseStatus, setPurchaseStatus, confirmPayment, } from "@/lib/redux/slice/vipSlice";
+import { fetchVipTiers, resetPurchaseStatus, setPurchaseStatus } from "@/lib/redux/slice/vipSlice";
 import { fetchVipStatus } from "@/lib/redux/slice/profileSlice";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import StripePaymentSheet from "@/components/StripePaymentSheet";
+import ApplePaymentSheet from "@/components/ApplePaymentSheet";
 import XPTierTracker from "../homepage/components/XPTierTracker";
 import { LegalDisclaimerSection } from "@/components/LegalDisclaimerSection";
 import { PlanComparisonSection } from "@/components/PlanComparisonSection";
+import { getAppleProductId } from "@/lib/appleIAP";
 const tierData = {
     gold: {
         name: 'Gold',
@@ -65,11 +66,10 @@ const SparkleSmallIcon = ({ className, color }) => (
 export default function BuySubscription() {
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [selectedTier, setSelectedTier] = useState("gold");
-    const [purchaseResponse, setPurchaseResponse] = useState(null);
     const currentTierData = tierData[selectedTier];
 
     const dispatch = useDispatch();
-    const { tiers, status, symbol, purchaseStatus, purchaseError, paymentClientSecret, activeSubscriptionId, modalLocked } = useSelector((state) => state.vip);
+    const { tiers, status, symbol, purchaseStatus, purchaseError, activeSubscriptionId, appleProductId, modalLocked } = useSelector((state) => state.vip);
     const { token } = useAuth();
     const router = useRouter();
 
@@ -137,140 +137,38 @@ export default function BuySubscription() {
             return;
         }
 
-        // Reset any previous payment response to ensure fresh payment intent
-        setPurchaseResponse(null);
         dispatch(resetPurchaseStatus());
+        dispatch(setPurchaseStatus({ status: 'awaiting_payment' }))
 
-        try {
-            const response = await dispatch(initiatePurchase({
+        dispatch({
+            type: 'vip/initiateApplePurchase/fulfilled',
+            payload: {
+                subscriptionId: `${selectedTier}_${selectedPlan}`,
+                appleProductId: getAppleProductId(selectedTier, selectedPlan),
                 tierId: selectedTier,
                 plan: selectedPlan,
-                region: "US",
-                token,
-                // Add timestamp to force backend to create new payment intent
-                _forceNew: Date.now()
-            }));
-
-            // ✅ FIX: Backend returns data in response.payload.data (nested)
-            const payloadData = response.payload?.data || response.payload;
-
-            // Check if user already has an active subscription
-            if (typeof payloadData === 'string' && payloadData.includes('already has an active VIP subscription')) {
-                alert("You already have an active VIP subscription. No payment is needed!");
-                return;
-            }
-
-            // Check if we have the required payment data
-            if (payloadData?.clientSecret && payloadData?.subscriptionId) {
-                // Create the expected response structure for StripePaymentSheet
-                const paymentData = {
-                    success: true,
-                    data: {
-                        clientSecret: payloadData.clientSecret,
-                        paymentIntentId: payloadData.paymentIntentId,
-                        amount: payloadData.amount,
-                        currency: payloadData.currency,
-                        subscriptionId: payloadData.subscriptionId
-                    }
-                };
-
-                setPurchaseResponse(paymentData);
-            } else {
-                // Check if this is an error message from the backend
-                if (typeof payloadData === 'string') {
-                    alert(`Subscription error: ${payloadData}`);
-                } else {
-                    alert("Payment initiation failed: Missing payment data. Please try again.");
-                }
-            }
-        } catch (error) {
-            alert("An error occurred. Please try again.");
-        }
+            },
+        })
     };
 
     const handlePaymentError = (error) => {
         alert("Payment failed. Please try again.");
         dispatch(resetPurchaseStatus());
-        setPurchaseResponse(null);
     };
 
     const handlePaymentCancel = () => {
         dispatch(resetPurchaseStatus());
-        setPurchaseResponse(null);
     };
 
-    const handlePaymentSuccess = async (paymentIntentId) => {
-        // Clear the StripePaymentSheet immediately to prevent double modals
-        setPurchaseResponse(null);
-
-        // This is called from our CapacitorCheckoutForm on success
-        // Confirm the payment with the backend
-        try {
-            // Add validation before making the API call
-            if (!paymentIntentId) {
-                throw new Error("Payment Intent ID is missing");
-            }
-            if (!activeSubscriptionId) {
-                throw new Error("Subscription ID is missing");
-            }
-            if (!token) {
-                throw new Error("Authentication token is missing");
-            }
-
-            // Add a small delay to ensure Stripe has processed the payment
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Increased delay for backend processing
-
-            const result = await dispatch(confirmPayment({
-                paymentIntentId,
-                subscriptionId: activeSubscriptionId,
-                token
-            })).unwrap();
-
-            // Refresh VIP status to update membership status across the app
-            // This updates: homepage banner, profile page, and wallet page
-            // All components use state.profile.vipStatus to display membership status
-            dispatch(fetchVipStatus(token));
-
-            // Show success message
-            dispatch(setPurchaseStatus({
+    const handleApplePaymentSuccess = async () => {
+        dispatch(fetchVipStatus(token))
+        dispatch(
+            setPurchaseStatus({
                 status: 'succeeded',
-                message: 'Payment completed successfully! VIP subscription activated.'
-            }));
-
-            // Redirect after showing success message
-            setTimeout(() => {
-                if (!modalLocked) {
-                    dispatch(resetPurchaseStatus());
-                    router.push("/Wallet");
-                }
-            }, 3000); // Increased delay to show success message
-        } catch (error) {
-            // More detailed error handling
-            let errorMessage = 'Payment confirmation failed. Please contact support.';
-            if (error.message) {
-                errorMessage = `Payment confirmation failed: ${error.message}`;
-            } else if (error.body?.message) {
-                errorMessage = `Payment confirmation failed: ${error.body.message}`;
-            }
-
-            // Check if this is a network/server error vs validation error
-            const isNetworkError = !error.status || error.status >= 500;
-            const isValidationError = error.status >= 400 && error.status < 500;
-
-            if (isNetworkError) {
-                // For network errors, show a more user-friendly message
-                errorMessage = 'Network error during payment confirmation. Your payment was successful, but we need to verify it. Please contact support if this persists.';
-            } else if (isValidationError) {
-                // For validation errors, show the specific error
-                errorMessage = `Payment confirmation failed: ${error.message || 'Invalid request parameters'}`;
-            }
-
-            dispatch(setPurchaseStatus({
-                status: 'failed',
-                error: errorMessage
-            }));
-        }
-    };
+                message: 'Payment completed successfully! VIP subscription activated.',
+            }),
+        )
+    }
 
     // Set trending plan as default when tier data is available
     useEffect(() => {
@@ -293,13 +191,12 @@ export default function BuySubscription() {
         }
     }, [purchaseStatus, dispatch, router, modalLocked]);
 
-    // Cleanup effect to clear purchase response when component unmounts
+    // Cleanup effect to reset purchase status when component unmounts
     useEffect(() => {
         return () => {
-            // Clear purchase response on unmount to prevent memory leaks
-            setPurchaseResponse(null);
+            dispatch(resetPurchaseStatus());
         };
-    }, []);
+    }, [dispatch]);
 
     if ((status === "loading" || (status === "idle" && tiers.length === 0))) {
         return (
@@ -605,12 +502,13 @@ export default function BuySubscription() {
                 </main>
             </div>
 
-            {/* Stripe Payment Sheet */}
-            {purchaseResponse && purchaseResponse.data?.clientSecret && (
-                <StripePaymentSheet
-                    clientSecret={purchaseResponse.data.clientSecret}
-                    paymentIntentId={purchaseResponse.data.paymentIntentId}
-                    onPaymentSuccess={handlePaymentSuccess}
+            {/* Apple Payment Sheet */}
+            {purchaseStatus === 'awaiting_payment' && appleProductId && (
+                <ApplePaymentSheet
+                    subscriptionId={activeSubscriptionId}
+                    appleProductId={appleProductId}
+                    token={token}
+                    onPaymentSuccess={handleApplePaymentSuccess}
                     onPaymentError={handlePaymentError}
                     onPaymentCancel={handlePaymentCancel}
                 />
