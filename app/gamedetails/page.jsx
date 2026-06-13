@@ -273,7 +273,10 @@ function GameDetailsContent() {
         const normalizedImages = normalizeGameImages(rawGame);
         const normalizedTitle = normalizeGameTitle(rawGame);
         const normalizedDescription = normalizeGameDescription(rawGame);
-        const normalizedGoals = normalizeGameGoals(rawGame);
+        // Prefer backend-normalized goals (SDK-agnostic with coinReward/xpReward), fall back to client-side normalizer
+        const normalizedGoals = Array.isArray(rawGame.goals) && rawGame.goals.length > 0
+            ? rawGame.goals
+            : normalizeGameGoals(rawGame);
         const normalizedUrl = normalizeGameUrl(rawGame);
         const normalizedAmount = normalizeGameAmount(rawGame);
 
@@ -658,7 +661,8 @@ function GameDetailsContent() {
                 // Batch fields for backend integration
                 batchNumber: claimData.batchNumber,  // Starting batch number (1-indexed)
                 batchesClaimed: claimData.groups || 1,  // Number of batches being claimed
-                gameTitle: gameTitle
+                gameTitle: gameTitle,
+                taskIds: claimData.taskIds || []  // Task IDs for per-task deduplication
             }, token);
 
             if (transferResult.success === false) {

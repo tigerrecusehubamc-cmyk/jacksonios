@@ -13,15 +13,16 @@ export const Breakdown = ({ game, sessionCoins = 0, sessionXP = 0 }) => {
     // Goals for this game – same source as LevelsSection (normalizer then fallbacks)
     const goals = React.useMemo(() => {
         if (!game) return [];
+        // Prefer backend-normalized goals (SDK-agnostic with coinReward/xpReward)
+        if (Array.isArray(game.goals) && game.goals.length > 0) return game.goals;
         try {
             const normalized = normalizeGameGoals(game);
             if (Array.isArray(normalized) && normalized.length > 0) return normalized;
         } catch (_) { }
-        const fromRoot = Array.isArray(game.goals) ? game.goals : [];
         const fromRaw = Array.isArray(game.besitosRawData?.goals) ? game.besitosRawData.goals : [];
         const fromDetails = Array.isArray(game.gameDetails?.goals) ? game.gameDetails.goals : [];
         const fromData = Array.isArray(game.data?.goals) ? game.data.goals : [];
-        return fromRoot.length > 0 ? fromRoot : fromRaw.length > 0 ? fromRaw : fromDetails.length > 0 ? fromDetails : fromData;
+        return fromRaw.length > 0 ? fromRaw : fromDetails.length > 0 ? fromDetails : fromData;
     }, [game]);
     const firstGoal = goals[0];
 
@@ -30,9 +31,9 @@ export const Breakdown = ({ game, sessionCoins = 0, sessionXP = 0 }) => {
     const baseXP = Math.max(1, Number(xpConfig.baseXP) || 1);
     const multiplier = Number(xpConfig.multiplier) || 1;
 
-    // First row: coin and XP of the first task (Game Install) – same formula as LevelsSection
+    // First row: coin and XP of the first task (Game Install) – prefer coinReward from backend
     const firstTaskCoins = firstGoal
-        ? (parseFloat(firstGoal.amount || firstGoal.points || 0) || 0)
+        ? (parseFloat(firstGoal.coinReward ?? firstGoal.amount ?? firstGoal.points ?? 0) || 0)
         : 0;
     const firstTaskXP = firstGoal
         ? (firstGoal.xp != null && firstGoal.xp !== "")
@@ -44,10 +45,10 @@ export const Breakdown = ({ game, sessionCoins = 0, sessionXP = 0 }) => {
     const isGoalCompleted = (g) =>
         g.completed === true || g.completed === "true" || g.status === "completed" || g.status === "success" || g.isCompleted === true;
 
-    // Total coins earned from this game = sum over completed tasks only (same as LevelsSection: goal.amount || goal.points per task)
+    // Total coins earned from this game = sum over completed tasks only (prefer coinReward from backend)
     const totalCoinsFromCompleted = goals
         .filter(isGoalCompleted)
-        .reduce((sum, g) => sum + (parseFloat(g.amount || g.points || 0) || 0), 0);
+        .reduce((sum, g) => sum + (parseFloat(g.coinReward ?? g.amount ?? g.points ?? 0) || 0), 0);
     const totalCoins = sessionCoins > 0 ? sessionCoins : totalCoinsFromCompleted;
 
     // Total XP earned from this game = sum over completed tasks only (same as LevelsSection: baseXP * multiplier^index per task)

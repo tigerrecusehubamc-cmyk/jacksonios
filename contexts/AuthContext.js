@@ -22,6 +22,7 @@ import {
   getCashbackOffers,
   getShoppingOffers,
   getBitlabsSurveys,
+  getAllNonGameOffers,
   getWalkathonStatus,
   getWalkathonLeaderboard,
   biometricLogin,
@@ -35,6 +36,7 @@ import {
 } from "@/lib/biometricAuth";
 import { setDealsCache, clearDealsCache } from "@/lib/dealsCache";
 import { getDeviceMetadata, clearVerisoulSessionId } from "@/lib/deviceUtils";
+import { resetCounters as resetAdjustCounters } from "@/lib/adjustCounters";
 import {
   initializeVerisoulSDK,
   getVerisoulSessionId,
@@ -79,6 +81,7 @@ import {
   fetchBonusDays,
   resetDailyChallengeState,
 } from "@/lib/redux/slice/dailyChallengeSlice";
+import { clearStreak } from "@/lib/redux/slice/streakSlice";
 import {
   fetchSurveys,
   fetchNonGameOffers,
@@ -444,6 +447,14 @@ export function AuthProvider({ children }) {
                         sessionAuthData,
                         storedToken,
                       );
+                      if (fraudResponse?.blocked === true) {
+                        console.error(
+                          "🔒 [AuthContext] VPN/Proxy detected -Blocking user access:",
+                          fraudResponse.reason,
+                        );
+                        await handleVpnBlocked(fraudResponse, storedToken);
+                        return;
+                      }
                       if (fraudResponse?.success && fraudResponse?.sessionId) {
                         console.log(
                           "[FraudDebug] loadSession re-auth – storing backend sessionId:",
@@ -504,6 +515,14 @@ export function AuthProvider({ children }) {
                     sessionAuthData,
                     storedToken,
                   );
+                  if (fraudResponse?.blocked === true) {
+                    console.error(
+                      "🔒 [AuthContext] VPN/Proxy detected (new session) - blocking user access:",
+                      fraudResponse.reason,
+                    );
+                    await handleVpnBlocked(fraudResponse, storedToken);
+                    return;
+                  }
                   if (fraudResponse?.success && fraudResponse?.sessionId) {
                     console.log(
                       "[FraudDebug] loadSession new session – storing backend sessionId:",
@@ -886,57 +905,12 @@ export function AuthProvider({ children }) {
       }
     }, 9000);
 
-    // ── STAGE 7 (30 s): Deals page pre-warm (Cashback + Shopping + Surveys) ────
-    const dealsPrewarmTimer = setTimeout(async () => {
-      try {
-        const defaultParams = {
-          category: "all",
-          page: 1,
-          limit: 6,
-          useAdminConfig: "true",
-        };
-        const [cashbackRes, shoppingRes, surveysRes] = await Promise.all([
-          getCashbackOffers(defaultParams, token),
-          getShoppingOffers(defaultParams, token),
-          getBitlabsSurveys(defaultParams, token),
-        ]);
-
-        let cbOffers = [];
-        if (cashbackRes?.success && cashbackRes.data) {
-          cbOffers = Array.isArray(cashbackRes.data.offers)
-            ? cashbackRes.data.offers
-            : cashbackRes.data.categorized?.cashback || [];
-        }
-
-        let shOffers = [];
-        if (shoppingRes?.success && shoppingRes.data) {
-          shOffers = Array.isArray(shoppingRes.data.offers)
-            ? shoppingRes.data.offers
-            : shoppingRes.data.categorized?.shopping || [];
-        }
-
-        let svOffers = [];
-        if (surveysRes?.success && Array.isArray(surveysRes.data?.surveys)) {
-          svOffers = surveysRes.data.surveys;
-        }
-
-        setDealsCache({
-          cashbackOffers: cbOffers,
-          shoppingOffers: shOffers.slice(0, 6),
-          surveyOffers: svOffers,
-        });
-      } catch (_e) {
-        // Silent — deals pre-warm is best-effort
-      }
-    }, 30000);
-
     return () => {
       clearTimeout(dailyTimer);
       clearTimeout(walletTxTimer);
       clearTimeout(mostPlayedScreenTimer);
       clearTimeout(secondaryGamesTimer);
       clearTimeout(taskListTimer);
-      clearTimeout(dealsPrewarmTimer);
     };
     // Use user?._id (primitive string) instead of the full user object so this
     // effect only re-runs when the logged-in account actually changes, not on
@@ -1074,7 +1048,18 @@ export function AuthProvider({ children }) {
                   if (verisoulSessionId)
                     sessionAuthData.session_id = verisoulSessionId;
 
-                  await authenticateFraudSession(sessionAuthData, token);
+                  const focusFraudResponse = await authenticateFraudSession(
+                    sessionAuthData,
+                    token,
+                  );
+                  if (focusFraudResponse?.blocked === true) {
+                    console.error(
+                      "🔒 [AuthContext] VPN/Proxy detected (handleFocus) - blocking user:",
+                      focusFraudResponse.reason,
+                    );
+                    await handleVpnBlocked(focusFraudResponse, token);
+                    return;
+                  }
                   console.log(
                     "[FraudDebug] handleFocus re-auth – authenticate called (new backend sessionId in response if success)",
                   );
@@ -1116,6 +1101,20 @@ export function AuthProvider({ children }) {
 
   // Gatekeeper logic for routing (No changes needed here)
   useEffect(() => {
+    // 🔒 Check if user was blocked previously due to VPN - redirect to blocked page
+    if (typeof window !== "undefined") {
+      const vpnBlocked = localStorage.getItem("vpn_blocked");
+      const vpnReason = localStorage.getItem("vpn_reason");
+      if (vpnBlocked === "true" && !pathname.startsWith("/blocked")) {
+        console.log(
+          "🔒 [AuthContext] VPN blocked - redirecting to blocked page",
+        );
+        const reason = vpnReason || "vpn_detected";
+        router.replace(`/blocked?reason=${reason}`);
+        return;
+      }
+    }
+
     if (isLoading) return;
     if (pathname === "/") return;
 
@@ -1458,6 +1457,14 @@ export function AuthProvider({ children }) {
             sessionAuthData,
             token,
           );
+          if (fraudResponse?.blocked === true) {
+            console.error(
+              "🔒 [AuthContext] VPN/Proxy detected (login) - blocking user:",
+              fraudResponse.reason,
+            );
+            await handleVpnBlocked(fraudResponse, token);
+            return;
+          }
           if (fraudResponse?.success && fraudResponse?.sessionId) {
             localStorage.setItem(
               "verisoul_session_id",
@@ -1467,7 +1474,7 @@ export function AuthProvider({ children }) {
         } catch (error) {
           console.error(
             "❌ [AuthContext] Error authenticating fraud session (non-blocking):",
-            error,
+            error?.message,
           );
         }
       })();
@@ -1521,6 +1528,29 @@ export function AuthProvider({ children }) {
           dispatch(fetchSurveys({ token })),
           // VIP status (VipBanner)
           dispatch(fetchVipStatus(token)),
+          // Deals data (Deals page) - fetch immediately after login/signup
+          (async () => {
+            try {
+              const [nonGameRes, surveyRes] = await Promise.all([
+                getAllNonGameOffers({}, token),
+                getBitlabsSurveys({ page: 1 }, token),
+              ]);
+
+              const nonGameOffers =
+                nonGameRes?.success && Array.isArray(nonGameRes.data)
+                  ? nonGameRes.data
+                  : [];
+              const surveyOffers =
+                surveyRes?.success && Array.isArray(surveyRes.data)
+                  ? surveyRes.data
+                  : [];
+
+              const combined = [...nonGameOffers, ...surveyOffers];
+              setDealsCache({ allOffers: combined });
+            } catch (_e) {
+              // Silent — deals fetch is best-effort
+            }
+          })(),
           // User game data (useHomepageData / inProgressGames)
           ...(user && user._id
             ? [
@@ -2411,6 +2441,48 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const handleVpnBlocked = async (fraudResponse, authToken) => {
+    console.error(
+      "🔒 [AuthContext] VPN/Proxy blocked - signing out user:",
+      fraudResponse.reason,
+    );
+
+    const reason = fraudResponse?.reason || "vpn_detected";
+    const message =
+      reason === "vpn_detected"
+        ? "VPN connections are not allowed. Please disable your VPN and try again."
+        : reason === "proxy_detected"
+          ? "Proxy connections are not allowed. Please disable your proxy and try again."
+          : reason === "tor_detected"
+            ? "Tor connections are not allowed. Please disable Tor and try again."
+            : "High risk detected. Please contact support.";
+
+    try {
+      const storedSessionId = localStorage.getItem("verisoul_session_id");
+      if (storedSessionId && authToken) {
+        await unauthenticateFraudSession(storedSessionId, authToken).catch(
+          () => {},
+        );
+      }
+    } catch (e) {}
+
+    clearVerisoulSessionId();
+    localStorage.removeItem("verisoul_session_id");
+    localStorage.clear();
+
+    dispatch(clearProfile());
+    dispatch(clearGames());
+    dispatch(clearWalletTransactions());
+    dispatch(clearAccountOverview());
+
+    setToken(null);
+    setUser(null);
+
+    router.replace(
+      `/blocked?reason=${reason}&message=${encodeURIComponent(message)}`,
+    );
+  };
+
   // MODIFIED: signOut clears the profile state in the Redux store but KEEPS biometric credentials
   // Biometric credentials are preserved so users can login with biometric after signout
   const signOut = async () => {
@@ -2451,7 +2523,9 @@ export function AuthProvider({ children }) {
     dispatch(clearSurveys()); // Clear surveys data
     dispatch(clearNonGameOffers()); // Clear non-game offers data
     dispatch(resetDailyChallengeState()); // Clear daily challenge (today, calendar, etc.) so new account doesn't see previous user's "Claim reward" / completed state
+    dispatch(clearStreak()); // Clear streak data so new account starts fresh
     clearDealsCache(); // Clear in-memory deals page cache (not in localStorage, must be cleared explicitly)
+    resetAdjustCounters(); // Reset per-user Adjust milestone counters (industry standard: clear on logout)
 
     // Purge all Redux persist data to prevent QuotaExceededError
     // Use persistor.purge() which properly handles cleanup without serialization issues

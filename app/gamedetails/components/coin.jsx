@@ -58,9 +58,9 @@ export const Coin = ({
         const firstBatchSize = Number(taskProgression?.firstBatchSize || 0);
         const nextBatchSize = Number(taskProgression?.nextBatchSize || 0);
 
-        const fallbackFirst = 3;
-        const effectiveFirstBatchSize = hasProgressionRule && firstBatchSize > 0 ? firstBatchSize : fallbackFirst;
-        const effectiveNextBatchSize = hasProgressionRule && nextBatchSize > 0 ? nextBatchSize : effectiveFirstBatchSize;
+        const effectiveFirstBatchSize = hasProgressionRule && firstBatchSize > 0 ? firstBatchSize : processedGoals.length;
+        const isNextBatchZero = hasProgressionRule && (nextBatchSize === 0 || nextBatchSize == null);
+        const effectiveNextBatchSize = isNextBatchZero ? null : (hasProgressionRule ? 1 : null);
 
         const batches = [];
         let idx = 0;
@@ -75,11 +75,14 @@ export const Coin = ({
         }
 
         // Subsequent batches
-        while (idx < processedGoals.length && effectiveNextBatchSize > 0) {
-            const goals = processedGoals.slice(idx, idx + effectiveNextBatchSize);
+        // When nextBatchSize is null/0 (optional), each task is its own batch
+        // so user can claim any number of completed tasks freely
+        const batchSize = effectiveNextBatchSize || 1;
+        while (idx < processedGoals.length && batchSize > 0) {
+            const goals = processedGoals.slice(idx, idx + batchSize);
             if (goals.length === 0) break;
-            batches.push({ size: effectiveNextBatchSize, goals });
-            idx += effectiveNextBatchSize;
+            batches.push({ size: batchSize, goals });
+            idx += batchSize;
         }
 
         // Compute completion sequentially (only full batches count)
@@ -132,19 +135,22 @@ export const Coin = ({
         // but we include all for correctness)
         const totalEarned = sumRewards(processedGoals.filter(g => g?.isCompleted));
 
-        // Overall totals for progress bar. Prefer API rewards.coins / rewards.xp everywhere (all UI sections + game details)
+        // Overall totals for progress bar. Prefer backend totalCoins / rewards.coins / rewards.xp everywhere
         const rawData = game?.besitosRawData || game || {};
+        const backendTotalCoins = game?.totalCoins ?? rawData.totalCoins;
         const rewardsCoins = game?.rewards?.coins ?? game?.rewards?.gold;
         const rewardsXP = game?.rewards?.xp;
         const isBitLab = game?.sdkProvider === 'bitlab' || game?.bitlabsRawData != null || rawData.total_points != null || game?.total_points != null || (rawData.events?.length && rawData.events[0]?.promised_points !== undefined) || (game?.bitlabsRawData?.events?.length > 0);
-        const totalPossibleCoins = (rewardsCoins != null && Number(rewardsCoins) >= 0)
-            ? Number(rewardsCoins)
-            : isBitLab && (rawData.total_points != null || game?.total_points != null)
-                ? Number(rawData.total_points ?? game?.total_points ?? 0)
-                : processedGoals.reduce((sum, g) => {
-                    const v = Number(g?.reward ?? g?.coinReward ?? 0);
-                    return sum + (Number.isFinite(v) ? v : 0);
-                }, 0);
+        const totalPossibleCoins = (backendTotalCoins != null && Number(backendTotalCoins) >= 0)
+            ? Number(backendTotalCoins)
+            : (rewardsCoins != null && Number(rewardsCoins) >= 0)
+                ? Number(rewardsCoins)
+                : isBitLab && (rawData.total_points != null || game?.total_points != null)
+                    ? Number(rawData.total_points ?? game?.total_points ?? 0)
+                    : processedGoals.reduce((sum, g) => {
+                        const v = Number(g?.reward ?? g?.coinReward ?? 0);
+                        return sum + (Number.isFinite(v) ? v : 0);
+                    }, 0);
 
         const xpConfig = game?.xpRewardConfig || rawData?.xpRewardConfig || { baseXP: 1, multiplier: 1 };
         const baseXP = Number(xpConfig.baseXP || 1);
@@ -243,7 +249,8 @@ export const Coin = ({
      * @returns {string} - Simple user-friendly error message
      */
     const getUserFriendlyErrorMessage = (errorMessage) => {
-        return "🎯 Complete the milestone first! You need to reach the required level to claim your rewards.";
+        if (!errorMessage) return "An unexpected error occurred. Please try again.";
+        return errorMessage;
     };
 
     /**
@@ -301,6 +308,12 @@ export const Coin = ({
             const startingBatchNumber = claimedGroups + 1;
             const gameTitle = normalizeGameTitle(game);
 
+            // Extract task/goal IDs from the batches being claimed (prevent double-claim)
+            const claimedTaskIds = batchData.batches
+                .slice(claimedGroups, claimedGroups + claimableBatches)
+                .flatMap(b => b.goals.map(g => g.goalId))
+                .filter(Boolean);
+
             // Prepare earning data for API call with batch fields for backend integration
             const earningData = {
                 gameId: game.id,
@@ -309,7 +322,8 @@ export const Coin = ({
                 reason: `Game session completion - ${gameTitle} - ${claimableBatches} batch${claimableBatches > 1 ? 'es' : ''} claimed`,
                 batchNumber: startingBatchNumber,  // Starting batch number (1-indexed)
                 batchesClaimed: claimableBatches,  // How many batches being claimed
-                gameTitle: gameTitle                // Game title for backend tracking
+                gameTitle: gameTitle,                // Game title for backend tracking
+                taskIds: claimedTaskIds              // Task IDs for deduplication
             };
 
             // Prefer parent-provided claim handler which also locks session
@@ -319,7 +333,8 @@ export const Coin = ({
                     coins: claimableRewards.coins,
                     xp: claimableRewards.xp,
                     groups: claimableBatches,
-                    batchNumber: startingBatchNumber  // Pass batch number to parent
+                    batchNumber: startingBatchNumber,  // Pass batch number to parent
+                    taskIds: claimedTaskIds            // Pass task IDs for deduplication
                 });
             } else {
                 // Fallback to direct transfer if parent handler not provided
@@ -535,7 +550,7 @@ export const Coin = ({
                                     ? `🎉 Ready to claim ${claimableRewards.coins.toFixed(2)} + ${claimableRewards.xp} XP from ${claimableBatches} batch${claimableBatches > 1 ? 'es' : ''}!`
                                     : sessionCoins > 0
                                         ? `💰 Complete ${Math.max(0, batchData.currentBatchTarget - batchData.currentBatchProgress)} more tasks to unlock the next batch reward!`
-                                        : '*Complete level 3 to claim your reward.'}
+                                        : `💰 Complete tasks to start earning `}
                         </p>
 
                         {/* Progress indicator when coins are available but milestone not reached */}

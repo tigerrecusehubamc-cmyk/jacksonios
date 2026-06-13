@@ -242,19 +242,20 @@ export const GameListSection = ({ searchQuery = "", showSearch = false }) => {
     const goalsList = game.goals || [];
     const completedGoalsCount = goalsList.filter(g => g.completed === true || g.status === "completed").length || 0;
     const totalGoals = goalsList.length || 0;
-    // Coins: same as LevelsSection — sum of completed goals' amount/points
-    const earnedAmount = Number(
-      goalsList
-        .filter(g => g.completed === true || g.status === "completed")
-        .reduce((sum, goal) => sum + (parseFloat(goal.amount || goal.points) || 0), 0)
-    ) || 0;
-    // XP: same formula as LevelsSection — per completed goal using xpRewardConfig (baseXP * multiplier^index)
+    // Coins: prefer backend totalCoins, fall back to sum of completed goals' coinReward/amount/points
+    const backendTotalCoins = game.totalCoins ?? game.besitosRawData?.totalCoins ?? game.bitlabsRawData?.totalCoins;
+    const earnedAmount = backendTotalCoins != null && Number(backendTotalCoins) > 0
+      ? Number(backendTotalCoins)
+      : Number(
+          goalsList
+            .filter(g => g.completed === true || g.status === "completed")
+            .reduce((sum, goal) => sum + (parseFloat(goal.coinReward ?? goal.amount ?? goal.points) || 0), 0)
+        ) || 0;
+    // XP: same formula as LevelsSection — per goal using xpRewardConfig (baseXP * multiplier^index)
     const xpConfig = game?.xpRewardConfig || game?.bitlabsRawData?.xpRewardConfig || game?.besitosRawData?.xpRewardConfig || { baseXP: 1, multiplier: 1 };
     const baseXP = Math.max(1, Number(xpConfig.baseXP) || 1);
     const multiplier = Number(xpConfig.multiplier) || 1;
     const totalXP = goalsList.reduce((sum, goal, index) => {
-      const isCompleted = goal.completed === true || goal.completed === "true" || goal.status === "completed";
-      if (!isCompleted) return sum;
       const calculatedXP = Math.round((baseXP * Math.pow(multiplier, index)) * 100) / 100;
       return sum + calculatedXP;
     }, 0);
@@ -294,8 +295,8 @@ export const GameListSection = ({ searchQuery = "", showSearch = false }) => {
       subtitle: `${completedGoalsCount} of ${totalGoals} completed`,
       image: cardImage,
       overlayImage: cardImage || game.image || game.square_image,
-      score: Number.isFinite(earnedAmount) ? earnedAmount.toFixed(2) : "0.00",
-      bonus: `+${totalXP}`,
+      score: Number.isFinite(earnedAmount) ? String(Math.round(earnedAmount)) : "0",
+      bonus: `+${Math.round(totalXP)}`,
       coinIcon: "/dollor.png",
       picIcon: "/xp.svg",
       hasStatusDot: true,

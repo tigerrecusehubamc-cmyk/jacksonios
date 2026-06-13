@@ -88,7 +88,7 @@ const GameItemCard = ({
             </div>
 
             <div
-                className={`relative ${game.scoreWidth || "w-[70px]"} h-[55px] rounded-[10px] overflow-hidden bg-[linear-gradient(180deg,rgba(158,173,247,0.6)_0%,rgba(113,106,231,0.6)_100%)] flex flex-col items-center justify-center gap-1.5 px-2`}
+                className={`relative ${game.scoreWidth || "min-w-[70px] w-fit"} h-[55px] rounded-[10px] overflow-hidden bg-[linear-gradient(180deg,rgba(158,173,247,0.6)_0%,rgba(113,106,231,0.6)_100%)] flex flex-col items-center justify-center gap-1.5 px-3`}
             >
                 {/* Coin value and icon - horizontally aligned */}
                 <div className="flex items-center justify-center gap-1">
