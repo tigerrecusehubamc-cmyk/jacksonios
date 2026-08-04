@@ -4,6 +4,7 @@ import { ReduxProvider } from "@/lib/redux/ReduxProvider";
 import StatusBarSetter from "@/components/StatusBarSetter";
 import SplashScreen from "@/components/SplashScreen";
 import AdjustInitializer from "@/components/AdjustInitializer";
+import ErrorTrackingProvider from "@/components/ErrorTrackingProvider";
 
 export const metadata = {
   title: "Jackson Rewards",
@@ -107,9 +108,11 @@ export default function RootLayout({ children }) {
         <SplashScreen>
           <ReduxProvider>
             <AuthProvider>
-              <AdjustInitializer />
-              <StatusBarSetter />
-              {children}
+              <ErrorTrackingProvider>
+                <AdjustInitializer />
+                <StatusBarSetter />
+                {children}
+              </ErrorTrackingProvider>
             </AuthProvider>
           </ReduxProvider>
         </SplashScreen>

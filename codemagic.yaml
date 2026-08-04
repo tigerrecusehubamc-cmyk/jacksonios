@@ -21,6 +21,9 @@ workflows:
         PROFILE_NAME: Jackson
         CURRENT_PROJECT_VERSION: "118"
         NEXT_PUBLIC_API_URL: "https://rewardsuatapi.hireagent.co"
+        # Error tracking (Sentry, project: jackson-mobile). Empty = disabled.
+        NEXT_PUBLIC_SENTRY_DSN: "https://5edf5b539511322705162cbb7cf7c286@o4511852755550208.ingest.us.sentry.io/4511852816629760"
+        NEXT_PUBLIC_SENTRY_ENV: "uat"
         NEXT_PUBLIC_VERISOUL_API_KEY: "9sxeYwvVRwwI2fKL1ubo4euZ2zXNstA6cqnqDvN0"
         NEXT_PUBLIC_VERISOUL_BASE_URL: "https://api.prod.verisoul.ai"
         NEXT_PUBLIC_VERISOUL_PROJECT_ID: "579b117f-385b-44b0-95e0-e66a261cdf83"
