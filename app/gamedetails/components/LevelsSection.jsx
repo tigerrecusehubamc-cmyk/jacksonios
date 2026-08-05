@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { RulesModal } from "./RulesModal";
@@ -576,24 +576,44 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
     const activeLevels = processedGoals.filter(goal => !goal.isLocked);
     const lockedLevels = processedGoals.filter(goal => goal.isLocked);
 
-    // Calculate dynamic line heights to connect from first card to last card
-    const calculateLineHeight = (cardCount, isLocked = false) => {
-        if (cardCount === 0) return 0;
-        if (cardCount === 1) return 120; // Single card height + buffer
+    // Measure the actual rendered rows so the connector line ends exactly at the
+    // center of the last circle (estimates break on iOS where card heights differ)
+    const activeListRef = useRef(null);
+    const lockedListRef = useRef(null);
+    const [activeLineHeight, setActiveLineHeight] = useState(0);
+    const [lockedLineHeight, setLockedLineHeight] = useState(0);
 
-        // More generous calculation to account for variable card heights
-        // Assume average card height of ~100px + 16px gap = 116px between centers
-        const estimatedCardHeight = 100;
-        const gapBetweenCards = 16;
-        const distanceBetweenCircles = (cardCount - 1) * (estimatedCardHeight + gapBetweenCards);
+    const LINE_TOP_OFFSET = 24; // matches the line's top-6 class
 
-        // Add generous buffer to ensure line extends well past the last circle
-        const buffer = isLocked ? 150 : 100; // Extra buffer for locked tasks
-        return distanceBetweenCircles + estimatedCardHeight + buffer;
+    const measureLineHeight = (container) => {
+        if (!container) return 0;
+        const rows = container.querySelectorAll(':scope > .level-row');
+        if (!rows.length) return 0;
+        const lastRow = rows[rows.length - 1];
+        // Circles are vertically centered in their row, so the row's vertical
+        // center is the last circle's center
+        return Math.max(0, lastRow.offsetTop + lastRow.offsetHeight / 2 - LINE_TOP_OFFSET);
     };
 
-    const activeLineHeight = calculateLineHeight(activeLevels.length, false);
-    const lockedLineHeight = calculateLineHeight(lockedLevels.length, true);
+    useLayoutEffect(() => {
+        const update = () => {
+            setActiveLineHeight(measureLineHeight(activeListRef.current));
+            setLockedLineHeight(measureLineHeight(lockedListRef.current));
+        };
+        update();
+
+        const observers = [];
+        if (typeof ResizeObserver !== 'undefined') {
+            [activeListRef.current, lockedListRef.current].forEach((el) => {
+                if (el) {
+                    const ro = new ResizeObserver(update);
+                    ro.observe(el);
+                    observers.push(ro);
+                }
+            });
+        }
+        return () => observers.forEach((ro) => ro.disconnect());
+    }, [processedGoals]);
 
 
 
@@ -708,9 +728,9 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
             )}
 
             {/* Active Levels */}
-            <div className="relative flex flex-col gap-4 px-5">
+            <div ref={activeListRef} className="relative flex flex-col gap-4 px-5">
                 {/* Progress Line - Dynamic Height - Connects first to last card */}
-                {activeLevels.length > 0 && (
+                {activeLevels.length > 0 && activeLineHeight > 0 && (
                     <div
                         className="absolute left-[38px] top-6 z-0"
                         style={{
@@ -731,7 +751,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                 )}
 
                 {activeLevels.map((level, index) => (
-                    <div key={level.id} className="flex items-center gap-3 w-full relative z-10">
+                    <div key={level.id} className="level-row flex items-center gap-3 w-full relative z-10">
                         {/* Level Number Circle with Status Indicator */}
                         <div className={`flex w-[38px] h-[38px] items-center justify-center rounded-full flex-shrink-0 relative ${level.isCompleted ? 'bg-green-600' :
                             level.isFailed || level.isExpired ? 'bg-red-600/50' :
@@ -919,9 +939,9 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
             </div>
 
             {/* Locked Levels */}
-            <div className="relative flex flex-col gap-4 px-5 mt-6">
+            <div ref={lockedListRef} className="relative flex flex-col gap-4 px-5 mt-6">
                 {/* Progress Line for Locked Levels - Dynamic Height - Connects first to last card */}
-                {lockedLevels.length > 0 && (
+                {lockedLevels.length > 0 && lockedLineHeight > 0 && (
                     <div
                         className="absolute left-[38px] top-6 z-0 bg-[#2f344a] "
                         style={{
@@ -942,7 +962,7 @@ export const LevelsSection = ({ game, selectedTier, onTierChange, onSessionUpdat
                 )}
 
                 {lockedLevels.map((level, index) => (
-                    <div key={`locked-${index}`} className="flex items-center gap-3 w-full relative z-10">
+                    <div key={`locked-${index}`} className="level-row flex items-center gap-3 w-full relative z-10">
                         <div className="flex w-[38px] h-[38px] items-center justify-center bg-[#2f344a] rounded-full flex-shrink-0 relative">
                             <div className="font-semibold text-[#f4f3fc] text-[12px]">
                                 {level.id}
