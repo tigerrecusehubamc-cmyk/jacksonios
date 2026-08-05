@@ -44,6 +44,7 @@ import {
 } from "@/lib/verisoulSDK";
 import useOnboardingStore from "@/stores/useOnboardingStore";
 import { App } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import { Preferences } from "@capacitor/preferences";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -147,8 +148,11 @@ export function AuthProvider({ children }) {
         (async () => {
           try {
             // Capacitor v7+: addListener returns a Promise<PluginListenerHandle>
-            listener = await App.addListener("appUrlOpen", (event) => {
+            const processedUrls = new Set();
+            const handleAppUrlOpen = (event) => {
               const urlString = event.url;
+              if (!urlString || processedUrls.has(urlString)) return;
+              processedUrls.add(urlString);
               console.log(
                 "🔗 [DeepLink] appUrlOpen fired. Raw URL:",
                 urlString,
@@ -158,10 +162,16 @@ export function AuthProvider({ children }) {
               let path;
               let token;
 
-              // Handle custom URL scheme (com.jackson.app://)
-              if (urlString.startsWith("com.jackson.app://")) {
+              // Handle the registered iOS scheme and the legacy scheme.
+              if (
+                urlString.startsWith("jacksonrewards://") ||
+                urlString.startsWith("com.jackson.app://")
+              ) {
+                const schemePrefix = urlString.startsWith("jacksonrewards://")
+                  ? "jacksonrewards://"
+                  : "com.jackson.app://";
                 parsableUrl = new URL(
-                  urlString.replace("com.jackson.app://", "http://app/"),
+                  urlString.replace(schemePrefix, "http://app/"),
                 );
                 path = parsableUrl.pathname;
                 token = parsableUrl.searchParams.get("token");
@@ -201,9 +211,15 @@ export function AuthProvider({ children }) {
                   console.log(
                     "🔗 [DeepLink] Navigating to /auth/callback with token (source=native)",
                   );
-                  router.replace(
-                    `/auth/callback?token=${encodeURIComponent(token)}&source=native`,
+                  // The URL has already returned control to the native app. It is
+                  // now safe to close SFSafariViewController without cancelling
+                  // the deep-link navigation.
+                  Browser.close().catch(() => {});
+                  const callbackParams = new URLSearchParams(
+                    parsableUrl.searchParams,
                   );
+                  callbackParams.set("source", "native");
+                  router.replace(`/auth/callback?${callbackParams.toString()}`);
                 }
               } else if (
                 (path === "/auth/error" || path === "/auth/callback") &&
@@ -265,7 +281,19 @@ export function AuthProvider({ children }) {
                   { path, hasToken: !!token, hasParsableUrl: !!parsableUrl },
                 );
               }
-            });
+            };
+
+            listener = await App.addListener(
+              "appUrlOpen",
+              handleAppUrlOpen,
+            );
+
+            // appUrlOpen covers warm starts; getLaunchUrl covers OAuth returning
+            // while iOS had terminated the app.
+            const launchUrl = await App.getLaunchUrl();
+            if (launchUrl?.url) {
+              handleAppUrlOpen({ url: launchUrl.url });
+            }
 
             if (cancelled && listener?.remove) {
               await listener.remove();

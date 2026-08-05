@@ -17,6 +17,7 @@ const WalkathonSection = () => {
     const [walkathon, setWalkathon] = useState(null);
     const [loading, setLoading] = useState(true);
     const [userProgress, setUserProgress] = useState(null);
+    const [showInfo, setShowInfo] = useState(false);
 
     // Load walkathon status to check eligibility
     useEffect(() => {
@@ -190,9 +191,11 @@ const WalkathonSection = () => {
                         className="absolute top-px left-[299px] w-9 h-9 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-transparent rounded-full"
                         type="button"
                         aria-label="More information about Walkathon"
+                        aria-expanded={showInfo}
+                        aria-controls="walkathon-info-popover"
                         onClick={(e) => {
                             e.stopPropagation();
-                            handleWalkathonClick();
+                            setShowInfo((current) => !current);
                         }}
                     >
                         <img
@@ -201,6 +204,28 @@ const WalkathonSection = () => {
                             src="https://c.animaapp.com/SDZlvEPf/img/informationcircle.svg"
                         />
                     </button>
+
+                    {showInfo && (
+                        <div
+                            id="walkathon-info-popover"
+                            role="dialog"
+                            aria-label="About Walkathon"
+                            className="absolute z-20 top-9 right-3 left-3 rounded-xl border border-white/20 bg-[#102f57]/95 p-3 text-sm text-white shadow-xl backdrop-blur"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <p className="font-semibold">How Walkathon works</p>
+                            <p className="mt-1 text-xs leading-5 text-white/85">
+                                {displayData.description} Link Apple Health to track eligible steps and view your milestones.
+                            </p>
+                            <button
+                                type="button"
+                                className="mt-2 text-xs font-semibold text-[#c9d5ff]"
+                                onClick={() => setShowInfo(false)}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    )}
                 </article>
             </section>
         </motion.div>
