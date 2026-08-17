@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { resetPassword } from "@/lib/api";
+import { resetPassword, verifyResetToken } from "@/lib/api";
 
 const ResetPasswordComponent = () => {
   const router = useRouter();
@@ -11,6 +11,8 @@ const ResetPasswordComponent = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [isTokenValid, setIsTokenValid] = useState(false);
 
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
@@ -25,12 +27,41 @@ const ResetPasswordComponent = () => {
   // ✅ Read token
   useEffect(() => {
     const tokenFromUrl = searchParams.get("token");
-    if (tokenFromUrl) {
-      setToken(tokenFromUrl);
-    } else {
+    if (!tokenFromUrl) {
       setMessage("Invalid or missing reset token. Please request a new link.");
       setIsError(true);
+      setIsTokenValid(false);
+      setIsVerifying(false);
+      return;
     }
+
+    let cancelled = false;
+    setToken(tokenFromUrl);
+    setIsVerifying(true);
+
+    verifyResetToken(tokenFromUrl)
+      .then(() => {
+        if (cancelled) return;
+        setIsTokenValid(true);
+        setMessage("");
+        setIsError(false);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setIsTokenValid(false);
+        setMessage(
+          error.message ||
+            "This reset link is invalid or expired. Please request a new one.",
+        );
+        setIsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setIsVerifying(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams]);
 
   // ✅ Validation logic
@@ -64,6 +95,7 @@ const ResetPasswordComponent = () => {
 
   const isFormValid =
     token &&
+    isTokenValid &&
     newPassword &&
     confirmPassword &&
     Object.keys(errors).length === 0;
@@ -119,6 +151,7 @@ const ResetPasswordComponent = () => {
 
               <div className="relative w-full h-[45px] bg-white/10 rounded-lg border border-white/20 flex items-center">
                 <input
+                  disabled={isVerifying || !isTokenValid}
                   type={showPassword1 ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -159,6 +192,7 @@ const ResetPasswordComponent = () => {
 
               <div className="relative w-full h-[45px] bg-white/10 rounded-lg border border-white/20 flex items-center">
                 <input
+                  disabled={isVerifying || !isTokenValid}
                   type={showPassword2 ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -201,9 +235,15 @@ const ResetPasswordComponent = () => {
               </p>
             )}
 
+            {isVerifying && (
+              <p className="text-center text-xs mt-2 text-neutral-300">
+                Verifying reset link...
+              </p>
+            )}
+
             <button
               type="submit"
-              disabled={!isFormValid || isLoading}
+              disabled={!isFormValid || isLoading || isVerifying}
               className={`w-full h-[40px] mt-4 rounded-lg text-white font-semibold transition ${
                 isFormValid && !isLoading
                   ? "bg-gradient-to-b from-[#9eadf7] to-[#716ae7] hover:opacity-90"

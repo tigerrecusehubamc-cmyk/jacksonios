@@ -18,14 +18,15 @@ export const ChallengeGroupSection = ({ streak }) => {
 
         // Only use bonus days from API - no fallback to streak prop
         if (bonusDays.length > 0) {
-            // Calculate positions dynamically based on number of bonus days
-            const positions = bonusDays.length === 3
-                ? ["7.35%", "50%", "92.65%"]  // Spread evenly for 3 milestones
-                : bonusDays.length === 4
-                    ? ["7.35%", "31.76%", "56.17%", "80.58%"]
-                    : bonusDays.length === 5
-                        ? ["7.35%", "31.76%", "56.17%", "80.58%", "90%"]
-                        : bonusDays.map((_, index) => `${((index + 1) / (bonusDays.length + 1)) * 100}%`);
+            // Keep the first/last circle inside the track and distribute every
+            // configured milestone evenly. Percentage positioning stays correct
+            // on narrower iPhones where the container is less than 340px wide.
+            const edgeInset = 7.5;
+            const positions = bonusDays.map((_, index) => {
+                if (bonusDays.length === 1) return "50%";
+                const position = edgeInset + (index / (bonusDays.length - 1)) * (100 - edgeInset * 2);
+                return `${position}%`;
+            });
 
             const milestones = bonusDays.map((bonusDay, index) => {
                 // Use direct coins and xp fields from simplified API response
@@ -122,8 +123,6 @@ export const ChallengeGroupSection = ({ streak }) => {
                         {/* Milestone indicators with treasure chests and rewards */}
                         {milestones.map((milestone, index) => {
                             const isCompleted = milestone.isReached;
-                            const containerWidth = 340; // Max width of container
-                            const position = parseFloat(milestone.leftPosition) / 100 * containerWidth; // Convert percentage to pixels
                             const isLastMilestone = index === milestones.length - 1;
 
                             // Green treasure chest images (for all except last)
@@ -164,12 +163,12 @@ export const ChallengeGroupSection = ({ streak }) => {
                                                 // Align above the day number circle - adjust for golden chest size
                                                 top: isLastMilestone ? "-64px" : (index === 0 ? "-40px" : index === 1 ? "-54px" : "-56px"),
                                                 // Center the chest above the day number circle (15px is half of 30px circle)
-                                                left: `${position - parseFloat(chestSize.width) / 2}px`,
+                                                left: milestone.leftPosition,
                                                 width: chestSize.width,
                                                 height: chestSize.height,
                                                 zIndex: isLastMilestone ? 15 : 10, // Higher z-index for golden treasure
                                                 opacity: isCompleted ? 1 : 0.6, // Dim if not reached
-                                                transform: 'translateX(0)', // Ensure proper centering
+                                                transform: 'translateX(-50%)',
                                             }}
                                             alt={`Reward ${index + 1} - Day ${milestone.value} ${isLastMilestone ? '(Golden)' : '(Green)'}`}
                                             src={imageUrl}
@@ -188,7 +187,8 @@ export const ChallengeGroupSection = ({ streak }) => {
                                     <div
                                         className="absolute w-[30px] h-[30px] top-[-3px] rounded-full border-2 flex items-center justify-center"
                                         style={{
-                                            left: `${position - 15}px`, // Better centering to match chest positioning
+                                            left: milestone.leftPosition,
+                                            transform: 'translateX(-50%)',
                                             backgroundColor: isCompleted ? '#ffd700' : '#6b5424',
                                             borderColor: isCompleted ? '#b8860b' : '#a68b4a', // Match progress bar track border color
                                             zIndex: 5, // Ensure indicators are above progress bar
@@ -207,9 +207,10 @@ export const ChallengeGroupSection = ({ streak }) => {
                                         <div
                                             className="absolute top-[32px] flex flex-col items-center justify-center gap-0.5"
                                             style={{
-                                                left: `${position - 20}px`,
+                                                left: milestone.leftPosition,
                                                 width: "40px",
                                                 zIndex: 5,
+                                                transform: 'translateX(-50%)',
                                             }}
                                         >
                                             {milestone.coins > 0 && (
