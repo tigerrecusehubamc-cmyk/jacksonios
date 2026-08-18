@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { fetchGamesBySection } from "@/lib/redux/slice/gameSlice";
-import { normalizeGameImages, normalizeGameTitle, normalizeGameAmount, normalizeGameCategory, getTotalPromisedPoints } from "@/lib/gameDataNormalizer";
+import { normalizeGameImages, normalizeGameTitle, normalizeGameCategory, getTotalPromisedPoints } from "@/lib/gameDataNormalizer";
 
 const EMPTY_ARRAY = [];
 
@@ -33,11 +33,8 @@ const MostPlayedGames = () => {
             // Normalize game data for both besitos and bitlab
             const images = normalizeGameImages(game);
             const title = normalizeGameTitle(game);
-            const amount = normalizeGameAmount(game);
-            const coinVal = game.rewards?.coins ?? game.rewards?.gold ?? amount;
-            const raw = typeof coinVal === 'number' ? coinVal : (typeof coinVal === 'string' ? parseFloat(String(coinVal).replace('$', '')) || 0 : 0);
-            const displayCoins = Number.isFinite(raw) ? (raw === Math.round(raw) ? Math.round(raw) : Math.round(raw * 100) / 100) : 0;
-            const { totalXP } = getTotalPromisedPoints(game);
+            const { totalCoins, totalXP } = getTotalPromisedPoints(game);
+            const displayCoins = Number.isFinite(totalCoins) ? totalCoins : 0;
             const displayXP = Number.isFinite(totalXP) ? Math.round(totalXP) : 0;
             const category = normalizeGameCategory(game);
 
@@ -67,7 +64,7 @@ const MostPlayedGames = () => {
                 // Map from normalized data for display
                 optimizedImage: getOptimizedImage(),
                 displayTitle: title,
-                displayAmount: displayCoins ? `$${displayCoins}` : '$0',
+                displayCoins,
                 displayCategory: category,
                 // Keep full game data including besitosRawData for details page
                 fullGameData: game
@@ -109,6 +106,7 @@ const MostPlayedGames = () => {
 
     // One discover call only on mount. Guard loading/failed to prevent unnecessary calls.
     useEffect(() => {
+        if (!(userProfile?._id || userProfile?.id)) return;
         const hasFreshCache = sectionTimestamp != null && Date.now() - sectionTimestamp < CACHE_STALE_MS;
         if (hasFreshCache || mostPlayedStatus === "loading" || mostPlayedStatus === "failed") return;
         dispatch(fetchGamesBySection({
@@ -117,7 +115,7 @@ const MostPlayedGames = () => {
             page: 1,
             limit: 10
         }));
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [userProfile?._id, userProfile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // JS direction-lock touch handler for Android WebView carousel scroll
     const touchStartRef = useRef({ x: 0, y: 0, scrollLeft: 0 });
@@ -232,7 +230,7 @@ const MostPlayedGames = () => {
             {filteredGames.length > 0 ? (
                 <div
                     ref={scrollContainerRef}
-                    className="most-played-games-scroll flex h-[110px] min-w-0 items-start gap-1 w-full justify-start"
+                    className="most-played-games-scroll flex h-[132px] min-w-0 items-start gap-1 w-full justify-start"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {filteredGames.map((game, index) => (
@@ -269,7 +267,7 @@ const MostPlayedGames = () => {
                                 {(game.displayTitle || game.details?.name || game.title || 'Game').split(' - ')[0]}
                             </div>
                             <div className="flex items-center justify-center gap-1 text-[10px] text-white/80">
-                                <span>{game.displayAmount ?? '$0'}</span>
+                                <span>{game.displayCoins ?? 0} coins</span>
                                 <span>·</span>
                                 <span>{game.displayXP ?? 0} XP</span>
                             </div>

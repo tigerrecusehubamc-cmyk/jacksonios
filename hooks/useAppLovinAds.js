@@ -20,7 +20,7 @@ import {
  *
  * @returns {Object} Ad state and control functions
  */
-export const useAppLovinAds = () => {
+export const useAppLovinAds = ({ enabled = true } = {}) => {
   const { token, user } = useAuth();
 
   console.log("[useAppLovinAds] 🔄 Hook initialized", {
@@ -46,6 +46,8 @@ export const useAppLovinAds = () => {
   const currentAdRecordIdRef = useRef(null);
   const initializationAttemptedRef = useRef(false);
   const preloadInFlightRef = useRef(false);
+  const listenerCleanupRef = useRef(null);
+  const surfaceAdErrorsRef = useRef(false);
 
   // Get platform-specific ad unit ID
   const getPlatformAdUnitId = useCallback(() => {
@@ -78,9 +80,10 @@ export const useAppLovinAds = () => {
    */
   const setupListeners = useCallback(() => {
     console.log("[useAppLovinAds] 🔧 Setting up event listeners...");
+    listenerCleanupRef.current?.();
 
     // Ad loaded
-    appLovinPlugin.addLoadListener((adInfo) => {
+    const unsubscribeLoad = appLovinPlugin.addLoadListener((adInfo) => {
       console.log("[useAppLovinAds] ✅ Ad loaded event received:", adInfo);
       console.log("[useAppLovinAds] 📊 Ad Info:", {
         adUnitId: adInfo?.adUnitId,
@@ -96,14 +99,14 @@ export const useAppLovinAds = () => {
     });
 
     // Ad displayed
-    appLovinPlugin.addDisplayListener((adInfo) => {
+    const unsubscribeDisplay = appLovinPlugin.addDisplayListener((adInfo) => {
       console.log("[useAppLovinAds] 🎬 Ad displayed event received:", adInfo);
       setIsShowingAd(true);
       console.log("[useAppLovinAds] 📈 State updated: isShowingAd=true");
     });
 
     // Ad completed
-    appLovinPlugin.addCompleteListener((result) => {
+    const unsubscribeComplete = appLovinPlugin.addCompleteListener((result) => {
       console.log("[useAppLovinAds] 🎉 Ad completed event received:", result);
       console.log("[useAppLovinAds] 💰 Reward details:", {
         amount: result?.reward?.amount,
@@ -121,7 +124,7 @@ export const useAppLovinAds = () => {
     });
 
     // Ad failed
-    appLovinPlugin.addFailListener((error) => {
+    const unsubscribeFail = appLovinPlugin.addFailListener((error) => {
       console.error("[useAppLovinAds] ❌ Ad failed event received:", error);
       console.error("[useAppLovinAds] 🐛 Error details:", {
         type: error?.type,
@@ -131,19 +134,30 @@ export const useAppLovinAds = () => {
       });
       setIsLoading(false);
       setIsShowingAd(false);
-      setError(error.error || "Ad failed");
+      if (surfaceAdErrorsRef.current) {
+        setError(error.error || "Ad failed");
+      }
       console.log(
         "[useAppLovinAds] 📈 State updated: isLoading=false, isShowingAd=false, error set",
       );
     });
 
     console.log("[useAppLovinAds] ✅ Event listeners set up successfully");
+    listenerCleanupRef.current = () => {
+      unsubscribeLoad?.();
+      unsubscribeDisplay?.();
+      unsubscribeComplete?.();
+      unsubscribeFail?.();
+      listenerCleanupRef.current = null;
+    };
   }, []);
 
   /**
    * Initialize the AppLovin MAX SDK
    */
-  const initializeSDK = useCallback(async () => {
+  const initializeSDK = useCallback(async (options = {}) => {
+    const { silent = false } = options;
+    if (!enabled) return false;
     console.log("[useAppLovinAds] 🚀 Starting SDK initialization...");
     console.log("[useAppLovinAds] 📋 Initial state:", {
       initializationAttempted: initializationAttemptedRef.current,
@@ -323,7 +337,10 @@ export const useAppLovinAds = () => {
     } catch (err) {
       console.error("[useAppLovinAds] ❌ Initialization error:", err);
       console.error("[useAppLovinAds] 🐛 Error stack:", err?.stack);
-      setError(err.message || "Failed to initialize ad SDK");
+      initializationAttemptedRef.current = false;
+      if (!silent) {
+        setError(err.message || "Failed to initialize ad SDK");
+      }
       console.log(
         "[useAppLovinAds] 📈 State updated: error set, isLoading=false",
       );
@@ -334,12 +351,15 @@ export const useAppLovinAds = () => {
         "[useAppLovinAds] 📈 State updated: isLoading=false (finally)",
       );
     }
-  }, [token, isInitialized, setupListeners]);
+  }, [token, isInitialized, setupListeners, enabled]);
 
   /**
    * Load a rewarded ad
    */
-  const loadAd = useCallback(async () => {
+  const loadAd = useCallback(async (options = {}) => {
+    const { silent = false } = options;
+    if (!enabled) return false;
+    surfaceAdErrorsRef.current = !silent;
     console.log("[useAppLovinAds] 📥 Starting ad load process...");
     console.log("[useAppLovinAds] 📋 Current state:", {
       isInitialized,
@@ -437,7 +457,9 @@ export const useAppLovinAds = () => {
         stack: err?.stack,
         name: err?.name,
       });
-      setError(err.message || "Failed to load ad");
+      if (!silent) {
+        setError(err.message || "Failed to load ad");
+      }
       setIsAdReady(false);
       console.log(
         "[useAppLovinAds] 📈 State updated: error set, isAdReady=false",
@@ -466,12 +488,13 @@ export const useAppLovinAds = () => {
 
       return false;
     } finally {
+      surfaceAdErrorsRef.current = false;
       setIsLoading(false);
       console.log(
         "[useAppLovinAds] 📈 State updated: isLoading=false (finally)",
       );
     }
-  }, [isInitialized, token, initializeSDK]);
+  }, [isInitialized, token, initializeSDK, enabled]);
 
   /**
    * Preload next ad (debounced, single source of truth)
@@ -494,7 +517,7 @@ export const useAppLovinAds = () => {
 
     try {
       console.log("[useAppLovinAds] 🔄 Calling loadAd() from preload...");
-      await loadAd();
+      await loadAd({ silent: true });
       console.log("[useAppLovinAds] ✅ Preload complete");
     } catch (err) {
       console.error("[useAppLovinAds] ❌ Preload failed:", err);
@@ -513,6 +536,7 @@ export const useAppLovinAds = () => {
    */
   const showAd = useCallback(
     async (options = {}) => {
+      if (!enabled) return null;
       const { onReward, onError } = options;
 
       console.log("[useAppLovinAds] 🎬 Starting ad show process...");
@@ -773,7 +797,7 @@ export const useAppLovinAds = () => {
         );
       }
     },
-    [isAdReady, token, preloadNextAd, normalizeRevenue],
+    [isAdReady, token, preloadNextAd, normalizeRevenue, enabled],
   );
 
   /**
@@ -832,13 +856,19 @@ export const useAppLovinAds = () => {
       initializationAttempted: initializationAttemptedRef.current,
     });
 
+    if (!enabled) {
+      listenerCleanupRef.current?.();
+      setError(null);
+      return;
+    }
+
     if (token && !isInitialized && !initializationAttemptedRef.current) {
       console.log("[useAppLovinAds] 🚀 Triggering SDK initialization...");
-      initializeSDK();
+      initializeSDK({ silent: true });
     } else {
       console.log("[useAppLovinAds] ⏭️ Skipping SDK initialization");
     }
-  }, [token, isInitialized]);
+  }, [token, isInitialized, enabled]);
 
   // Fetch stats when initialized
   useEffect(() => {
@@ -861,7 +891,7 @@ export const useAppLovinAds = () => {
     console.log("[useAppLovinAds] 🔄 useEffect: Cleanup on unmount");
     return () => {
       console.log("[useAppLovinAds] 🧹 Cleanup: Component unmounting");
-      // Don't destroy singleton on unmount, just remove listeners
+      listenerCleanupRef.current?.();
     };
   }, []);
 

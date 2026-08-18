@@ -394,6 +394,7 @@ const GameCard = ({ onClose: onCloseProp }) => {
 
     // One discover call only on mount. Guard loading/failed to prevent unnecessary calls.
     useEffect(() => {
+        if (!(userProfile?._id || userProfile?.id)) return;
         const hasFreshCache = sectionTimestamp != null && Date.now() - sectionTimestamp < CACHE_STALE_MS;
         if (hasFreshCache || swipeStatus === "loading" || swipeStatus === "failed") return;
         dispatch(fetchGamesBySection({
@@ -402,7 +403,7 @@ const GameCard = ({ onClose: onCloseProp }) => {
             page: 1,
             limit: 10
         }));
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [userProfile?._id, userProfile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Return to app (focus): one discover call only if cache older than 2 min. User from localStorage.
     useEffect(() => {

@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../../contexts/AuthContext";
 import Image from "next/image";
 import { Capacitor } from "@capacitor/core";
-import { Browser } from "@capacitor/browser";
 
 const Spinner = () => (
   <div className="border-gray-500 h-16 w-16 animate-spin rounded-full border-4 border-t-[#af7de6]" />
@@ -143,17 +142,11 @@ function AuthCallbackContent() {
             console.log("📄 [AuthCallback] Native browser ERROR → building error deep link:", deepLink);
           }
 
-          try {
-            console.log("📄 [AuthCallback] Closing browser, then firing deep link in 500ms...");
-            await Browser.close();
-            setTimeout(() => {
-              console.log("📄 [AuthCallback] Firing deep link now:", deepLink);
-              window.location.href = deepLink;
-            }, 500);
-          } catch (closeError) {
-            console.warn("📄 [AuthCallback] Browser.close() failed, firing deep link immediately:", closeError);
-            window.location.href = deepLink;
-          }
+          // Closing SFSafariViewController first destroys this JavaScript context,
+          // so the delayed custom-scheme redirect never runs. Fire the URL first;
+          // AuthContext closes the browser after iOS delivers appUrlOpen.
+          console.log("📄 [AuthCallback] Firing native deep link:", deepLink);
+          window.location.assign(deepLink);
           return;
         }
       }

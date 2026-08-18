@@ -112,7 +112,7 @@ export default function SpinWheel() {
         loadAd,
         clearError: clearAdError,
         platformInfo,
-    } = useAppLovinAds();
+    } = useAppLovinAds({ enabled: !vipData.isVipActive });
 
     // Audio ref for sound effects
     const audioRef = useRef(null);

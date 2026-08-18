@@ -67,6 +67,7 @@ const SimpleTimerModal = ({ onClose, timeLeft }) => {
 export const Conversion = () => {
     // VIP/subscription: same pattern as SpinWheel — subscribers skip ads
     const vipStatus = useSelector((state) => state.profile.vipStatus);
+    const userId = useSelector((state) => state.profile.details?._id || state.profile.details?.id);
     const vipData = useMemo(() => {
         const isVipActive = vipStatus?.data?.isActive && vipStatus?.data?.currentTier && vipStatus?.data?.currentTier !== "Free";
         return { isVipActive };
@@ -83,7 +84,7 @@ export const Conversion = () => {
         loadAd,
         clearError: clearAdError,
         lastReward
-    } = useAppLovinAds();
+    } = useAppLovinAds({ enabled: !vipData.isVipActive });
 
     // State Management - Separate states for different flows
     const [conversionAmount, setConversionAmount] = useState("?");
@@ -96,6 +97,7 @@ export const Conversion = () => {
     const [adFlowState, setAdFlowState] = useState("idle"); // 'idle', 'loading', 'watching', 'completed'
 
     const [timeLeft, setTimeLeft] = useState(5 * 60); // 5 minutes in seconds
+    const [timerReadyAt, setTimerReadyAt] = useState(null);
     const timerRef = useRef(null);
     const resetResultRef = useRef(null);
     const [error, setError] = useState(null);
@@ -160,6 +162,14 @@ export const Conversion = () => {
         setTimerFlowState("running");
         setShowTimerModal(true);
         setTimeLeft(5 * 60); // 5 minutes (300 seconds)
+        const readyAt = Date.now() + (5 * 60 * 1000);
+        setTimerReadyAt(readyAt);
+        if (userId) {
+            localStorage.setItem(`conversionCooldown:${userId}`, JSON.stringify({
+                readyAt,
+                coinAmount,
+            }));
+        }
 
         // Fetch conversion settings in the background
         setIsLoadingSettings(true);
@@ -181,19 +191,6 @@ export const Conversion = () => {
             setIsLoadingSettings(false);
         }
 
-        timerRef.current = setInterval(() => {
-            setTimeLeft((prevTime) => {
-                if (prevTime <= 1) {
-                    clearInterval(timerRef.current);
-                    // Timer completed - settings are already loaded (fetched before timer started)
-                    calculateConversion();
-                    setTimerFlowState("idle");
-                    setShowTimerModal(false);
-                    return 0;
-                }
-                return prevTime - 1;
-            });
-        }, 1000);
     };
 
     // Handle Convert Now - VIP: no ad, show conversion; non-VIP: show ad first, then conversion (same logic as SpinWheel)
@@ -319,6 +316,52 @@ export const Conversion = () => {
             calculateConversion();
         }
     }, [isLoadingSettings, conversionSettings, conversionAmount, adFlowState]);
+
+    // Restore an in-progress cooldown after navigation or app resume. The key is
+    // user-scoped so one account cannot inherit another account's conversion.
+    useEffect(() => {
+        if (!userId) return;
+        const storageKey = `conversionCooldown:${userId}`;
+
+        try {
+            const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+            if (!saved?.readyAt) return;
+
+            const remaining = Math.max(0, Math.ceil((saved.readyAt - Date.now()) / 1000));
+            if (saved.coinAmount != null) setCoinAmount(String(saved.coinAmount));
+            setTimerReadyAt(saved.readyAt);
+            setTimeLeft(remaining);
+            setTimerFlowState("running");
+
+            getConversionSettings()
+                .then((settings) => setConversionSettings(settings.data))
+                .catch(() => {});
+        } catch {
+            localStorage.removeItem(storageKey);
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        if (timerFlowState !== "running" || !timerReadyAt) return;
+
+        const tick = () => {
+            const remaining = Math.max(0, Math.ceil((timerReadyAt - Date.now()) / 1000));
+            setTimeLeft(remaining);
+
+            if (remaining === 0) {
+                clearInterval(timerRef.current);
+                if (userId) localStorage.removeItem(`conversionCooldown:${userId}`);
+                calculateConversion();
+                setTimerFlowState("idle");
+                setShowTimerModal(false);
+                setTimerReadyAt(null);
+            }
+        };
+
+        tick();
+        timerRef.current = setInterval(tick, 1000);
+        return () => clearInterval(timerRef.current);
+    }, [timerFlowState, timerReadyAt, userId, calculateConversion]);
 
     // Cleanup timer on component unmount
     useEffect(() => {
