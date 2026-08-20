@@ -10,6 +10,7 @@ import XPTierTracker from "../homepage/components/XPTierTracker";
 import { LegalDisclaimerSection } from "@/components/LegalDisclaimerSection";
 import { PlanComparisonSection } from "@/components/PlanComparisonSection";
 import { getAppleProductId } from "@/lib/appleIAP";
+import { initiateApplePurchase } from "@/lib/api";
 const tierData = {
     gold: {
         name: 'Gold',
@@ -138,21 +139,37 @@ export default function BuySubscription() {
         }
 
         dispatch(resetPurchaseStatus());
-        dispatch(setPurchaseStatus({ status: 'awaiting_payment' }))
+        dispatch(setPurchaseStatus({ status: 'loading' }));
 
-        dispatch({
-            type: 'vip/initiateApplePurchase/fulfilled',
-            payload: {
-                subscriptionId: `${selectedTier}_${selectedPlan}`,
-                appleProductId: getAppleProductId(selectedTier, selectedPlan),
-                tierId: selectedTier,
-                plan: selectedPlan,
-            },
-        })
+        try {
+            const response = await initiateApplePurchase(
+                { tierId: selectedTier, plan: selectedPlan, region: "US" },
+                token,
+            );
+            const purchaseSession = response?.data || response;
+            const sessionId = purchaseSession?.sessionId;
+            const appleProductId = purchaseSession?.appStoreProductId || getAppleProductId(selectedTier, selectedPlan);
+
+            if (!sessionId || !appleProductId) {
+                throw new Error("The purchase session could not be created.");
+            }
+
+            dispatch({
+                type: 'vip/initiateApplePurchase/fulfilled',
+                payload: {
+                    subscriptionId: sessionId,
+                    appleProductId,
+                    tierId: selectedTier,
+                    plan: selectedPlan,
+                },
+            });
+        } catch (error) {
+            handlePaymentError(error);
+        }
     };
 
     const handlePaymentError = (error) => {
-        alert("Payment failed. Please try again.");
+        alert(error?.message || "Payment failed. Please try again.");
         dispatch(resetPurchaseStatus());
     };
 

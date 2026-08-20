@@ -6,7 +6,7 @@ import {
   lockModal,
   unlockModal,
 } from "@/lib/redux/slice/vipSlice";
-import { purchaseSubscription } from "@/lib/appleIAP";
+import { finishTransaction, purchaseSubscription } from "@/lib/appleIAP";
 
 export default function ApplePaymentSheet({
   subscriptionId,
@@ -47,6 +47,10 @@ export default function ApplePaymentSheet({
         const errorMessage = result.payload || "Payment verification failed with backend";
         throw new Error(errorMessage);
       }
+
+      // Finish only after the backend verifies and activates the subscription.
+      // This keeps failed verification transactions recoverable by StoreKit.
+      await finishTransaction(purchaseResult.transactionId);
 
       if (onPaymentSuccess) {
         onPaymentSuccess({

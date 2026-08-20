@@ -389,10 +389,7 @@ export const Race = ({ progressData, isLoadingXP }) => {
                         transform: 'translateZ(10px)',
                         transformStyle: 'preserve-3d'
                     }}
-                    // onClick={() => {
-                    //     // Instant navigation - no loading delay
-                    //     router.push('/Race/ListGame');
-                    // }}
+                    onClick={() => router.push('/Race/ListGame?fromRace=true')}
                     aria-label="Start Playing - Begin Race"
                     type="button"
                 >

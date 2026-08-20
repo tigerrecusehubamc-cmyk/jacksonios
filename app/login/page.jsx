@@ -279,20 +279,13 @@ function LoginPageContent() {
 
       if (result?.ok) {
         dispatch(fetchStreakStatus());
-        // Wait 16 s so all prefetch API calls in handleAuthSuccess finish loading
-        // before navigating — homepage arrives with data ready, no loading states.
-        // Safety check: only redirect if the user hasn't navigated to another screen.
-        setTimeout(() => {
-          if (autoRegister) {
-            router.push("/face-verification?autoRegister=true");
-          } else {
-            const currentPath =
-              typeof window !== "undefined" ? window.location.pathname : "";
-            if (currentPath === "/login" || currentPath === "/homepage") {
-              router.push("/homepage");
-            }
-          }
-        }, 16000);
+        // Authentication is complete. Homepage data continues loading in the
+        // background, so navigation must not be held behind an arbitrary delay.
+        if (autoRegister) {
+          router.replace("/face-verification?autoRegister=true");
+        } else {
+          router.replace("/homepage");
+        }
       }
       else {
         const backendError = result?.error;
