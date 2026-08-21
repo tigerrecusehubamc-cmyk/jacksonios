@@ -55,6 +55,10 @@ export default function WalkathonPage() {
         setActiveTab(tabId);
     }, []);
 
+    const handleCloseMilestoneCelebration = useCallback(() => {
+        setNewMilestones([]);
+    }, []);
+
     // Debug logging helper - useCallback to prevent recreation
     const logWalkathon = useCallback((label, data) => {
         console.log(`[🚶 WALKATHON] ${label}`, data);
@@ -849,7 +853,7 @@ export default function WalkathonPage() {
             {/* Milestone Celebration Modal */}
             <MilestoneCelebration
                 milestones={newMilestones}
-                onClose={() => setNewMilestones([])}
+                onClose={handleCloseMilestoneCelebration}
             />
 
             <HomeIndicator activeTab="home" />
