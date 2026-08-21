@@ -30,8 +30,7 @@ const RecommendationCard = React.memo(({ card, onCardClick }) => {
                         width={158}
                         height={158}
                         sizes="158px"
-                        priority
-                        loading="eager"
+                        loading="lazy"
                         decoding="async"
                         onError={handleImageError}
                     />
@@ -221,9 +220,6 @@ export const ListGame = () => {
         // Clear Redux state BEFORE navigation to prevent showing old data
         dispatch({ type: 'games/clearCurrentGameDetails' });
 
-        // Clear Redux state BEFORE navigation
-        dispatch({ type: 'games/clearCurrentGameDetails' });
-
         if (game.isDownloaded && game.fullData) {
             // For downloaded games, use localStorage method
             try {
@@ -288,80 +284,13 @@ export const ListGame = () => {
         });
     }, [dispatch, gamesBySection, gamesBySectionStatus, availableUiSections, userProfile]);
 
-    // Refresh games in background after showing cached data (to get admin updates)
-    // Do this in background without blocking UI - show cached data immediately
-    useEffect(() => {
-        if (!userProfile) return;
-
-        // Use available sections from Redux if available, otherwise use common sections
-        const sectionsToRefresh = availableUiSections && availableUiSections.length > 0
-            ? availableUiSections
-            : ["Swipe", "Most Played", "Cash Coach Recommendation", "New Games", "Trending"];
-
-        // Use setTimeout to refresh in background after showing cached data
-        // This ensures smooth UX - cached data shows immediately, fresh data loads in background
-        const refreshTimer = setTimeout(() => {
-            sectionsToRefresh.forEach(section => {
-                dispatch(fetchGamesBySection({
-                    uiSection: section,
-                    user: userProfile,
-                    page: 1,
-                    limit: 50,
-                    force: true,
-                    background: true
-                }));
-            });
-        }, 100); // Small delay to let cached data render first
-
-        return () => clearTimeout(refreshTimer);
-    }, [dispatch, availableUiSections, userProfile]);
-
-    // Refresh games in background when app comes to foreground (admin might have updated)
-    useEffect(() => {
-        if (!userProfile) return;
-
-        // Use available sections from Redux if available, otherwise use common sections
-        const sectionsToRefresh = availableUiSections && availableUiSections.length > 0
-            ? availableUiSections
-            : ["Swipe", "Most Played", "Cash Coach Recommendation", "New Games", "Trending"];
-
-        const handleFocus = () => {
-            sectionsToRefresh.forEach(section => {
-                dispatch(fetchGamesBySection({
-                    uiSection: section,
-                    user: userProfile,
-                    page: 1,
-                    limit: 50,
-                    force: true,
-                    background: true
-                }));
-            });
-        };
-
-        window.addEventListener("focus", handleFocus);
-
-        const handleVisibilityChange = () => {
-            if (!document.hidden && userProfile) {
-                sectionsToRefresh.forEach(section => {
-                    dispatch(fetchGamesBySection({
-                        uiSection: section,
-                        user: userProfile,
-                        page: 1,
-                        limit: 50,
-                        force: true,
-                        background: true
-                    }));
-                });
-            }
-        };
-
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-
-        return () => {
-            window.removeEventListener("focus", handleFocus);
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
-        };
-    }, [dispatch, availableUiSections, userProfile]);
+    // NOTE: this screen intentionally does NOT force-refresh sections on mount,
+    // focus, or visibilitychange. Doing so fired 10+ concurrent section fetches
+    // (5 sections x mount + 100ms force + focus/visibility) whose combined
+    // payloads and re-renders, together with eager full-size image decoding,
+    // crashed the WKWebView content process on device (BUG_017: freeze, then
+    // Capacitor reloads to Home). The homepage owns background refresh; this
+    // screen renders from cache and only fills sections that are empty.
 
     // Loading timeout handling
     useEffect(() => {
