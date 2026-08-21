@@ -19,7 +19,7 @@ workflows:
         BUNDLE_ID: com.jackson.rewards.app
         TEAM_ID: HNLHZ72LJL
         PROFILE_NAME: Jackson
-        CURRENT_PROJECT_VERSION: "120"
+        CURRENT_PROJECT_VERSION: "121"
         NEXT_PUBLIC_API_URL: "https://rewardsuatapi.hireagent.co"
         # Error tracking (Sentry, project: jackson-mobile). Empty = disabled.
         NEXT_PUBLIC_SENTRY_DSN: "https://5edf5b539511322705162cbb7cf7c286@o4511852755550208.ingest.us.sentry.io/4511852816629760"
@@ -72,7 +72,7 @@ workflows:
                 config.build_settings['CODE_SIGN_STYLE'] = 'Manual'
                 config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = 'Jackson'
                 config.build_settings['CODE_SIGN_IDENTITY'] = 'Apple Distribution'
-                config.build_settings['CURRENT_PROJECT_VERSION'] = ENV['CURRENT_PROJECT_VERSION'] || '120'
+                config.build_settings['CURRENT_PROJECT_VERSION'] = ENV['CURRENT_PROJECT_VERSION'] || '121'
               end
             end
           end
