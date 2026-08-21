@@ -22,6 +22,12 @@ export const MilestoneCelebration = ({ milestones = [], onClose }) => {
 
             return () => clearTimeout(timer);
         }
+
+        // Keep the component's local copy in sync when the parent dismisses
+        // the celebration. Previously the stale local milestone kept the
+        // overlay mounted after "Tap to continue" was pressed.
+        setVisibleMilestones([]);
+        setCurrentIndex(0);
     }, [milestones, onClose]);
 
     if (!visibleMilestones || visibleMilestones.length === 0) {
@@ -42,6 +48,8 @@ export const MilestoneCelebration = ({ milestones = [], onClose }) => {
                         if (currentIndex < visibleMilestones.length - 1) {
                             setCurrentIndex(currentIndex + 1);
                         } else {
+                            setVisibleMilestones([]);
+                            setCurrentIndex(0);
                             onClose?.();
                         }
                     }}
