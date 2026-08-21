@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { fetchGamesBySection } from "@/lib/redux/slice/gameSlice";
 // Removed getAgeGroupFromProfile and getGenderFromProfile - now passing user object directly
@@ -87,14 +87,10 @@ const RecommendationCard = React.memo(({ card, onCardClick }) => {
 
 export const ListGame = () => {
     const router = useRouter();
-    const searchParams = useSearchParams();
     const dispatch = useDispatch();
     const [currentScaleClass, setCurrentScaleClass] = useState("scale-100");
     const [loadingTimeout, setLoadingTimeout] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
-
-    // Check if user came from race banner
-    const fromRace = searchParams.get('fromRace') === 'true';
 
     // Handle clicks outside tooltip
     const tooltipRef = useRef(null);
@@ -222,12 +218,6 @@ export const ListGame = () => {
     // Optimized: Memoized game click handler
     const handleGameClick = useCallback((game) => {
 
-        // If user came from race banner, redirect to race screen
-        if (fromRace) {
-            router.push('/Race');
-            return;
-        }
-
         // Clear Redux state BEFORE navigation to prevent showing old data
         dispatch({ type: 'games/clearCurrentGameDetails' });
 
@@ -258,7 +248,7 @@ export const ListGame = () => {
             }
             router.push(`/gamedetails?gameId=${gameId}&source=race`);
         }
-    }, [router, dispatch, fromRace]);
+    }, [router, dispatch]);
 
     // Handle race button click
     const handleRaceButtonClick = useCallback(() => {

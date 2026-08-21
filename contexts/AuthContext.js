@@ -1516,14 +1516,16 @@ export function AuthProvider({ children }) {
         });
       }
 
-      // PREFETCH: Load every API used on the home screen before navigating.
-      // Navigation only happens after all responses are received — no loading states on home screen.
+      // Warm homepage data after authentication without blocking navigation.
+      // The login response is the only operation required before entering the app;
+      // each homepage section already owns its loading/empty state.
       if (token) {
-        // TIER 1 — Profile first: user data (age/gender) is required by game section fetches
-        await dispatch(fetchUserProfile({ token }));
+        void (async () => {
+          try {
+            // Profile first: age/gender is required by game section fetches.
+            await dispatch(fetchUserProfile({ token }));
 
-        // TIER 2 — Progress bar data: wallet balance + profile stats + XP tier in parallel
-        await Promise.allSettled([
+            await Promise.allSettled([
           dispatch(fetchWalletScreen({ token })),
           dispatch(fetchProfileStats({ token })),
           getXPTierProgressBar(token).then((response) => {
@@ -1544,10 +1546,9 @@ export function AuthProvider({ children }) {
             }
             return response;
           }),
-        ]);
+            ]);
 
-        // TIER 3 — All remaining homepage sections in parallel
-        await Promise.allSettled([
+            await Promise.allSettled([
           // Non-gaming offers (NonGameOffersSection)
           dispatch(
             fetchNonGameOffers({ token, offerType: "cashback_shopping" }),
@@ -1605,11 +1606,17 @@ export function AuthProvider({ children }) {
                 ),
               ]
             : []),
-        ]);
+            ]);
+          } catch (prefetchError) {
+            console.warn(
+              "[AuthContext] Homepage prefetch failed; sections will retry after navigation:",
+              prefetchError?.message,
+            );
+          }
+        })();
       }
 
-      // All Tier 1-3 data is now in Redux. Clear the flag so the gatekeeper
-      // fires once and redirects to /homepage with everything already loaded.
+      // Release the route gate immediately; prefetch continues in background.
       setIsLoginRedirectPending(false);
 
       // Welcome bonus tasks/timer in background (don't block navigation)

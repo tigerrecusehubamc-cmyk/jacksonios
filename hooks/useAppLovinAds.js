@@ -14,6 +14,22 @@ import {
   getAppLovinAdStats,
 } from "@/lib/api";
 
+const describeAdFailure = (failure) => {
+  const code = failure?.errorCode ?? failure?.code;
+  const rawMessage = failure?.error || failure?.message;
+  const knownMessages = {
+    "204": "No rewarded ad is available for this device right now",
+    "-1": "The rewarded-ad request failed before reaching an ad network",
+  };
+  const message = rawMessage && rawMessage !== "Failed to load ad"
+    ? rawMessage
+    : knownMessages[String(code)] || "Failed to load rewarded ad";
+
+  return code !== undefined && code !== null && String(code) !== ""
+    ? `${message} (MAX ${code})`
+    : message;
+};
+
 /**
  * Custom hook for AppLovin MAX rewarded ads integration
  * Handles SDK initialization, ad loading, displaying, and tracking
@@ -135,7 +151,7 @@ export const useAppLovinAds = ({ enabled = true } = {}) => {
       setIsLoading(false);
       setIsShowingAd(false);
       if (surfaceAdErrorsRef.current) {
-        setError(error.error || "Ad failed");
+        setError(describeAdFailure(error));
       }
       console.log(
         "[useAppLovinAds] 📈 State updated: isLoading=false, isShowingAd=false, error set",
@@ -458,7 +474,7 @@ export const useAppLovinAds = ({ enabled = true } = {}) => {
         name: err?.name,
       });
       if (!silent) {
-        setError(err.message || "Failed to load ad");
+        setError(describeAdFailure(err));
       }
       setIsAdReady(false);
       console.log(

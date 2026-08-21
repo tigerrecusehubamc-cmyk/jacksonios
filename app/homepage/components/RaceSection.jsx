@@ -36,9 +36,9 @@ const RaceSection = () => {
         return () => window.removeEventListener('keydown', handleEscape);
     }, [isRaceModalOpen]);
 
-    // Go to game list page
+    // Open the Race overview. The user can start and choose a game from there.
     const handleRaceClick = useCallback(() => {
-        router.push('/Race/ListGame?fromRace=true');
+        router.push('/Race');
     }, [router]);
 
     // Open the tooltip/modal

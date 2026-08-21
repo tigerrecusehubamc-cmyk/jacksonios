@@ -16,19 +16,37 @@ export const ChallengeGroupSection = ({ streak }) => {
     // Generate milestones dynamically from bonus days - only use API data, no fallbacks
     const generateMilestones = () => {
 
-        // Only use bonus days from API - no fallback to streak prop
+        // The compact component represents the weekly Day 1–7 sequence. Keep
+        // every day visible even when an administrator has not configured its
+        // reward yet; unconfigured days intentionally show no reward value.
         if (bonusDays.length > 0) {
+            const configuredWeeklyDays = new Map(
+                bonusDays
+                    .filter((day) => day.dayNumber >= 1 && day.dayNumber <= 7)
+                    .map((day) => [day.dayNumber, day]),
+            );
+            const weeklyBonusDays = Array.from({ length: 7 }, (_, index) => {
+                const dayNumber = index + 1;
+                return configuredWeeklyDays.get(dayNumber) || {
+                    dayNumber,
+                    coins: 0,
+                    xp: 0,
+                    isReached: Number(apiCurrentStreak || 0) >= dayNumber,
+                    isConfigured: false,
+                };
+            });
+
             // Keep the first/last circle inside the track and distribute every
             // configured milestone evenly. Percentage positioning stays correct
             // on narrower iPhones where the container is less than 340px wide.
             const edgeInset = 7.5;
-            const positions = bonusDays.map((_, index) => {
-                if (bonusDays.length === 1) return "50%";
-                const position = edgeInset + (index / (bonusDays.length - 1)) * (100 - edgeInset * 2);
+            const positions = weeklyBonusDays.map((_, index) => {
+                if (weeklyBonusDays.length === 1) return "50%";
+                const position = edgeInset + (index / (weeklyBonusDays.length - 1)) * (100 - edgeInset * 2);
                 return `${position}%`;
             });
 
-            const milestones = bonusDays.map((bonusDay, index) => {
+            const milestones = weeklyBonusDays.map((bonusDay, index) => {
                 // Use direct coins and xp fields from simplified API response
                 const coins = bonusDay.coins || 0;
                 const xp = bonusDay.xp || 0;
@@ -36,8 +54,9 @@ export const ChallengeGroupSection = ({ streak }) => {
 
                 const milestone = {
                     value: bonusDay.dayNumber,
-                    leftPosition: positions[index] || `${((index + 1) / (bonusDays.length + 1)) * 100}%`,
+                    leftPosition: positions[index] || `${((index + 1) / (weeklyBonusDays.length + 1)) * 100}%`,
                     isReached: bonusDay.isReached || false,
+                    isConfigured: bonusDay.isConfigured !== false,
                     coins: coins,
                     xp: xp,
                     rewardType: rewardType,
@@ -136,7 +155,9 @@ export const ChallengeGroupSection = ({ streak }) => {
                             const goldenChestImage = "/tesurebox.png";
 
                             // Use golden chest for last milestone, green for others
-                            const imageUrl = isLastMilestone
+                            const imageUrl = !milestone.isConfigured
+                                ? null
+                                : isLastMilestone
                                 ? goldenChestImage
                                 : greenChestImages[Math.min(index, greenChestImages.length - 1)];
 

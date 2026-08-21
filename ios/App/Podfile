@@ -37,7 +37,10 @@ end
 
 target 'App' do
   capacitor_pods
-  # Add your Pods here
+  # The MAX ad unit is configured to use Google/AdMob demand. The core
+  # AppLovin SDK alone cannot load that inventory; the mediation adapter also
+  # brings in the compatible Google Mobile Ads SDK.
+  pod 'AppLovinMediationGoogleAdapter'
 end
 
 post_install do |installer|
