@@ -261,10 +261,16 @@ export const ListGame = () => {
     useEffect(() => {
         if (!userProfile) return;
 
-        // Use available sections from Redux if available, otherwise use common sections
-        const sectionsToFetch = availableUiSections && availableUiSections.length > 0
+        // Use available sections from Redux if available, otherwise use common sections.
+        // Filter out blank names defensively: a "" entry from the API caused an
+        // infinite dispatch loop here, because "" always reads as status "idle"
+        // (fetch results are keyed under "Unknown", never under "").
+        const rawSections = availableUiSections && availableUiSections.length > 0
             ? availableUiSections
             : ["Swipe", "Most Played", "Cash Coach Recommendation", "New Games", "Trending"];
+        const sectionsToFetch = rawSections.filter(
+            (s) => typeof s === "string" && s.trim() !== ""
+        );
 
         // Fetch games from sections that don't have games loaded yet
         sectionsToFetch.forEach(section => {
