@@ -38,6 +38,7 @@ export default function ApplePaymentSheet({
           subscriptionId,
           transactionId: purchaseResult.transactionId,
           transactionReceipt: purchaseResult.transactionReceipt,
+          jwsRepresentation: purchaseResult.jwsRepresentation,
           productId: purchaseResult.productId,
           token,
         })
