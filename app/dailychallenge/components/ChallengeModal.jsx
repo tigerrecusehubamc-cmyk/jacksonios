@@ -12,7 +12,7 @@ import {
     fetchBonusDays
 } from "../../../lib/redux/slice/dailyChallengeSlice";
 import { SimpleSpinWheel } from "./SimpleSpinWheel";
-import { spinForChallenge } from "../../../lib/api";
+import { spinForChallenge, reportChallengePlayTime } from "../../../lib/api";
 import { onDailyChallengeComplete } from "../../../lib/adjustService";
 import { incrementAndGet } from "../../../lib/adjustCounters";
 import { useAppLovinAds } from "@/hooks/useAppLovinAds";
@@ -24,6 +24,10 @@ import {
 } from "../../../lib/redux/slice/walletTransactionsSlice";
 import { fetchProfileStats } from "../../../lib/redux/slice/profileSlice";
 import { fetchAccountOverview } from "../../../lib/redux/slice/accountOverviewSlice";
+// Timestamp of the last challenge game launch, used to measure play time on
+// return. localStorage because the app is backgrounded while the game runs.
+const CHALLENGE_LAUNCH_KEY = "jackson.challengeGameLaunchedAt";
+
 import {
     describeObjective,
     describeProgress,
@@ -55,6 +59,57 @@ export const ChallengeModal = ({
     // (play for N minutes) or counted (N purchases / milestones / tasks).
     const objectiveProgress = describeProgress(today?.challenge, today?.progress);
     const spinRequirement = resolveSpinRequirement(today?.challenge);
+
+    // Report play time when the user returns from the game.
+    //
+    // Play-time challenges are validated server-side against minutes reported
+    // through this endpoint and nothing else, so without this they can never be
+    // completed. Elapsed time away from the app is the only play signal
+    // available to a web-view app; it is capped at the challenge requirement so
+    // a user who leaves the phone idle cannot bank hours of credit.
+    useEffect(() => {
+        const reportPlayTime = async () => {
+            let launchedAt = null;
+            try {
+                launchedAt = localStorage.getItem(CHALLENGE_LAUNCH_KEY);
+            } catch (e) {
+                return;
+            }
+            if (!launchedAt) return;
+
+            const { objective, target } = resolveObjective(today?.challenge);
+            if (objective !== 'playtime' || !target) return;
+            if (today?.progress?.isCompleted) return;
+
+            const elapsedMinutes = Math.floor((Date.now() - Number(launchedAt)) / 60000);
+            if (!Number.isFinite(elapsedMinutes) || elapsedMinutes <= 0) return;
+
+            try {
+                localStorage.removeItem(CHALLENGE_LAUNCH_KEY);
+            } catch (e) {
+                // ignore
+            }
+
+            try {
+                await reportChallengePlayTime(
+                    Math.min(elapsedMinutes, target),
+                    localStorage.getItem('authToken'),
+                );
+                await dispatch(fetchToday({ token: localStorage.getItem('authToken') }));
+            } catch (e) {
+                console.warn('[ChallengeModal] failed to report play time:', e?.message);
+            }
+        };
+
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') reportPlayTime();
+        };
+
+        document.addEventListener('visibilitychange', onVisible);
+        reportPlayTime();
+
+        return () => document.removeEventListener('visibilitychange', onVisible);
+    }, [today?.challenge, today?.progress?.isCompleted, dispatch]);
     const [showCompletionSuccess, setShowCompletionSuccess] = useState(false);
     const [spinSuccess, setSpinSuccess] = useState(false);
     // Local error state for completion/claim handlers (prevents setError is not defined)
@@ -504,6 +559,17 @@ export const ChallengeModal = ({
                         const separator = deepLink.includes('?') ? '&' : '?';
                         deepLink = `${deepLink}${separator}partner_user_id=${userId}`;
                     }
+                }
+                // Remember when the game was launched so play time can be
+                // reported when the user comes back. Stored rather than held in
+                // state because the app is backgrounded in between.
+                try {
+                    localStorage.setItem(
+                        CHALLENGE_LAUNCH_KEY,
+                        String(Date.now()),
+                    );
+                } catch (e) {
+                    // storage unavailable - play time simply is not reported
                 }
                 // Open the game deep link
                 window.open(deepLink, '_blank');
