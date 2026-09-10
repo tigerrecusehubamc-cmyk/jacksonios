@@ -24,6 +24,12 @@ import {
 } from "../../../lib/redux/slice/walletTransactionsSlice";
 import { fetchProfileStats } from "../../../lib/redux/slice/profileSlice";
 import { fetchAccountOverview } from "../../../lib/redux/slice/accountOverviewSlice";
+import {
+    describeObjective,
+    describeProgress,
+    resolveObjective,
+    resolveSpinRequirement,
+} from "@/lib/challengeObjective";
 
 export const ChallengeModal = ({
     isOpen,
@@ -44,6 +50,11 @@ export const ChallengeModal = ({
     const [isSpinning, setIsSpinning] = useState(false);
     const [challengeStartTime, setChallengeStartTime] = useState(null);
     const [timeLimitCountdown, setTimeLimitCountdown] = useState(null);
+
+    // Objective is derived rather than assumed: a challenge may be timed
+    // (play for N minutes) or counted (N purchases / milestones / tasks).
+    const objectiveProgress = describeProgress(today?.challenge, today?.progress);
+    const spinRequirement = resolveSpinRequirement(today?.challenge);
     const [showCompletionSuccess, setShowCompletionSuccess] = useState(false);
     const [spinSuccess, setSpinSuccess] = useState(false);
     // Local error state for completion/claim handlers (prevents setError is not defined)
@@ -747,12 +758,39 @@ export const ChallengeModal = ({
                     </div>
                 )} */}
 
-                {/* Time Limit - Hide for spin challenges */}
-                {today?.challenge?.requirements?.timeLimit && today?.challenge?.type !== 'spin' && (
+                {/* What this challenge requires. Play-time challenges are timed;
+                    purchases, milestones and tasks are counted, so they show
+                    progress instead of a duration. */}
+                {today?.challenge?.type !== 'spin' && describeObjective(today?.challenge) && (
                     <div className="mb-3 p-2 bg-purple-500/20 border border-purple-500/30 rounded-lg">
-                        <div className="text-purple-200 text-xs font-medium mb-1">Time Limit</div>
+                        <div className="text-purple-200 text-xs font-medium mb-1">
+                            {resolveObjective(today?.challenge).isTimed ? 'Time Limit' : 'Objective'}
+                        </div>
                         <div className="text-purple-100 text-sm font-semibold">
-                            {today.challenge.requirements.timeLimit} {today.challenge.requirements.timeLimit === 1 ? 'minute' : 'minutes'}
+                            {describeObjective(today?.challenge)}
+                            {objectiveProgress && (
+                                <span className="ml-2 text-purple-200 font-normal">
+                                    &mdash; {objectiveProgress.label}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Spin challenges that require more than one spin */}
+                {today?.challenge?.type === 'spin' && spinRequirement.spinCount > 1 && (
+                    <div className="mb-3 p-2 bg-purple-500/20 border border-purple-500/30 rounded-lg">
+                        <div className="text-purple-200 text-xs font-medium mb-1">Objective</div>
+                        <div className="text-purple-100 text-sm font-semibold">
+                            Spin {spinRequirement.spinCount} times
+                            {spinRequirement.spinWindowMinutes
+                                ? ` within ${spinRequirement.spinWindowMinutes} minutes`
+                                : ''}
+                            {today?.progress?.totalSteps > 1 && (
+                                <span className="ml-2 text-purple-200 font-normal">
+                                    &mdash; {Number(today?.progress?.currentStep) || 0}/{today.progress.totalSteps}
+                                </span>
+                            )}
                         </div>
                     </div>
                 )}
