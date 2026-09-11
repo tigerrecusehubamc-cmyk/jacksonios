@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { uploadAvatar } from "@/lib/api";
+import { uploadAvatar, BASE_URL } from "@/lib/api";
 import { useSelector, useDispatch } from "react-redux";
 import { updateUserProfile, fetchUserProfile } from "@/lib/redux/slice/profileSlice";
 
@@ -44,7 +44,7 @@ export const EditProfile = () => {
 
         // Ensure the avatar URL has proper protocol
         if (!avatarUrl.startsWith('http')) {
-          avatarUrl = `https://rewardsuatapi.hireagent.co${avatarUrl}`;
+          avatarUrl = `${BASE_URL}${avatarUrl}`;
         }
 
         setAvatarPreview(avatarUrl);

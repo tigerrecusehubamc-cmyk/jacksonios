@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DailyRewardsSection } from "./DailyRewardsSection";
 import { WeeklyCalendarSection } from "./WeeklyCalendarSection";
+import { BASE_URL } from "@/lib/api";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { MemoizedButton, MemoizedImage } from "./PerformanceWrapper";
 import { useDailyRewards } from "../hooks/useDailyRewards";
@@ -51,7 +52,7 @@ const DailyReward = () => {
         try {
             // API call to recover missed day
             const token = localStorage.getItem("authToken");
-            const response = await fetch("https://rewardsuatapi.hireagent.co/api/daily-rewards/recover", {
+            const response = await fetch(`${BASE_URL}/api/daily-rewards/recover`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

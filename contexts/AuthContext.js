@@ -27,6 +27,7 @@ import {
   getWalkathonLeaderboard,
   biometricLogin,
   checkBiometricStatus,
+  BASE_URL,
 } from "@/lib/api";
 import {
   checkBiometricAvailability,
@@ -2677,7 +2678,7 @@ export function AuthProvider({ children }) {
         // 1. Fetch profile + location status in PARALLEL (saves ~200-400ms vs sequential)
         const [profileAction, locationResult] = await Promise.allSettled([
           dispatch(fetchUserProfile(socialToken)),
-          fetch("https://rewardsuatapi.hireagent.co/api/location/status", {
+          fetch(`${BASE_URL}/api/location/status`, {
             method: "GET",
             headers: {
               Authorization: `Bearer ${socialToken}`,
