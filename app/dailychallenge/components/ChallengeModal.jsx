@@ -60,6 +60,16 @@ export const ChallengeModal = ({
     const objectiveProgress = describeProgress(today?.challenge, today?.progress);
     const spinRequirement = resolveSpinRequirement(today?.challenge);
 
+    // Whether the server already counts enough spins for this challenge.
+    //
+    // `spinSuccess` below only knows about spins made while this modal was
+    // mounted, which was fine when every spin challenge needed exactly one
+    // spin. Multi-spin challenges are spread over minutes, so the user
+    // routinely backgrounds the app or closes the modal in between and comes
+    // back to a reset flag with the requirement already met.
+    const spinTargetMet =
+        (Number(today?.progress?.currentStep) || 0) >= spinRequirement.spinCount;
+
     // Report play time when the user returns from the game.
     //
     // Play-time challenges are validated server-side against minutes reported
@@ -192,8 +202,9 @@ export const ChallengeModal = ({
             setIsCompleting(true);
             setError(null);
 
-            // For spin challenges, ensure spin was successful (skip check when auto=true — we're only called with auto after a successful spin)
-            if (today?.challenge?.type === "spin" && !auto && !spinSuccess) {
+            // For spin challenges, ensure spin was successful (skip check when auto=true — we're only called with auto after a successful spin,
+            // and when the server already counts enough spins, which outlives this modal's state)
+            if (today?.challenge?.type === "spin" && !auto && !spinSuccess && !spinTargetMet) {
                 alert("Please spin the wheel successfully before marking as complete.");
                 setIsCompleting(false);
                 return;
