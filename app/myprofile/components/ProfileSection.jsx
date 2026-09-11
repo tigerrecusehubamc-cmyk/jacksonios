@@ -1,5 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
+import { BASE_URL } from '@/lib/api'
 
 
 
@@ -21,7 +22,7 @@ const ProfileSection = ({ profile, vipStatus, handleEditProfile }) => {
                                 // Ensure proper protocol
                                 return avatarUrl.startsWith('http')
                                     ? avatarUrl
-                                    : `https://rewardsuatapi.hireagent.co${avatarUrl}`;
+                                    : `${BASE_URL}${avatarUrl}`;
                             })()
                             : "/profile.png"
                     }

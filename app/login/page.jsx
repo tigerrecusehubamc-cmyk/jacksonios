@@ -6,6 +6,7 @@ import { fetchStreakStatus } from "@/lib/redux/slice/streakSlice";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import LoadingOverlay from "@/components/LoadingOverlay";
+import { BASE_URL } from "@/lib/api";
 import BiometricLoginButton from "@/components/BiometricLoginButton";
 import Script from "next/script";
 
@@ -338,7 +339,7 @@ function LoginPageContent() {
     });
 
     setIsRedirecting(true);
-    const backendUrl = "https://rewardsuatapi.hireagent.co";
+    const backendUrl = BASE_URL;
 
     // Check if the app is running on a native mobile platform (iOS/Android)
     if (Capacitor.isNativePlatform()) {

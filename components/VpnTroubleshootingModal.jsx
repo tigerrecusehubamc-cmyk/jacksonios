@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { BASE_URL } from '@/lib/api';
 
 const VpnTroubleshootingModal = ({ isVisible, onClose }) => {
     const [vpnDetection, setVpnDetection] = useState(null);
@@ -122,12 +123,12 @@ const VpnTroubleshootingModal = ({ isVisible, onClose }) => {
                         <div className="bg-red-900/30 rounded-lg p-4">
                             <h3 className="text-red-400 font-semibold mb-2">🌐 API Status</h3>
                             <div className="text-sm text-gray-300">
-                                <p>Base URL: https://rewardsuatapi.hireagent.co</p>
+                                <p>Base URL: {BASE_URL}</p>
                                 <p>Besitos API: https://api.besitoscorp.com/</p>
                                 <button
                                     onClick={async () => {
                                         try {
-                                            const response = await fetch('https://rewardsuatapi.hireagent.co/api/health', {
+                                            const response = await fetch(`${BASE_URL}/api/health`, {
                                                 method: 'GET',
                                                 timeout: 10000
                                             });

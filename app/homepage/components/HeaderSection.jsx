@@ -2,6 +2,7 @@
 import React, { useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
+import { BASE_URL } from "@/lib/api";
 
 const HeaderSection = () => {
     const router = useRouter();
@@ -42,7 +43,7 @@ const HeaderSection = () => {
         // Ensure proper protocol
         return avatarUrl.startsWith('http')
             ? avatarUrl
-            : `https://rewardsuatapi.hireagent.co${avatarUrl}`;
+            : `${BASE_URL}${avatarUrl}`;
     }, [headerData.avatar]);
 
     return (
