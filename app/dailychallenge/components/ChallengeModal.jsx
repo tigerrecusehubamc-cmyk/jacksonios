@@ -584,6 +584,14 @@ export const ChallengeModal = ({
                 }
                 // Open the game deep link
                 window.open(deepLink, '_blank');
+            } else if (resolveObjective(today?.challenge).objective === 'playtime') {
+                // Without a link the game never opens, so play time can never be
+                // recorded and the challenge can never complete. Say so now
+                // rather than letting the user wait, watch an ad, and then be
+                // told their play time was not tracked.
+                alert(
+                    "This game can't be opened right now, so your play time can't be tracked. Please try another challenge or contact support.",
+                );
             }
             onStartChallenge();
         } catch (error) {
